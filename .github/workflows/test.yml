@@ -22,6 +22,11 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+      
+      - name: Install hardhat
+        run: |
+          yarn add --dev hardhat
+        id: hardhat-install
 
       - name: Show Forge version
         run: |
@@ -41,11 +46,6 @@ jobs:
         run: |
           forge test -vvv
         id: forge-test
-
-      - name: Install hardhat
-        run: |
-          yarn add --dev hardhat
-        id: hardhat-install
 
       - name: Run Hardhat tests
         run: |
