@@ -11,7 +11,7 @@ This library is designed with modularity and simplicity in mind, allowing develo
 * Decryption Callback: Implement custom logic that gets triggered when the decryption key is received, i.e., decryption of the Ciphertext.
 * Abstract Interface: Extend and implement the library to suit your specific needs.
 
-### Using the Solidity Interfaces
+### Using the Solidity Interfaces
 
 To use this library in your project, import the required files into your contract:
 
@@ -61,20 +61,20 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
 }
 ```
 
-## How It Works
+### How It Works
 
 * Encryption: Use the off-chain TypeScript library to generate the encrypted data (`TypesLib.Ciphertext`) with a threshold network public key. The following solidity types are supported by the TypeScript library - uint256, int256, address, string, bool, bytes32, bytes, uint256 array, address array, and struct.
 * Timelock Request: Call `blocklock.requestBlocklock` with the block number after which decryption is allowed and the encrypted data or Ciphertext.
 * Decryption: Once the specified block number is reached, a callback to your `receiveBlocklock` logic is triggered with the decryption key to unlock the data.
 
-### Licensing
+### Licensing
 
 This library is licensed under the MIT License which can be accessed [here](LICENSE).
 
-### Contributing
+### Contributing
 
 Contributions are welcome! If you find a bug, have a feature request, or want to improve the code, feel free to open an issue or submit a pull request.
 
-### Acknowledgments
+### Acknowledgments
 
 Special thanks to the Filecoin Foundation for supporting the development of this library.
