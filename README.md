@@ -1,66 +1,18 @@
-## Foundry
+## @randamu/blocklock-solidity
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+This repository contains the Solidity-based smart contracts library that facilitates Randamu's on-chain timelock encryption and decryption.
 
-Foundry consists of:
+By leveraging this library, developers can implement time-based data unlocking mechanisms securely in their smart contracts.
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+This library is designed with modularity and simplicity in mind, allowing developers to extend and integrate it into their existing projects easily.
 
-## Documentation
+### Features
+* Timelock Encryption: Encrypt data that can only be decrypted after a specified block number.
+* Decryption Callback: Implement custom logic that gets triggered when decryption occurs.
+* Abstract Interface: Extend and implement the library to suit your specific needs.
 
-https://book.getfoundry.sh/
+### Using the Solidity Interfaces
 
-## Usage
+### Licensing
 
-### Build
 
-```shell
-$ forge build
-```
-
-### Test
-
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
