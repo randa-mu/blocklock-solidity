@@ -403,7 +403,7 @@ import {
         expect(await blocklockReceiver.plainTextValue()).to.be.equal(msg);
       });
 
-      it.only("timelock request should revert if blocklock sender address is incorrect in blocklockReceiver", async function () {
+      it("timelock request should revert if blocklock sender address is incorrect in blocklockReceiver", async function () {
         blocklockReceiver = await ethers.deployContract("MockBlocklockReceiver", [
             await owner.getAddress(),
           ]);
