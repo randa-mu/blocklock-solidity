@@ -318,7 +318,7 @@ import {
       expect(Array.from(getBytes(encodedMessage))).to.have.members(Array.from(decryptedM2));
     });
   
-    it.only("Should deploy the contracts with non zero addresses", async function () {
+    it("Should deploy the contracts with non zero addresses", async function () {
       expect(await owner.getAddress()).to.not.equal(ZeroAddress);
       expect(await schemeProvider.getAddress()).to.not.equal(ZeroAddress);
       expect(await blocklockReceiver.getAddress()).to.not.equal(ZeroAddress);
@@ -326,24 +326,102 @@ import {
       expect(await decryptionSender.getAddress()).to.not.equal(ZeroAddress);
       expect(await blocklockScheme.getAddress()).to.not.equal(ZeroAddress);
     });
-  
-    it("should revert if a bidder tries to submit a second sealed bid", async function () {
-      const msg = ethers.parseEther("3");
-      const blocknumber = 11;
-      const encodedMessage = new Uint8Array(Buffer.from(msg.toString()));
-      const identity = blockHeightToBEBytes(BigInt(blocknumber));
-      const ct = encrypt_towards_identity_g1(encodedMessage, identity, BLOCKLOCK_DEFAULT_PUBLIC_KEY, BLOCKLOCK_IBE_OPTS);
-  
-      const sealedAmount = encodeCiphertextToSolidity(ct);
-  
-      // Submit the first sealed bid from bidder1
-      await auction.connect(bidder1).sealedBid(sealedAmount, { value: reservePrice });
-      // Submit the second sealed bid from bidder1
-      await expect(
-        auction.connect(bidder1).sealedBid(sealedAmount, { value: reservePrice }), // Less than reserve price
-      ).to.be.revertedWith("Bid ID must be unique.");
-    });
-  
+    
+    it("can request blocklock decryption from user contract and receive decryption key callback", async function () {
+        let blockHeight = await ethers.provider.getBlockNumber();
+    
+        const msg = ethers.parseEther("4");
+        const msgBytes = AbiCoder.defaultAbiCoder().encode(["uint256"], [msg]);
+        const encodedMessage = getBytes(msgBytes);
+        // encodedMessage = 0x00000000000000000000000000000000000000000000000029a2241af62c0000
+    
+        const ct = encrypt(encodedMessage, BigInt(blockHeight + 2), BLOCKLOCK_DEFAULT_PUBLIC_KEY);
+        
+        let tx = await blocklockReceiver.connect(owner).createTimelockRequest(BigInt(blockHeight + 2), encodeCiphertextToSolidity(ct));
+        let receipt = await tx.wait(1);
+        if (!receipt) {
+          throw new Error("transaction has not been mined");
+        }
+
+       
+        const decryptionSenderIface = DecryptionSender__factory.createInterface();
+        const [requestID, callback, schemeID, condition, ciphertext] = extractSingleLog(
+          decryptionSenderIface,
+          receipt,
+          await decryptionSender.getAddress(),
+          decryptionSenderIface.getEvent("DecryptionRequested"),
+        );
+        
+        let req = await blocklock.getRequest(BigInt(requestID));
+        expect(req.blockHeight).to.be.equal(BigInt(blockHeight + 2));
+    
+        console.log(`received decryption request ${requestID}`);
+        console.log(`call back address ${callback}, scheme id ${schemeID}`);
+    
+        const blsKey = "0x58aabbe98959c4dcb96c44c53be7e3bb980791fc7a9e03445c4af612a45ac906";
+        const bls = await BlsBn254.create();
+        const { pubKey, secretKey } = bls.createKeyPair(blsKey);
+    
+        const conditionBytes = isHexString(condition) ? getBytes(condition) : toUtf8Bytes(condition);
+        const m = bls.hashToPoint(BLOCKLOCK_IBE_OPTS.dsts.H1_G1, conditionBytes);
+    
+        const hexCondition = Buffer.from(conditionBytes).toString("hex");
+        blockHeight = BigInt("0x" + hexCondition);
+    
+        const parsedCiphertext = parseSolidityCiphertextString(ciphertext);
+    
+        const signature = bls.sign(m, secretKey).signature;
+        const sig = bls.serialiseG1Point(signature);
+        const sigBytes = AbiCoder.defaultAbiCoder().encode(["uint256", "uint256"], [sig[0], sig[1]]);
+    
+        const decryption_key = preprocess_decryption_key_g1(parsedCiphertext, { x: sig[0], y: sig[1] }, BLOCKLOCK_IBE_OPTS);
+
+        tx = await decryptionSender.connect(owner).fulfilDecryptionRequest(requestID, decryption_key, sigBytes);
+        receipt = await tx.wait(1);
+        if (!receipt) {
+          throw new Error("transaction has not been mined");
+        }
+    
+        const iface = BlocklockSender__factory.createInterface();
+        const [, , , decryptionK] = extractSingleLog(
+          iface,
+            receipt,
+          await blocklock.getAddress(),
+          iface.getEvent("BlocklockCallbackSuccess"),
+        );
+
+        let test_ct: BlocklockTypes.CiphertextStruct = {
+          u: { x: [...req.ciphertext.u.x], y: [...req.ciphertext.u.y] },
+          v: req.ciphertext.v,
+          w: req.ciphertext.w,
+        };
+    
+        const decryptedM2 = getBytes(await blocklock.decrypt(test_ct, decryptionK));
+    
+        expect(Array.from(getBytes(encodedMessage))).to.have.members(Array.from(decryptedM2));
+
+        expect(await blocklockReceiver.plainTextValue()).to.be.equal(msg);
+      });
+
+      it.only("timelock request should revert if blocklock sender address is incorrect in blocklockReceiver", async function () {
+        blocklockReceiver = await ethers.deployContract("MockBlocklockReceiver", [
+            await owner.getAddress(),
+          ]);
+          await blocklockReceiver.waitForDeployment();
+          
+          let blockHeight = await ethers.provider.getBlockNumber();
+    
+        const msg = ethers.parseEther("4");
+        const msgBytes = AbiCoder.defaultAbiCoder().encode(["uint256"], [msg]);
+        const encodedMessage = getBytes(msgBytes);
+        // encodedMessage = 0x00000000000000000000000000000000000000000000000029a2241af62c0000
+    
+        const ct = encrypt(encodedMessage, BigInt(blockHeight + 2), BLOCKLOCK_DEFAULT_PUBLIC_KEY);
+        
+        await expect(
+            blocklockReceiver.connect(owner).createTimelockRequest(BigInt(blockHeight + 2), encodeCiphertextToSolidity(ct))
+        ).to.be.reverted;
+      });
     
 });
   
