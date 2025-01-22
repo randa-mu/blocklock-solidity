@@ -1,6 +1,6 @@
 {
-    "name": "blocklock-solidity",
-    "description": "solidity smart contracts for on-chain timelock encryption",
+    "name": "@randamu/blocklock-solidity",
+    "description": "Core solidity smart contracts for Randamu's on-chain timelock encryption",
     "license": "MIT",
     "version": "0.0.1",
     "directories": {
