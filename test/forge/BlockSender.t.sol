@@ -22,7 +22,7 @@ contract SimpleAuctionTest is Test {
 
     address owner;
 
-    // create ciphertexts 
+    // create ciphertexts
     // e.g., 3 ether - 3000000000000000000 wei
     TypesLib.Ciphertext sealedBidBidder1 = TypesLib.Ciphertext({
         u: BLS.PointG2({
