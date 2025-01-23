@@ -13,7 +13,6 @@ import {
   BlocklockSender,
   BlocklockSignatureScheme,
   DecryptionSender,
-  MockBlocklockReceiver__factory,
   DecryptionSender__factory,
   BlocklockSender__factory,
 } from "../../typechain-types";
