@@ -30,6 +30,12 @@ interface IDecryptionSender {
     function fulfilDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
         external;
 
+    /**
+     * @notice Updates the signature scheme address provider contract address
+     * @param newSignatureSchemeAddressProvider The signature address provider address to set
+     */
+    function setSignatureSchemeAddressProvider(address newSignatureSchemeAddressProvider) external;
+
     // Getters
 
     /**
@@ -60,4 +66,6 @@ interface IDecryptionSender {
      * @return Bytes string representing the public key points on the elliptic curve.
      */
     function getPublicKeyBytes() external view returns (bytes memory);
+
+    function version() external pure returns (string memory);
 }

@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "../libraries/TypesLib.sol";
+import {AccessControlEnumerableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
+import {TypesLib} from "../libraries/TypesLib.sol";
 import {BLS} from "../libraries/BLS.sol";
 import {IBlocklockSender} from "../interfaces/IBlocklockSender.sol";
 import {IBlocklockReceiver} from "../interfaces/IBlocklockReceiver.sol";
@@ -15,7 +19,15 @@ import {IDecryptionSender} from "../interfaces/IDecryptionSender.sol";
 
 import {console} from "forge-std/console.sol";
 
-contract BlocklockSender is IBlocklockSender, DecryptionReceiverBase {
+contract BlocklockSender is
+    IBlocklockSender,
+    DecryptionReceiverBase,
+    Initializable,
+    UUPSUpgradeable,
+    AccessControlEnumerableUpgradeable
+{
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+
     string public constant SCHEME_ID = "BN254-BLS-BLOCKLOCK";
     bytes public constant DST_H1_G1 = "BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_";
     bytes public constant DST_H2 = "BLOCKLOCK_BN254_XMD:KECCAK-256_H2_";
@@ -35,10 +47,31 @@ contract BlocklockSender is IBlocklockSender, DecryptionReceiverBase {
     event BlocklockCallbackSuccess(
         uint256 indexed requestID, uint256 blockHeight, TypesLib.Ciphertext ciphertext, bytes decryptionKey
     );
+    event DecryptionSenderUpdated(address indexed decryptionSender);
 
     error BlocklockCallbackFailed(uint256 requestID);
 
-    constructor(address _decryptionSender) DecryptionReceiverBase(_decryptionSender) {}
+    modifier onlyOwner() {
+        _checkRole(ADMIN_ROLE);
+        _;
+    }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address owner, address _decryptionSender) public initializer {
+        __UUPSUpgradeable_init();
+        __AccessControlEnumerable_init();
+
+        require(_grantRole(ADMIN_ROLE, owner), "Grant role failed");
+        require(_grantRole(DEFAULT_ADMIN_ROLE, owner), "Grant role failed");
+        decryptionSender = IDecryptionSender(_decryptionSender);
+    }
+
+    // OVERRIDEN UPGRADE FUNCTIONS
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     /**
      * @dev See {IBlocklockSender-requestBlocklock}.
@@ -137,6 +170,14 @@ contract BlocklockSender is IBlocklockSender, DecryptionReceiverBase {
     }
 
     /**
+     * @dev See {IBlocklockSender-setDecryptionSender}.
+     */
+    function setDecryptionSender(address newDecryptionSender) external onlyOwner {
+        decryptionSender = IDecryptionSender(newDecryptionSender);
+        emit DecryptionSenderUpdated(newDecryptionSender);
+    }
+
+    /**
      * @dev See {ISignatureSender-isInFlight}.
      */
     function isInFlight(uint256 requestID) external view returns (bool) {
@@ -154,5 +195,12 @@ contract BlocklockSender is IBlocklockSender, DecryptionReceiverBase {
         require(r.decryptionRequestID > 0, "invalid requestID");
 
         return r;
+    }
+
+    /**
+     * @dev Returns the version number of the upgradeable contract.
+     */
+    function version() external pure returns (string memory) {
+        return "1.0.0";
     }
 }

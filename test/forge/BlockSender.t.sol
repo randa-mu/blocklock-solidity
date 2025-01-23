@@ -10,8 +10,12 @@ import {BlocklockSignatureScheme} from "../../src/blocklock/BlocklockSignatureSc
 import {DecryptionSender} from "../../src/decryption-requests/DecryptionSender.sol";
 import {BLS} from "../../src/libraries/BLS.sol";
 import {TypesLib} from "../../src/libraries/TypesLib.sol";
+import {UUPSProxy} from "../../src/proxy/UUPSProxy.sol";
 
 contract SimpleAuctionTest is Test {
+    UUPSProxy decryptionSenderProxy;
+    UUPSProxy blocklockSenderProxy;
+
     SignatureSender public sigSender;
     DecryptionSender public decryptionSender;
     BlocklockSender public tlock;
@@ -63,9 +67,24 @@ contract SimpleAuctionTest is Test {
         });
         sigSender = new SignatureSender(pk.x, pk.y, owner, address(sigAddrProvider));
 
-        decryptionSender = new DecryptionSender(pk.x, pk.y, owner, address(sigAddrProvider));
+        // deploy implementation contracts for decryption and blocklock senders
+        DecryptionSender decryptionSenderImplementationV1 = new DecryptionSender();
+        BlocklockSender blocklockSenderImplementationV1 = new BlocklockSender();
 
-        tlock = new BlocklockSender(address(decryptionSender));
+        // deploy proxy contracts and point them to their implementation contracts
+        decryptionSenderProxy = new UUPSProxy(address(decryptionSenderImplementationV1), "");
+        console.log("Decryption Sender proxy contract deployed at: ", address(decryptionSenderProxy));
+
+        blocklockSenderProxy = new UUPSProxy(address(blocklockSenderImplementationV1), "");
+        console.log("Blocklock Sender proxy contract deployed at: ", address(blocklockSenderProxy));
+
+        // wrap proxy address in implementation ABI to support delegate calls
+        decryptionSender = DecryptionSender(address(decryptionSenderProxy));
+        tlock = BlocklockSender(address(blocklockSenderProxy));
+
+        // initialize the contracts
+        decryptionSender.initialize(pk.x, pk.y, owner, address(sigAddrProvider));
+        tlock.initialize(owner, address(decryptionSender));
 
         vm.stopPrank();
     }
