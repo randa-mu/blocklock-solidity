@@ -17,11 +17,13 @@ This library is designed with modularity and simplicity in mind, allowing develo
 
 | Contract        | Address | Network          |
 |-----------------|---------|------------------|
-| BlocklockSender Proxy | 0xa0d2eC4992B016b2C6E469b24CB470669AEa2D1D   | Filecoin Testnet |
-| BlocklockSender Implementation | 0xEBfD42261fb8e213E369b5a5627E4C3c1d2A6D36   | Filecoin Testnet |
-| DecryptionSender Proxy | 0xC7D59fFc9f48E82A670eA1d8e5DDe13E2E7EE194   | Filecoin Testnet |
-| DecryptionSender Implementation | 0xFFeceE7688aB110Af747238A8Eb42d174e186730   | Filecoin Testnet |
-| MockBlocklockReceiver | 0xbf2185f2aaFD87183a377358bDbEDa6bD90b3925   | Filecoin Testnet |
+| BlocklockSender Proxy | 0xfF66908E1d7d23ff62791505b2eC120128918F44   | Filecoin Testnet |
+| BlocklockSender Implementation | 0x9B849F45dFe4655ac45CA6621b46c0224d3dBf34   | Filecoin Testnet |
+| DecryptionSender Proxy | 0x9297Bb1d423ef7386C8b2e6B7BdE377977FBedd3   | Filecoin Testnet |
+| DecryptionSender Implementation | 0x9Ae47e892B51Db9Df906C6FB753662072C1a9883   | Filecoin Testnet |
+| SignatureSchemeAddressProvider | 0xD2b5084E68230D609AEaAe5E4cF7df9ebDd6375A   | Filecoin Testnet |
+| BlocklockSignatureScheme | 0x62C9CF8Ff30177d8479eDaB017f38017bEbf10C2   | Filecoin Testnet |
+| MockBlocklockReceiver | 0x6f637EcB3Eaf8bEd0fc597Dc54F477a33BBCA72B   | Filecoin Testnet |
 
 
 ### Using the Solidity Interfaces
