@@ -220,7 +220,11 @@ describe("BlocklockSender", function () {
     const encodedMessage = getBytes(msgBytes);
     // encodedMessage = 0x00000000000000000000000000000000000000000000000029a2241af62c0000
 
-    const { id, receipt } = await encryptAndRegister(encodedMessage, BigInt(blockHeight + 2), BLOCKLOCK_DEFAULT_PUBLIC_KEY);
+    const { id, receipt } = await encryptAndRegister(
+      encodedMessage,
+      BigInt(blockHeight + 2),
+      BLOCKLOCK_DEFAULT_PUBLIC_KEY,
+    );
 
     expect(BigInt(id) > BigInt(0)).to.be.equal(true);
 

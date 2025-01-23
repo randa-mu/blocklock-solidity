@@ -129,7 +129,7 @@ contract BlocklockSender is IBlocklockSender, DecryptionReceiverBase {
         // 6: if U = [r]G_2 then return M' else return \bot
         BLS.PointG1 memory rG1 = BLS.scalarMulG1Base(r);
         (bool equal, bool success) = BLS.verifyEqualityG1G2(rG1, ciphertext.u);
-        // Decryption fails if a bad decryption key / ciphertext was provided 
+        // Decryption fails if a bad decryption key / ciphertext was provided
         require(equal == success == true, "invalid decryption key / ciphertext registered");
 
         return m2;
