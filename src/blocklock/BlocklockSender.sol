@@ -104,7 +104,7 @@ contract BlocklockSender is IBlocklockSender, DecryptionReceiverBase {
         view
         returns (bytes memory)
     {
-        require(decryptionKey.length != 256, "invalid decryption key length");
+        require(ciphertext.v.length != 256, "invalid decryption key length");
         require(ciphertext.w.length < 256, "message of unsupported length");
 
         // \sigma' \gets V \xor decryptionKey
