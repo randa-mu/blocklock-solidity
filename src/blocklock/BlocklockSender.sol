@@ -137,7 +137,7 @@ contract BlocklockSender is
         view
         returns (bytes memory)
     {
-        require(decryptionKey.length != 256, "invalid decryption key length");
+        require(ciphertext.v.length != 256, "invalid decryption key length");
         require(ciphertext.w.length < 256, "message of unsupported length");
 
         // \sigma' \gets V \xor decryptionKey
@@ -162,9 +162,8 @@ contract BlocklockSender is
         // 6: if U = [r]G_2 then return M' else return \bot
         BLS.PointG1 memory rG1 = BLS.scalarMulG1Base(r);
         (bool equal, bool success) = BLS.verifyEqualityG1G2(rG1, ciphertext.u);
-        // Assuming that the validity of the decryptionKey has been verified,
-        // decryption fails if the ciphertext has been wrongly registered.
-        require(equal == success == true, "invalid ciphertext registered");
+        // Decryption fails if a bad decryption key / ciphertext was provided
+        require(equal == success == true, "invalid decryption key / ciphertext registered");
 
         return m2;
     }

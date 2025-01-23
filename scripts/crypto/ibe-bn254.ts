@@ -295,7 +295,7 @@ function hash_identity_to_point_g1(identity: Uint8Array, opts: IbeOpts): G1 {
 // Concrete instantiation of H_2 that outputs a uniformly random byte string of length n
 // H_2: G_T \rightarrow \{0, 1\}^\ell
 function hash_shared_key_to_bytes(shared_key: GT, n: number, opts: IbeOpts): Uint8Array {
-    // todo: analyse the format of Fp12.to_bytes()
+    // encode shared_key as BE(shared_key.c0.c0.c0) || BE(shared_key.c0.c0.c1) || BE(shared_key.c0.c1.c0) || ...
     if (opts.expand_fn == "xmd") {
         return expand_message_xmd(bn254.fields.Fp12.toBytes(shared_key), opts.dsts.H2, n, opts.hash)
     } else {
