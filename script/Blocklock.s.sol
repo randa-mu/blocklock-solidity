@@ -39,15 +39,15 @@ contract BlocklockScript is Script {
     });
 
     function run() external {
-        vm.startBroadcast();
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        address admin = msg.sender;
+        vm.startBroadcast(deployerPrivateKey);
+
+        address admin = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
 
         SignatureSchemeAddressProvider sigAddrProvider = new SignatureSchemeAddressProvider(admin);
         BlocklockSignatureScheme tlockScheme = new BlocklockSignatureScheme();
         sigAddrProvider.updateSignatureScheme(SCHEME_ID, address(tlockScheme));
-
-        console.log("Deployer and admin wallet address: ", msg.sender);
 
         console.log("\nSignatureSchemeAddressProvider contract deployed to: ", address(sigAddrProvider));
 
@@ -74,3 +74,18 @@ contract BlocklockScript is Script {
         vm.stopBroadcast();
     }
 }
+
+
+/**
+# Deployment steps
+
+## Load the variables in the .env file
+source .env
+
+## Deploy and verify the contract
+forge script script/Blocklock.s.sol:BlocklockScript --rpc-url $CALIBRATIONNET_RPC_URL --broadcast -g 10000 -vvvv
+
+-g is the gas limit passed in order to prevent a common error with deploying contracts to the FEVM as per the docs in the filecoin fevm foundry kit here - https://github.com/filecoin-project/fevm-foundry-kit/tree/main
+
+For ethereum, add --verify with etherscan key in .env and foundry.toml files
+*/
