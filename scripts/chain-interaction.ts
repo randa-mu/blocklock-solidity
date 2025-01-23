@@ -9,6 +9,7 @@ import {
     DecryptionSender,
     DecryptionSender__factory,
     BlocklockSender__factory,
+    MockBlocklockReceiver__factory,
 } from "../typechain-types";
 
 // Usage:
@@ -43,19 +44,32 @@ async function main() {
     try {
         // Create a provider using the RPC URL
         const provider = new ethers.JsonRpcProvider(RPC_URL);
+        
         // Create a signer using the private key
         const signer = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
-
-        await latestBlockNumber(provider);
-        await getWalletBalance(RPC_URL!, walletAddr);
         
+        // Get latest block number
+        await latestBlockNumber(provider);
+        
+        // Get wallet ETH balance
+        await getWalletBalance(RPC_URL!, walletAddr);
+
+        // Create blocklockSender instance with proxy contract address
         const blocklockSender = new ethers.Contract("0xfF66908E1d7d23ff62791505b2eC120128918F44", BlocklockSender__factory.abi, provider);
+        
         // cast call 0xfF66908E1d7d23ff62791505b2eC120128918F44 "version()(string)" --rpc-url https://rpc.ankr.com/filecoin_testnet
         console.log("decryptionSender address from blocklockSender proxy", await blocklockSender.decryptionSender());
-
+        
+        // Create decryptionSender instance with proxy contract address
         const decryptionSender = new ethers.Contract("0x9297Bb1d423ef7386C8b2e6B7BdE377977FBedd3", DecryptionSender__factory.abi, provider);
-        console.log("Version number from decryptionSender proxy",  await decryptionSender.version());
-
+        console.log("Version number from decryptionSender proxy", await decryptionSender.version());
+        
+        // Create mockBlocklockReceiver instance with implementation contract address
+        const mockBlocklockReceiver = MockBlocklockReceiver__factory.connect("0x6f637EcB3Eaf8bEd0fc597Dc54F477a33BBCA72B", signer);
+        console.log(await mockBlocklockReceiver.plainTextValue());
+        
+        // create a timelock request from mockBlocklockReceiver contract and check it is fulfilled by blocklock agent
+        
     } catch (error) {
         console.error("Error fetching latest block number:", error);
     }
