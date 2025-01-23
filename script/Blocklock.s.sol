@@ -6,7 +6,6 @@ import {console} from "forge-std/console.sol";
 
 import {SignatureSchemeAddressProvider} from "../src/signature-schemes/SignatureSchemeAddressProvider.sol";
 import {BlocklockSignatureScheme} from "../src/blocklock/BlocklockSignatureScheme.sol";
-
 import {SignatureSender} from "../src/signature-requests/SignatureSender.sol";
 import {BlocklockSender} from "../src/blocklock/BlocklockSender.sol";
 import {DecryptionSender} from "../src/decryption-requests/DecryptionSender.sol";
@@ -50,15 +49,18 @@ contract BlocklockScript is Script {
 
         console.log("Deployer and admin wallet address: ", msg.sender);
 
-        console.log("SignatureSchemeAddressProvider contract deployed to: ", address(sigAddrProvider));
+        console.log("\nSignatureSchemeAddressProvider contract deployed to: ", address(sigAddrProvider));
 
         console.log("BlocklockSignatureScheme contract deployed to: ", address(tlockScheme));
 
         decryptionSenderImplementation = new DecryptionSender();
+        console.log("\nDecryptionSender implementation contract deployed at: ", address(decryptionSenderImplementation));
+
         blocklockSenderImplementation = new BlocklockSender();
+        console.log("BlocklockSender implementation contract deployed at: ", address(blocklockSenderImplementation));
 
         decryptionSenderProxy = new UUPSProxy(address(decryptionSenderImplementation), "");
-        console.log("DecryptionSender proxy contract deployed at: ", address(decryptionSenderProxy));
+        console.log("\nDecryptionSender proxy contract deployed at: ", address(decryptionSenderProxy));
 
         blocklockSenderProxy = new UUPSProxy(address(blocklockSenderImplementation), "");
         console.log("BlocklockSender proxy contract deployed at: ", address(blocklockSenderProxy));
