@@ -10,10 +10,10 @@ import {
     DecryptionSender__factory,
     BlocklockSender__factory,
     MockBlocklockReceiver__factory,
-} from "../typechain-types";
-import { encodeConditions, encrypt_towards_identity_g1, Ciphertext } from "./crypto"
-import { TypesLib as BlocklockTypes } from "../typechain-types/src/blocklock/BlocklockSender"
-import { IbeOpts } from "./crypto";
+} from "../../typechain-types";
+import { encodeConditions, encrypt_towards_identity_g1, Ciphertext } from "../crypto"
+import { TypesLib as BlocklockTypes } from "../../typechain-types/src/blocklock/BlocklockSender"
+import { IbeOpts } from "../crypto";
 import { keccak_256 } from "@noble/hashes/sha3";
 
 // Usage:
@@ -137,14 +137,14 @@ async function main() {
         const encodedConditions = blockHeightToBEBytes(conditions.blockHeight);
         const ct = encrypt_towards_identity_g1(encodedMessage, encodedConditions, BLOCKLOCK_DEFAULT_PUBLIC_KEY, BLOCKLOCK_IBE_OPTS);
 
-        let tx = await mockBlocklockReceiver.connect(signer).createTimelockRequest(blockHeight, encodeCiphertextToSolidity(ct));
-        let receipt = await tx.wait(1);
-        if (!receipt) {
-            throw new Error("transaction has not been mined");
-        }
-        const reqId = await mockBlocklockReceiver.requestId();
-        console.log("Created blocklock request id on filecoin testnet", reqId);
-        console.log("is created blocklock request id inFlight?", await decryptionSender.isInFlight(reqId));
+        // let tx = await mockBlocklockReceiver.connect(signer).createTimelockRequest(blockHeight, encodeCiphertextToSolidity(ct));
+        // let receipt = await tx.wait(1);
+        // if (!receipt) {
+        //     throw new Error("transaction has not been mined");
+        // }
+        // const reqId = await mockBlocklockReceiver.requestId();
+        // console.log("Created blocklock request id on filecoin testnet", reqId);
+        // console.log("is created blocklock request id inFlight?", await decryptionSender.isInFlight(reqId));
 
     } catch (error) {
         console.error("Error fetching latest block number:", error);

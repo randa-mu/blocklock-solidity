@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
-import {} from "../typechain-types/src/decryption-requests/DecryptionSender"
-import { DecryptionSender__factory } from "../typechain-types";
+import {} from "../../typechain-types/src/decryption-requests/DecryptionSender"
+import { DecryptionSender__factory } from "../../typechain-types";
 
 const abi = DecryptionSender__factory.abi
 const iface = new ethers.Interface(abi);

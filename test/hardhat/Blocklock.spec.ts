@@ -30,6 +30,7 @@ import {
   Result,
   toUtf8Bytes,
 } from "ethers";
+import "dotenv/config"
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
@@ -56,6 +57,8 @@ const BLOCKLOCK_DEFAULT_PUBLIC_KEY = {
     c1: BigInt("0x11c939ea560caf31f552c9c4879b15865d38ba1dfb0f7a7d2ac46a4f0cae25ba"),
   },
 };
+
+const blsKey = process.env.BLS_KEY;
 
 function blockHeightToBEBytes(blockHeight: bigint) {
   // Assume a block height < 2**64
@@ -259,7 +262,6 @@ describe("BlocklockSender", function () {
     console.log(`received decryption request ${requestID}`);
     console.log(`call back address ${callback}, scheme id ${schemeID}`);
 
-    const blsKey = "0x58aabbe98959c4dcb96c44c53be7e3bb980791fc7a9e03445c4af612a45ac906";
     const bls = await BlsBn254.create();
     const { pubKey, secretKey } = bls.createKeyPair(blsKey);
 
@@ -343,7 +345,6 @@ describe("BlocklockSender", function () {
     console.log(`received decryption request ${requestID}`);
     console.log(`call back address ${callback}, scheme id ${schemeID}`);
 
-    const blsKey = "0x58aabbe98959c4dcb96c44c53be7e3bb980791fc7a9e03445c4af612a45ac906";
     const bls = await BlsBn254.create();
     const { pubKey, secretKey } = bls.createKeyPair(blsKey);
 
