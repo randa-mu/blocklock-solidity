@@ -30,7 +30,8 @@ import {
   Result,
   toUtf8Bytes,
 } from "ethers";
-import "dotenv/config"
+import dotenv from 'dotenv';
+dotenv.config();
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
