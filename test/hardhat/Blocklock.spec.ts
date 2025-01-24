@@ -335,7 +335,7 @@ describe("BlocklockSender", function () {
       decryptionSenderIface.getEvent("DecryptionRequested"),
     );
 
-    console.log("callback and blocklock address", callback, await blocklock.getAddress())
+    console.log("callback and blocklock address", callback, await blocklock.getAddress());
 
     let req = await blocklock.getRequest(BigInt(requestID));
     expect(req.blockHeight).to.be.equal(BigInt(blockHeight + 2));
