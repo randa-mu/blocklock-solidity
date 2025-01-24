@@ -18,6 +18,7 @@ import {
 } from "../../typechain-types";
 import { TypesLib as BlocklockTypes } from "../../typechain-types/src/blocklock/BlocklockSender";
 import { keccak_256 } from "@noble/hashes/sha3";
+import dotenv from "dotenv";
 import {
   getBytes,
   Signer,
@@ -30,7 +31,7 @@ import {
   Result,
   toUtf8Bytes,
 } from "ethers";
-import dotenv from 'dotenv';
+
 dotenv.config();
 
 const { expect } = require("chai");

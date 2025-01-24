@@ -200,6 +200,6 @@ contract BlocklockSender is
      * @dev Returns the version number of the upgradeable contract.
      */
     function version() external pure returns (string memory) {
-        return "1.0.0";
+        return "0.0.1";
     }
 }

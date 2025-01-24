@@ -67,5 +67,8 @@ interface IDecryptionSender {
      */
     function getPublicKeyBytes() external view returns (bytes memory);
 
+    /**
+     * @dev Returns the version number of the upgradeable contract.
+     */
     function version() external pure returns (string memory);
 }
