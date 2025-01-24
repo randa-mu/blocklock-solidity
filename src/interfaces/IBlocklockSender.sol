@@ -15,6 +15,12 @@ interface IBlocklockSender {
         returns (uint256 requestID);
 
     /**
+     * @notice Updates the decryptionn sender contract address
+     * @param newDecryptionSender The decryption sender address to set
+     */
+    function setDecryptionSender(address newDecryptionSender) external;
+
+    /**
      * @notice Retrieves a specific request by its ID.
      * @dev This function returns the Request struct associated with the given requestId.
      * @param requestId The ID of the request to retrieve.
@@ -31,4 +37,9 @@ interface IBlocklockSender {
         external
         view
         returns (bytes memory);
+
+    /**
+     * @dev Returns the version number of the upgradeable contract.
+     */
+    function version() external pure returns (string memory);
 }

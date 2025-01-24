@@ -6,16 +6,11 @@ import {IDecryptionReceiver} from "../interfaces/IDecryptionReceiver.sol";
 import {IDecryptionSender} from "../interfaces/IDecryptionSender.sol";
 
 abstract contract DecryptionReceiverBase is IDecryptionReceiver {
-    IDecryptionSender public immutable decryptionSender;
+    IDecryptionSender public decryptionSender;
 
     modifier onlyDecrypter() {
         require(msg.sender == address(decryptionSender), "Only DecryptionSender can call");
         _;
-    }
-
-    constructor(address _DecryptionSender) {
-        require(_DecryptionSender != address(0), "Cannot set zero address as decryption key sender");
-        decryptionSender = IDecryptionSender(_DecryptionSender);
     }
 
     /**

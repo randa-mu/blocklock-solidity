@@ -13,12 +13,12 @@ import {
   BlocklockSender,
   BlocklockSignatureScheme,
   DecryptionSender,
-  MockBlocklockReceiver__factory,
   DecryptionSender__factory,
   BlocklockSender__factory,
 } from "../../typechain-types";
 import { TypesLib as BlocklockTypes } from "../../typechain-types/src/blocklock/BlocklockSender";
 import { keccak_256 } from "@noble/hashes/sha3";
+import dotenv from "dotenv";
 import {
   getBytes,
   Signer,
@@ -31,6 +31,8 @@ import {
   Result,
   toUtf8Bytes,
 } from "ethers";
+
+dotenv.config();
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
@@ -57,6 +59,8 @@ const BLOCKLOCK_DEFAULT_PUBLIC_KEY = {
     c1: BigInt("0x11c939ea560caf31f552c9c4879b15865d38ba1dfb0f7a7d2ac46a4f0cae25ba"),
   },
 };
+
+const blsKey = process.env.BLS_KEY;
 
 function blockHeightToBEBytes(blockHeight: bigint) {
   // Assume a block height < 2**64
@@ -145,18 +149,16 @@ function encrypt(message: Uint8Array, blockHeight: bigint, pk: G2 = BLOCKLOCK_DE
 describe("BlocklockSender", function () {
   let blocklockReceiver: MockBlocklockReceiver;
   let blocklock: BlocklockSender;
-  let sigSender: SignatureSender;
   let decryptionSender: DecryptionSender;
   let schemeProvider: SignatureSchemeAddressProvider;
   let blocklockScheme: BlocklockSignatureScheme;
 
   let owner: Signer;
-  let alice: Signer;
 
   const SCHEME_ID = "BN254-BLS-BLOCKLOCK";
 
   beforeEach(async () => {
-    [owner, alice] = await ethers.getSigners();
+    [owner] = await ethers.getSigners();
 
     schemeProvider = await ethers.deployContract("SignatureSchemeAddressProvider", [await owner.getAddress()]);
     await schemeProvider.waitForDeployment();
@@ -165,16 +167,36 @@ describe("BlocklockSender", function () {
     await blocklockScheme.waitForDeployment();
     await schemeProvider.updateSignatureScheme(SCHEME_ID, await blocklockScheme.getAddress());
 
-    decryptionSender = await ethers.deployContract("DecryptionSender", [
-      [BLOCKLOCK_DEFAULT_PUBLIC_KEY.x.c0, BLOCKLOCK_DEFAULT_PUBLIC_KEY.x.c1],
-      [BLOCKLOCK_DEFAULT_PUBLIC_KEY.y.c0, BLOCKLOCK_DEFAULT_PUBLIC_KEY.y.c1],
-      await owner.getAddress(),
-      await schemeProvider.getAddress(),
-    ]);
-    await decryptionSender.waitForDeployment();
+    const DecryptionSenderImplementation = await ethers.getContractFactory("DecryptionSender");
+    const decryptionSenderImplementation = await DecryptionSenderImplementation.deploy();
+    await decryptionSenderImplementation.waitForDeployment();
 
-    blocklock = await ethers.deployContract("BlocklockSender", [await decryptionSender.getAddress()]);
-    await blocklock.waitForDeployment();
+    let UUPSProxy = await ethers.getContractFactory("UUPSProxy");
+    const uupsProxy = await UUPSProxy.deploy(
+      await decryptionSenderImplementation.getAddress(),
+      DecryptionSenderImplementation.interface.encodeFunctionData("initialize", [
+        [BLOCKLOCK_DEFAULT_PUBLIC_KEY.x.c0, BLOCKLOCK_DEFAULT_PUBLIC_KEY.x.c1],
+        [BLOCKLOCK_DEFAULT_PUBLIC_KEY.y.c0, BLOCKLOCK_DEFAULT_PUBLIC_KEY.y.c1],
+        await owner.getAddress(),
+        await schemeProvider.getAddress(),
+      ]),
+    );
+    await uupsProxy.waitForDeployment();
+    decryptionSender = DecryptionSenderImplementation.attach(await uupsProxy.getAddress()); // DecryptionSender__factory.connect(await uupsProxy.getAddress(), owner);
+
+    const BlocklockSenderImplementation = await ethers.getContractFactory("BlocklockSender");
+    const blocklockSenderImplementation = await BlocklockSenderImplementation.deploy();
+    await blocklockSenderImplementation.waitForDeployment();
+
+    const uupsProxy2 = await UUPSProxy.deploy(
+      await blocklockSenderImplementation.getAddress(),
+      BlocklockSenderImplementation.interface.encodeFunctionData("initialize", [
+        await owner.getAddress(),
+        await decryptionSender.getAddress(),
+      ]),
+    );
+    await uupsProxy2.waitForDeployment();
+    blocklock = BlocklockSenderImplementation.attach(await uupsProxy2.getAddress());
 
     blocklockReceiver = await ethers.deployContract("MockBlocklockReceiver", [await blocklock.getAddress()]);
     await blocklockReceiver.waitForDeployment();
@@ -242,9 +264,8 @@ describe("BlocklockSender", function () {
     console.log(`received decryption request ${requestID}`);
     console.log(`call back address ${callback}, scheme id ${schemeID}`);
 
-    const blsKey = "0x58aabbe98959c4dcb96c44c53be7e3bb980791fc7a9e03445c4af612a45ac906";
     const bls = await BlsBn254.create();
-    const { pubKey, secretKey } = bls.createKeyPair(blsKey);
+    const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
 
     const conditionBytes = isHexString(condition) ? getBytes(condition) : toUtf8Bytes(condition);
     const m = bls.hashToPoint(BLOCKLOCK_IBE_OPTS.dsts.H1_G1, conditionBytes);
@@ -318,15 +339,16 @@ describe("BlocklockSender", function () {
       decryptionSenderIface.getEvent("DecryptionRequested"),
     );
 
+    console.log("callback and blocklock address", callback, await blocklock.getAddress());
+
     let req = await blocklock.getRequest(BigInt(requestID));
     expect(req.blockHeight).to.be.equal(BigInt(blockHeight + 2));
 
     console.log(`received decryption request ${requestID}`);
     console.log(`call back address ${callback}, scheme id ${schemeID}`);
 
-    const blsKey = "0x58aabbe98959c4dcb96c44c53be7e3bb980791fc7a9e03445c4af612a45ac906";
     const bls = await BlsBn254.create();
-    const { pubKey, secretKey } = bls.createKeyPair(blsKey);
+    const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
 
     const conditionBytes = isHexString(condition) ? getBytes(condition) : toUtf8Bytes(condition);
     const m = bls.hashToPoint(BLOCKLOCK_IBE_OPTS.dsts.H1_G1, conditionBytes);

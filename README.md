@@ -11,9 +11,24 @@ This library is designed with modularity and simplicity in mind, allowing develo
 * Decryption Callback: Implement custom logic that gets triggered when the decryption key is received, i.e., decryption of the Ciphertext.
 * Abstract Interface: Extend and implement the library to suit your specific needs.
 
-### Using the Solidity Interfaces
 
-To use this library in your project, import the required files into your contract:
+
+### Smart Contract Addresses
+
+| Contract        | Address | Network          |
+|-----------------|---------|------------------|
+| BlocklockSender Proxy | 0xfF66908E1d7d23ff62791505b2eC120128918F44   | Filecoin Testnet |
+| BlocklockSender Implementation | 0x9B849F45dFe4655ac45CA6621b46c0224d3dBf34   | Filecoin Testnet |
+| DecryptionSender Proxy | 0x9297Bb1d423ef7386C8b2e6B7BdE377977FBedd3   | Filecoin Testnet |
+| DecryptionSender Implementation | 0x9Ae47e892B51Db9Df906C6FB753662072C1a9883   | Filecoin Testnet |
+| SignatureSchemeAddressProvider | 0xD2b5084E68230D609AEaAe5E4cF7df9ebDd6375A   | Filecoin Testnet |
+| BlocklockSignatureScheme | 0x62C9CF8Ff30177d8479eDaB017f38017bEbf10C2   | Filecoin Testnet |
+| MockBlocklockReceiver | 0x6f637EcB3Eaf8bEd0fc597Dc54F477a33BBCA72B   | Filecoin Testnet |
+
+
+### Using the Solidity Interfaces
+
+To use this library in your project, import the required files into your contract and use the proxy contract address for BlocklockSender in the constructor as the blocklockContract parameter:
 
 ```solidity
 // Import the Types library for managing ciphertexts

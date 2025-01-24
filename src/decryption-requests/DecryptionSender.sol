@@ -1,12 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
+import {AccessControlEnumerableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+
 import {BLS} from "../libraries/BLS.sol";
 import {TypesLib} from "../libraries/TypesLib.sol";
 import {console} from "forge-std/console.sol";
 import {BytesLib} from "../libraries/BytesLib.sol";
 
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
+import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 import {IDecryptionSender} from "../interfaces/IDecryptionSender.sol";
@@ -20,7 +27,13 @@ import {ISignatureSchemeAddressProvider} from "../interfaces/ISignatureSchemeAdd
 /// @notice Smart Contract for Conditional Threshold Signing of messages sent within signature requests.
 /// by contract addresses implementing the SignatureReceiverBase abstract contract which implements the ISignatureReceiver interface.
 /// @notice Signature requests can also be made for requests requiring immediate signing of messages as the conditions are optional.
-contract DecryptionSender is IDecryptionSender, AccessControl, Multicall {
+contract DecryptionSender is
+    IDecryptionSender,
+    Multicall,
+    Initializable,
+    UUPSUpgradeable,
+    AccessControlEnumerableUpgradeable
+{
     using BytesLib for bytes;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
@@ -29,8 +42,9 @@ contract DecryptionSender is IDecryptionSender, AccessControl, Multicall {
     BLS.PointG2 private publicKey = BLS.PointG2({x: [uint256(0), uint256(0)], y: [uint256(0), uint256(0)]});
     mapping(uint256 => TypesLib.DecryptionRequest) public requestsInFlight;
 
-    ISignatureSchemeAddressProvider public immutable signatureSchemeAddressProvider;
+    ISignatureSchemeAddressProvider public signatureSchemeAddressProvider;
 
+    event SignatureSchemeAddressProviderUpdated(address indexed newSignatureSchemeAddressProvider);
     event DecryptionRequested(
         uint256 indexed requestID,
         address indexed callback,
@@ -48,15 +62,39 @@ contract DecryptionSender is IDecryptionSender, AccessControl, Multicall {
         _;
     }
 
-    constructor(uint256[2] memory x, uint256[2] memory y, address owner, address _signatureSchemeAddressProvider) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
+        uint256[2] memory x,
+        uint256[2] memory y,
+        address owner,
+        address _signatureSchemeAddressProvider
+    ) public initializer {
+        __UUPSUpgradeable_init();
+        __AccessControlEnumerable_init();
+
         publicKey = BLS.PointG2({x: x, y: y});
         require(_grantRole(ADMIN_ROLE, owner), "Grant role failed");
-        require(_grantRole(DEFAULT_ADMIN_ROLE, owner), "Grant role reverts");
-        require(
-            _signatureSchemeAddressProvider != address(0),
-            "Cannot set zero address as signature scheme address provider"
-        );
+        require(_grantRole(DEFAULT_ADMIN_ROLE, owner), "Grant role failed");
         signatureSchemeAddressProvider = ISignatureSchemeAddressProvider(_signatureSchemeAddressProvider);
+    }
+
+    // OVERRIDDEN UPGRADE FUNCTIONS
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+    function _msgSender() internal view override(Context, ContextUpgradeable) returns (address) {
+        return msg.sender;
+    }
+
+    function _msgData() internal pure override(Context, ContextUpgradeable) returns (bytes calldata) {
+        return msg.data;
+    }
+
+    function _contextSuffixLength() internal pure override(Context, ContextUpgradeable) returns (uint256) {
+        return 0;
     }
 
     /**
@@ -128,6 +166,14 @@ contract DecryptionSender is IDecryptionSender, AccessControl, Multicall {
     }
 
     /**
+     * @dev See {IDecryptionSender-setSignatureSchemeAddressProvider}.
+     */
+    function setSignatureSchemeAddressProvider(address newSignatureSchemeAddressProvider) external onlyOwner {
+        signatureSchemeAddressProvider = ISignatureSchemeAddressProvider(newSignatureSchemeAddressProvider);
+        emit SignatureSchemeAddressProviderUpdated(newSignatureSchemeAddressProvider);
+    }
+
+    /**
      * @dev See {IDecryptionSender-getPublicKey}.
      */
     function getPublicKey() public view returns (uint256[2] memory, uint256[2] memory) {
@@ -153,5 +199,12 @@ contract DecryptionSender is IDecryptionSender, AccessControl, Multicall {
      */
     function getRequestInFlight(uint256 requestID) external view returns (TypesLib.DecryptionRequest memory) {
         return requestsInFlight[requestID];
+    }
+
+    /**
+     * @dev Returns the version number of the upgradeable contract.
+     */
+    function version() external pure returns (string memory) {
+        return "0.0.1";
     }
 }

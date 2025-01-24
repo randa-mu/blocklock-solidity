@@ -5,5 +5,8 @@ libs = ["lib"]
 optimizer = true
 optimizer_runs = 20_000
 solc_version = '0.8.24'
+rpc_endpoints = { calibrationnet = '${FILECOIN_TESTNET_RPC_URL}' }
+chain_id = 314159
+
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
