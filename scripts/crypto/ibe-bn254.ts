@@ -63,6 +63,8 @@ export function get_identity_g1(identity: Uint8Array, opts: IbeOpts = DEFAULT_OP
  */
 export function encrypt_towards_identity_g1(m: Uint8Array, identity: Uint8Array, pk_g2: G2, opts: IbeOpts = DEFAULT_OPTS): Ciphertext {
     if (m.length > opts.hash.outputLen) {
+        // if you need to encrypt a larger message, it's suggested you used AGE + hybrid encryption, and encrypt the symmetric key
+        // see: https://github.com/drand/tlock for an example
         throw new Error(`cannot encrypt messages larger than our hash output: ${opts.hash.outputLen} bytes.`)
     }
 
