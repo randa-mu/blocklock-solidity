@@ -265,7 +265,7 @@ describe("BlocklockSender", function () {
     console.log(`call back address ${callback}, scheme id ${schemeID}`);
 
     const bls = await BlsBn254.create();
-    const { pubKey, secretKey } = bls.createKeyPair(blsKey);
+    const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
 
     const conditionBytes = isHexString(condition) ? getBytes(condition) : toUtf8Bytes(condition);
     const m = bls.hashToPoint(BLOCKLOCK_IBE_OPTS.dsts.H1_G1, conditionBytes);
@@ -348,7 +348,7 @@ describe("BlocklockSender", function () {
     console.log(`call back address ${callback}, scheme id ${schemeID}`);
 
     const bls = await BlsBn254.create();
-    const { pubKey, secretKey } = bls.createKeyPair(blsKey);
+    const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
 
     const conditionBytes = isHexString(condition) ? getBytes(condition) : toUtf8Bytes(condition);
     const m = bls.hashToPoint(BLOCKLOCK_IBE_OPTS.dsts.H1_G1, conditionBytes);
