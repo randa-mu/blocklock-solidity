@@ -70,7 +70,7 @@ contract BlocklockSender is
         decryptionSender = IDecryptionSender(_decryptionSender);
     }
 
-    // OVERRIDEN UPGRADE FUNCTIONS
+    // OVERRIDDEN UPGRADE FUNCTIONS
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     /**

@@ -82,7 +82,7 @@ contract DecryptionSender is
         signatureSchemeAddressProvider = ISignatureSchemeAddressProvider(_signatureSchemeAddressProvider);
     }
 
-    // OVERRIDEN UPGRADE FUNCTIONS
+    // OVERRIDDEN UPGRADE FUNCTIONS
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     function _msgSender() internal view override(Context, ContextUpgradeable) returns (address) {
