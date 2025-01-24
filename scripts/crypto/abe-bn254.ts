@@ -58,9 +58,7 @@ export function identityFromConditions(conditions: Conditions): Uint8Array {
  * @returns identity representing the conditions
  */
 function identityFromEncodedConditions(encodedConditions: Uint8Array): Uint8Array {
-    const identity = new Uint8Array(encodedConditions.length)
-    identity.set(encodedConditions)
-    return identity
+    return encodedConditions
 }
 
 /**
