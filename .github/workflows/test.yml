@@ -7,6 +7,7 @@ on:
 
 env:
   FOUNDRY_PROFILE: ci
+  BLS_KEY: ${{ secrets.BLS_KEY }}
 
 jobs:
   check:
@@ -15,8 +16,7 @@ jobs:
 
     name: Foundry project
     runs-on: ubuntu-latest
-    env: 
-      BLS_KEY: ${{ secrets.BLS_KEY }}
+      
     steps:
       - uses: actions/checkout@v4
         with:
