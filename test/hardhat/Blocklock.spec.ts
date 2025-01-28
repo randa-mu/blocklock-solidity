@@ -149,7 +149,7 @@ function encrypt(message: Uint8Array, blockHeight: bigint, pk: G2 = BLOCKLOCK_DE
 
 describe("BlocklockSender", function () {
   let blocklockReceiver: MockBlocklockReceiver;
-  let blocklockStringReceiver :MockBlocklockStringReceiver;
+  let blocklockStringReceiver: MockBlocklockStringReceiver;
   let blocklock: BlocklockSender;
   let decryptionSender: DecryptionSender;
   let schemeProvider: SignatureSchemeAddressProvider;
@@ -203,7 +203,9 @@ describe("BlocklockSender", function () {
     blocklockReceiver = await ethers.deployContract("MockBlocklockReceiver", [await blocklock.getAddress()]);
     await blocklockReceiver.waitForDeployment();
 
-    blocklockStringReceiver = await ethers.deployContract("MockBlocklockStringReceiver", [await blocklock.getAddress()]);
+    blocklockStringReceiver = await ethers.deployContract("MockBlocklockStringReceiver", [
+      await blocklock.getAddress(),
+    ]);
     await blocklockStringReceiver.waitForDeployment();
   });
 
@@ -420,7 +422,6 @@ describe("BlocklockSender", function () {
     const msg = "mainnet launch soon";
     const msgBytes = AbiCoder.defaultAbiCoder().encode(["string"], [msg]);
     const encodedMessage = getBytes(msgBytes);
-    // const encodedMessage = ethers.solidityPacked(["string"], [msg])
 
     const ct = encrypt(encodedMessage, BigInt(blockHeight + 2), BLOCKLOCK_DEFAULT_PUBLIC_KEY);
 
@@ -490,6 +491,6 @@ describe("BlocklockSender", function () {
     expect(Array.from(getBytes(encodedMessage))).to.have.members(Array.from(decryptedM2));
 
     expect(await blocklockStringReceiver.plainTextValue()).to.be.equal(msg);
-    console.log(await blocklockStringReceiver.plainTextValue(), msg)
+    console.log(await blocklockStringReceiver.plainTextValue(), msg);
   });
 });
