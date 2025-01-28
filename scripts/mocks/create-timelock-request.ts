@@ -16,7 +16,6 @@ import { keccak_256 } from "@noble/hashes/sha3";
 const RPC_URL = process.env.CALIBRATIONNET_RPC_URL;
 const walletAddr = "0x5d84b82b750B996BFC1FA7985D90Ae8Fbe773364"
 // const walletAddr = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
-// const walletAddr = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
 const blocklockSenderAddr = "0xfF66908E1d7d23ff62791505b2eC120128918F44"
 const decryptionSenderAddr = "0x9297Bb1d423ef7386C8b2e6B7BdE377977FBedd3";
 const mockBlocklockReceiverAddr = "0x6f637EcB3Eaf8bEd0fc597Dc54F477a33BBCA72B";
