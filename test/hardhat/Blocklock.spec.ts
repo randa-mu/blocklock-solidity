@@ -8,6 +8,7 @@ import {
 } from "../../scripts/crypto";
 import {
   MockBlocklockReceiver,
+  MockBlocklockStringReceiver,
   SignatureSchemeAddressProvider,
   SignatureSender,
   BlocklockSender,
@@ -148,6 +149,7 @@ function encrypt(message: Uint8Array, blockHeight: bigint, pk: G2 = BLOCKLOCK_DE
 
 describe("BlocklockSender", function () {
   let blocklockReceiver: MockBlocklockReceiver;
+  let blocklockStringReceiver :MockBlocklockStringReceiver;
   let blocklock: BlocklockSender;
   let decryptionSender: DecryptionSender;
   let schemeProvider: SignatureSchemeAddressProvider;
@@ -200,6 +202,9 @@ describe("BlocklockSender", function () {
 
     blocklockReceiver = await ethers.deployContract("MockBlocklockReceiver", [await blocklock.getAddress()]);
     await blocklockReceiver.waitForDeployment();
+
+    blocklockStringReceiver = await ethers.deployContract("MockBlocklockStringReceiver", [await blocklock.getAddress()]);
+    await blocklockStringReceiver.waitForDeployment();
   });
 
   async function encryptAndRegister(
@@ -313,7 +318,7 @@ describe("BlocklockSender", function () {
     expect(await blocklockScheme.getAddress()).to.not.equal(ZeroAddress);
   });
 
-  it("can request blocklock decryption from user contract and receive decryption key callback", async function () {
+  it("can request blocklock decryption from user contract for uint256 and receive decryption key callback", async function () {
     let blockHeight = await ethers.provider.getBlockNumber();
 
     const msg = ethers.parseEther("4");
@@ -407,5 +412,84 @@ describe("BlocklockSender", function () {
     await expect(
       blocklockReceiver.connect(owner).createTimelockRequest(BigInt(blockHeight + 2), encodeCiphertextToSolidity(ct)),
     ).to.be.reverted;
+  });
+
+  it("can request blocklock decryption from user contract for string and receive decryption key callback", async function () {
+    let blockHeight = await ethers.provider.getBlockNumber();
+
+    const msg = "mainnet launch soon";
+    const msgBytes = AbiCoder.defaultAbiCoder().encode(["string"], [msg]);
+    const encodedMessage = getBytes(msgBytes);
+    // const encodedMessage = ethers.solidityPacked(["string"], [msg])
+
+    const ct = encrypt(encodedMessage, BigInt(blockHeight + 2), BLOCKLOCK_DEFAULT_PUBLIC_KEY);
+
+    let tx = await blocklockStringReceiver
+      .connect(owner)
+      .createTimelockRequest(BigInt(blockHeight + 2), encodeCiphertextToSolidity(ct));
+    let receipt = await tx.wait(1);
+    if (!receipt) {
+      throw new Error("transaction has not been mined");
+    }
+
+    const decryptionSenderIface = DecryptionSender__factory.createInterface();
+    const [requestID, callback, schemeID, condition, ciphertext] = extractSingleLog(
+      decryptionSenderIface,
+      receipt,
+      await decryptionSender.getAddress(),
+      decryptionSenderIface.getEvent("DecryptionRequested"),
+    );
+
+    console.log("callback and blocklock address", callback, await blocklock.getAddress());
+
+    let req = await blocklock.getRequest(BigInt(requestID));
+    expect(req.blockHeight).to.be.equal(BigInt(blockHeight + 2));
+
+    console.log(`received decryption request ${requestID}`);
+    console.log(`call back address ${callback}, scheme id ${schemeID}`);
+
+    const bls = await BlsBn254.create();
+    const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
+
+    const conditionBytes = isHexString(condition) ? getBytes(condition) : toUtf8Bytes(condition);
+    const m = bls.hashToPoint(BLOCKLOCK_IBE_OPTS.dsts.H1_G1, conditionBytes);
+
+    const hexCondition = Buffer.from(conditionBytes).toString("hex");
+    blockHeight = BigInt("0x" + hexCondition);
+
+    const parsedCiphertext = parseSolidityCiphertextString(ciphertext);
+
+    const signature = bls.sign(m, secretKey).signature;
+    const sig = bls.serialiseG1Point(signature);
+    const sigBytes = AbiCoder.defaultAbiCoder().encode(["uint256", "uint256"], [sig[0], sig[1]]);
+
+    const decryption_key = preprocess_decryption_key_g1(parsedCiphertext, { x: sig[0], y: sig[1] }, BLOCKLOCK_IBE_OPTS);
+
+    tx = await decryptionSender.connect(owner).fulfilDecryptionRequest(requestID, decryption_key, sigBytes);
+    receipt = await tx.wait(1);
+    if (!receipt) {
+      throw new Error("transaction has not been mined");
+    }
+
+    const iface = BlocklockSender__factory.createInterface();
+    const [, , , decryptionK] = extractSingleLog(
+      iface,
+      receipt,
+      await blocklock.getAddress(),
+      iface.getEvent("BlocklockCallbackSuccess"),
+    );
+
+    let test_ct: BlocklockTypes.CiphertextStruct = {
+      u: { x: [...req.ciphertext.u.x], y: [...req.ciphertext.u.y] },
+      v: req.ciphertext.v,
+      w: req.ciphertext.w,
+    };
+
+    const decryptedM2 = getBytes(await blocklock.decrypt(test_ct, decryptionK));
+
+    expect(Array.from(getBytes(encodedMessage))).to.have.members(Array.from(decryptedM2));
+
+    expect(await blocklockStringReceiver.plainTextValue()).to.be.equal(msg);
+    console.log(await blocklockStringReceiver.plainTextValue(), msg)
   });
 });
