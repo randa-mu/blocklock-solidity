@@ -47,9 +47,9 @@ To use this library in your project, import the required files into your contrac
 
 ```solidity
 // Import the Types library for managing ciphertexts
-import {TypesLib} from "../libraries/TypesLib.sol";
+import {TypesLib} from "blocklock-solidity/src/libraries/TypesLib.sol";
 // Import the AbstractBlocklockReceiver for handling timelock decryption callbacks
-import {AbstractBlocklockReceiver} from "../AbstractBlocklockReceiver.sol";
+import {AbstractBlocklockReceiver} from "blocklock-solidity/src/AbstractBlocklockReceiver.sol";
 ```
 
 #### Example Usage
@@ -58,8 +58,8 @@ import {AbstractBlocklockReceiver} from "../AbstractBlocklockReceiver.sol";
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {TypesLib} from "../libraries/TypesLib.sol";
-import {AbstractBlocklockReceiver} from "../AbstractBlocklockReceiver.sol";
+import {TypesLib} from "blocklock-solidity/src/libraries/TypesLib.sol";
+import {AbstractBlocklockReceiver} from "blocklock-solidity/src/AbstractBlocklockReceiver.sol";
 
 contract MockBlocklockReceiver is AbstractBlocklockReceiver {
     uint256 public requestId;
