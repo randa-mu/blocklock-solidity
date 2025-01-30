@@ -1,4 +1,4 @@
-## @randamu/blocklock-solidity
+## blocklock-solidity
 
 This repository contains the Solidity-based smart contracts library that facilitates Randamu's on-chain timelock encryption and decryption.
 
