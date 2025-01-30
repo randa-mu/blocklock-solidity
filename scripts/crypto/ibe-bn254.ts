@@ -50,6 +50,9 @@ export const DEFAULT_OPTS: IbeOpts = {
     }
 }
 
+// Our H4 hash function can output at most 2**16 - 1 = 65535 pseudorandom bytes.
+const H4_MAX_OUTPUT_LEN: number = 65535
+
 /*
  * Convert the identity into a point on the curve.
  */
@@ -62,14 +65,11 @@ export function get_identity_g1(identity: Uint8Array, opts: IbeOpts = DEFAULT_OP
  * with the identity on G1, and the master public key on G2.
  */
 export function encrypt_towards_identity_g1(m: Uint8Array, identity: Uint8Array, pk_g2: G2, opts: IbeOpts = DEFAULT_OPTS): Ciphertext {
-    if (m.length > opts.hash.outputLen) {
-        // if you need to encrypt a larger message, it's suggested you used AGE + hybrid encryption, and encrypt the symmetric key
-        // see: https://github.com/drand/tlock for an example
-        throw new Error(`cannot encrypt messages larger than our hash output: ${opts.hash.outputLen} bytes.`)
+    // We can encrypt at most 2**16 - 1 = 65535 bytes with our H4 hash function.
+    const n_bytes = m.length
+    if (n_bytes > H4_MAX_OUTPUT_LEN) {
+        throw new Error(`cannot encrypt messages larger than our hash output: ${H4_MAX_OUTPUT_LEN} bytes.`)
     }
-
-    // \ell = min(len(m), opts.hash.outputLen)
-    const ell_bytes = m.length
 
     // Compute the identity's public key on G1
     // 3: PK_\rho \gets e(H_1(\rho), P)
@@ -94,9 +94,9 @@ export function encrypt_towards_identity_g1(m: Uint8Array, identity: Uint8Array,
     const shared_key = bn254.fields.Fp12.pow(pk_rho, r)
     const v = xor(sigma, hash_shared_key_to_bytes(shared_key, sigma.length, opts))
 
-    // Encrypt message m with one-time-pad derived from \sigma
+    // Encrypt message m using a hash-based stream cipher with key \sigma
     // 8: W \gets M \xor H_4(\sigma)
-    const w = xor(m, hash_sigma_to_bytes(sigma, ell_bytes, opts))
+    const w = xor(m, hash_sigma_to_bytes(sigma, n_bytes, opts))
 
     // 9: return ciphertext
     return {
@@ -122,8 +122,8 @@ export function decrypt_g1(ciphertext: Ciphertext, decryption_key_g1: G1, opts: 
  */
 export function decrypt_g1_with_preprocess(ciphertext: Ciphertext, preprocessed_decryption_key: Uint8Array, opts: IbeOpts = DEFAULT_OPTS): Uint8Array {
     // Check well-formedness of the ciphertext
-    if (ciphertext.W.length > opts.hash.outputLen) {
-        throw new Error(`cannot decrypt messages larger than our hash output: ${opts.hash.outputLen} bytes.`)
+    if (ciphertext.W.length > H4_MAX_OUTPUT_LEN) {
+        throw new Error(`cannot decrypt messages larger than our hash output: ${H4_MAX_OUTPUT_LEN} bytes.`)
     }
     if (ciphertext.V.length !== opts.hash.outputLen) {
         throw new Error(`cannot decrypt encryption key of invalid length != ${opts.hash.outputLen} bytes.`)
