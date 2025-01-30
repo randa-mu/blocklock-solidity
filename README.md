@@ -28,6 +28,21 @@ This library is designed with modularity and simplicity in mind, allowing develo
 
 ### Using the Solidity Interfaces
 
+#### Installation
+
+##### Hardhat (npm)
+
+```sh
+$ npm install blocklock-solidity
+```
+
+##### Foundry 
+```sh
+$ forge install randa-mu/blocklock-solidity
+```
+
+#### Importing
+
 To use this library in your project, import the required files into your contract and use the proxy contract address for BlocklockSender in the constructor as the blocklockContract parameter:
 
 ```solidity
