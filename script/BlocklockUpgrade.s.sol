@@ -14,7 +14,7 @@ import {BLS} from "../src/libraries/BLS.sol";
 import {TypesLib} from "../src/libraries/TypesLib.sol";
 import {UUPSProxy} from "../src/proxy/UUPSProxy.sol";
 
-contract BlocklockScript is Script {
+contract BlocklockUpgradeScript is Script {
     BlocklockSignatureScheme blocklockSignatureScheme;
     SignatureSchemeAddressProvider signatureSchemeAddressProvider;
 
@@ -47,35 +47,33 @@ contract BlocklockScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         address admin = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
-
-        SignatureSchemeAddressProvider sigAddrProvider = new SignatureSchemeAddressProvider(admin);
-        BlocklockSignatureScheme tlockScheme = new BlocklockSignatureScheme();
-        sigAddrProvider.updateSignatureScheme(SCHEME_ID, address(tlockScheme));
-
-        console.log("\nSignatureSchemeAddressProvider contract deployed to: ", address(sigAddrProvider));
-
-        console.log("BlocklockSignatureScheme contract deployed to: ", address(tlockScheme));
+        address decryptionSenderProxyAddr = 0x9297Bb1d423ef7386C8b2e6B7BdE377977FBedd3;
+        address blocklockSenderProxyAddr = 0xfF66908E1d7d23ff62791505b2eC120128918F44;
 
         decryptionSenderImplementation = new DecryptionSender();
         console.log("\nDecryptionSender implementation contract deployed at: ", address(decryptionSenderImplementation));
 
-        decryptionSenderProxy = new UUPSProxy(address(decryptionSenderImplementation), "");
+        decryptionSenderProxy = UUPSProxy(payable(decryptionSenderProxyAddr));
         console.log("DecryptionSender proxy contract deployed at: ", address(decryptionSenderProxy));
 
         blocklockSenderImplementation = new BlocklockSender();
         console.log("\nBlocklockSender implementation contract deployed at: ", address(blocklockSenderImplementation));
 
-        blocklockSenderProxy = new UUPSProxy(address(blocklockSenderImplementation), "");
+        blocklockSenderProxy = UUPSProxy(payable(blocklockSenderProxyAddr));
         console.log("BlocklockSender proxy contract deployed at: ", address(blocklockSenderProxy));
 
         decryptionSenderInstance = DecryptionSender(address(decryptionSenderProxy));
         blocklockSenderInstance = BlocklockSender(address(blocklockSenderProxy));
 
-        decryptionSenderInstance.initialize(pk.x, pk.y, admin, address(sigAddrProvider));
-        blocklockSenderInstance.initialize(admin, address(decryptionSenderProxy));
+        console.log("\nDecryptionSender version pre upgrade: ", decryptionSenderInstance.version());
+        console.log("BlocklockSender version pre upgrade: ", blocklockSenderInstance.version());
 
-        mockBlocklockReceiver = new MockBlocklockReceiver(address(blocklockSenderProxy));
-        console.log("\nMockBlocklockReceiver deployed at: ", address(mockBlocklockReceiver));
+        // Perform implementation contract upgrades
+        decryptionSenderInstance.upgradeToAndCall(address(decryptionSenderImplementation), "");
+        blocklockSenderInstance.upgradeToAndCall(address(blocklockSenderImplementation), "");
+
+        console.log("\nDecryptionSender version post upgrade: ", decryptionSenderInstance.version());
+        console.log("BlocklockSender version post upgrade: ", blocklockSenderInstance.version());
 
         vm.stopBroadcast();
     }
@@ -88,7 +86,7 @@ contract BlocklockScript is Script {
  * source .env
  *
  * ## STEP 2. Deploy and verify the contract
- * forge script script/Blocklock.s.sol:BlocklockScript --rpc-url $CALIBRATIONNET_RPC_URL --broadcast -g 100000 -vvvv
+ * forge script script/BlocklockUpgrade.s.sol:BlocklockUpgradeScript --rpc-url $CALIBRATIONNET_RPC_URL --broadcast -g 100000 -vvvv
  *
  * -g is the gas limit passed in order to prevent a common error with deploying contracts to the FEVM as per the docs in the filecoin fevm foundry kit here - https://github.com/filecoin-project/fevm-foundry-kit/tree/main
  *
