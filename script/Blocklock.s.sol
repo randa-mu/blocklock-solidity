@@ -84,10 +84,10 @@ contract BlocklockScript is Script {
 /**
  * # Deployment steps
  *
- * ## Load the variables in the .env file
+ * ## STEP 1. Load the variables in the .env file
  * source .env
  *
- * ## Deploy and verify the contract
+ * ## STEP 2. Deploy and verify the contract
  * forge script script/Blocklock.s.sol:BlocklockScript --rpc-url $CALIBRATIONNET_RPC_URL --broadcast -g 100000 -vvvv
  *
  * -g is the gas limit passed in order to prevent a common error with deploying contracts to the FEVM as per the docs in the filecoin fevm foundry kit here - https://github.com/filecoin-project/fevm-foundry-kit/tree/main

@@ -1,8 +1,11 @@
 {
-    "name": "@randamu/blocklock-solidity",
+    "name": "blocklock-solidity",
     "description": "Core solidity smart contracts for Randamu's on-chain timelock encryption",
     "license": "MIT",
-    "version": "0.0.1",
+    "publishConfig": {
+        "access": "public"
+    },
+    "version": "0.0.3",
     "directories": {
         "lib": "lib",
         "test": "test"
@@ -73,6 +76,10 @@
         ]
     },
     "author": "najienka",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/randa-mu/blocklock-solidity.git"
+    },
     "bugs": {
         "url": "https://github.com/randa-mu/blocklock-solidity/issues"
     },
