@@ -161,7 +161,7 @@ contract DecryptionSender is
             revert DecryptionReceiverCallbackFailed(requestID);
         } else {
             emit DecryptionReceiverCallbackSuccess(requestID, decryptionKey, signature);
-            delete requestsInFlight[requestID];
+            requestsInFlight[requestID].decryptionKey = decryptionKey;
         }
     }
 
