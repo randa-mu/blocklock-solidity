@@ -19,6 +19,7 @@ library TypesLib {
         uint256 blockHeight;
         Ciphertext ciphertext;
         bytes signature;
+        bytes decryptionKey;
         address callback;
     }
 

@@ -87,6 +87,7 @@ contract BlocklockSender is
             blockHeight: blockHeight,
             ciphertext: ciphertext,
             signature: hex"",
+            decryptionKey: hex"",
             callback: msg.sender
         });
 
@@ -123,7 +124,7 @@ contract BlocklockSender is
             revert BlocklockCallbackFailed(decryptionRequestID);
         } else {
             emit BlocklockCallbackSuccess(decryptionRequestID, r.blockHeight, r.ciphertext, decryptionKey);
-            delete blocklockRequests[decryptionRequestID];
+            blocklockRequests[decryptionRequestID].decryptionKey = decryptionKey;
         }
     }
 
