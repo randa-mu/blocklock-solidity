@@ -2,7 +2,7 @@
 pragma solidity 0.8.24;
 
 import {AccessControlEnumerableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
+"@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
@@ -20,11 +20,11 @@ import {IDecryptionSender} from "../interfaces/IDecryptionSender.sol";
 import {console} from "forge-std/console.sol";
 
 contract BlocklockSender is
-    IBlocklockSender,
-    DecryptionReceiverBase,
-    Initializable,
-    UUPSUpgradeable,
-    AccessControlEnumerableUpgradeable
+IBlocklockSender,
+DecryptionReceiverBase,
+Initializable,
+UUPSUpgradeable,
+AccessControlEnumerableUpgradeable
 {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
@@ -77,8 +77,8 @@ contract BlocklockSender is
      * @dev See {IBlocklockSender-requestBlocklock}.
      */
     function requestBlocklock(uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext)
-        external
-        returns (uint256)
+    external
+    returns (uint256)
     {
         require(blockHeight > block.number, "blockHeight must be strictly greater than current");
 
@@ -87,7 +87,8 @@ contract BlocklockSender is
             blockHeight: blockHeight,
             ciphertext: ciphertext,
             signature: hex"",
-            callback: msg.sender
+            decryptionKey : hex"",
+            callback : msg.sender
         });
 
         // New decryption request
@@ -107,8 +108,8 @@ contract BlocklockSender is
      * @dev See {DecryptionReceiverBase-onDecryptionDataReceived}.
      */
     function onDecryptionDataReceived(uint256 decryptionRequestID, bytes memory decryptionKey, bytes memory signature)
-        internal
-        override
+    internal
+    override
     {
         TypesLib.BlocklockRequest memory r = blocklockRequests[decryptionRequestID];
         require(r.decryptionRequestID > 0, "no matching blocklock request for that id");
@@ -133,9 +134,9 @@ contract BlocklockSender is
      * @param decryptionKey The decryption key that can be used to decrypt the ciphertext.
      */
     function decrypt(TypesLib.Ciphertext calldata ciphertext, bytes calldata decryptionKey)
-        public
-        view
-        returns (bytes memory)
+    public
+    view
+    returns (bytes memory)
     {
         require(ciphertext.v.length != 256, "invalid decryption key length");
         require(ciphertext.w.length < 256, "message of unsupported length");
