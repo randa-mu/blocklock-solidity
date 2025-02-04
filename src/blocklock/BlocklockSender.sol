@@ -36,6 +36,7 @@ contract BlocklockSender is
 
     // Mapping from decryption requestID to blocklock status
     mapping(uint256 => TypesLib.BlocklockRequest) public blocklockRequests;
+    mapping(uint256 => TypesLib.BlocklockRequest) public blocklockRequestsWithDecryptionKey;
 
     event BlocklockRequested(
         uint256 indexed requestID,
@@ -98,7 +99,7 @@ contract BlocklockSender is
         r.decryptionRequestID = decryptionRequestID;
 
         // Store the signature requestID for this blockHeight
-        blocklockRequests[decryptionRequestID] = r;
+        blocklockRequestsWithDecryptionKey[decryptionRequestID] = r;
 
         emit BlocklockRequested(decryptionRequestID, blockHeight, ciphertext, msg.sender, block.timestamp);
         return decryptionRequestID;
@@ -111,7 +112,7 @@ contract BlocklockSender is
         internal
         override
     {
-        TypesLib.BlocklockRequest memory r = blocklockRequests[decryptionRequestID];
+        TypesLib.BlocklockRequest memory r = blocklockRequestsWithDecryptionKey[decryptionRequestID];
         require(r.decryptionRequestID > 0, "no matching blocklock request for that id");
 
         r.signature = signature;
@@ -124,7 +125,7 @@ contract BlocklockSender is
             revert BlocklockCallbackFailed(decryptionRequestID);
         } else {
             emit BlocklockCallbackSuccess(decryptionRequestID, r.blockHeight, r.ciphertext, decryptionKey);
-            blocklockRequests[decryptionRequestID].decryptionKey = decryptionKey;
+            blocklockRequestsWithDecryptionKey[decryptionRequestID].decryptionKey = decryptionKey;
         }
     }
 
@@ -181,7 +182,7 @@ contract BlocklockSender is
      * @dev See {ISignatureSender-isInFlight}.
      */
     function isInFlight(uint256 requestID) external view returns (bool) {
-        uint256 signatureRequestID = blocklockRequests[requestID].decryptionRequestID;
+        uint256 signatureRequestID = blocklockRequestsWithDecryptionKey[requestID].decryptionRequestID;
         require(signatureRequestID > 0, "blocklock request not found");
 
         return decryptionSender.isInFlight(signatureRequestID);
@@ -191,7 +192,7 @@ contract BlocklockSender is
      * @dev See {IBlocklockSender-getRequest}.
      */
     function getRequest(uint256 requestID) external view returns (TypesLib.BlocklockRequest memory) {
-        TypesLib.BlocklockRequest memory r = blocklockRequests[requestID];
+        TypesLib.BlocklockRequest memory r = blocklockRequestsWithDecryptionKey[requestID];
         require(r.decryptionRequestID > 0, "invalid requestID");
 
         return r;
