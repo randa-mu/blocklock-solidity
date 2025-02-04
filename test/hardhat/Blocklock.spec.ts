@@ -484,6 +484,7 @@ describe("BlocklockSender", function () {
     req = await blocklock.getRequest(BigInt(requestID));
     expect(req.blockHeight).to.be.equal(Number(decryptionBlockHeight));
     expect(req.ciphertext).to.deep.equal(decryptionCiphertext);
+    expect(decryptionK).to.deep.equal(req.decryptionKey);
 
     let test_ct: BlocklockTypes.CiphertextStruct = {
       u: { x: [...req.ciphertext.u.x], y: [...req.ciphertext.u.y] },
