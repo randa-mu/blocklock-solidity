@@ -44,7 +44,7 @@ interface IDecryptionSender {
      * @param requestId The ID of the request to retrieve.
      * @return The Request struct corresponding to the given requestId.
      */
-    function getRequestInFlight(uint256 requestId) external view returns (TypesLib.DecryptionRequest memory);
+    function getRequest(uint256 requestId) external view returns (TypesLib.DecryptionRequest memory);
 
     /**
      * @notice Verifies whether a specific request is in flight or not.
@@ -66,6 +66,14 @@ interface IDecryptionSender {
      * @return Bytes string representing the public key points on the elliptic curve.
      */
     function getPublicKeyBytes() external view returns (bytes memory);
+
+    function getAllFulfilledRequestIds() external view returns (uint256[] memory);
+
+    function getAllUnfulfilledRequestIds() external view returns (uint256[] memory);
+
+    function getCountOfFulfilledRequestIds() external view returns (uint256);
+
+    function getCountOfUnfulfilledRequestIds() external view returns (uint256);
 
     /**
      * @dev Returns the version number of the upgradeable contract.

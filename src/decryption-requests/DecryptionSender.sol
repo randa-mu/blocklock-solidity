@@ -6,6 +6,7 @@ import {AccessControlEnumerableUpgradeable} from
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {BLS} from "../libraries/BLS.sol";
 import {TypesLib} from "../libraries/TypesLib.sol";
@@ -35,14 +36,20 @@ contract DecryptionSender is
     AccessControlEnumerableUpgradeable
 {
     using BytesLib for bytes;
+    using EnumerableSet for EnumerableSet.UintSet;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     uint256 public lastRequestID = 0;
     BLS.PointG2 private publicKey = BLS.PointG2({x: [uint256(0), uint256(0)], y: [uint256(0), uint256(0)]});
     mapping(uint256 => TypesLib.DecryptionRequest) public requestsInFlight;
+    
+    mapping(uint256 => TypesLib.DecryptionRequest) public requests;
 
     ISignatureSchemeAddressProvider public signatureSchemeAddressProvider;
+
+    EnumerableSet.UintSet private fulfilledRequestIds;
+    EnumerableSet.UintSet private unfulfilledRequestIds;
 
     event SignatureSchemeAddressProviderUpdated(address indexed newSignatureSchemeAddressProvider);
     event DecryptionRequested(
@@ -124,8 +131,10 @@ contract DecryptionSender is
             condition: condition,
             decryptionKey: hex"",
             signature: hex"",
-            callback: msg.sender
+            callback: msg.sender,
+            isFulfilled: false
         });
+        unfulfilledRequestIds.add(lastRequestID);
 
         emit DecryptionRequested(lastRequestID, msg.sender, schemeID, condition, ciphertext, block.timestamp);
 
@@ -161,7 +170,11 @@ contract DecryptionSender is
             revert DecryptionReceiverCallbackFailed(requestID);
         } else {
             emit DecryptionReceiverCallbackSuccess(requestID, decryptionKey, signature);
-            requestsInFlight[requestID].decryptionKey = decryptionKey;
+            requests[requestID].decryptionKey = decryptionKey;
+            requests[requestID].isFulfilled = true;
+
+            unfulfilledRequestIds.remove(requestID);
+            fulfilledRequestIds.add(requestID);
         }
     }
 
@@ -191,14 +204,30 @@ contract DecryptionSender is
      * @dev See {IDecryptionSender-isInFlight}.
      */
     function isInFlight(uint256 requestID) public view returns (bool) {
-        return requestsInFlight[requestID].callback != address(0);
+        return requestsInFlight[requestID].isFulfilled;
     }
 
     /**
      * @dev See {IDecryptionSender-getRequestInFlight}.
      */
-    function getRequestInFlight(uint256 requestID) external view returns (TypesLib.DecryptionRequest memory) {
-        return requestsInFlight[requestID];
+    function getRequest(uint256 requestID) external view returns (TypesLib.DecryptionRequest memory) {
+        return requests[requestID];
+    }
+
+    function getAllFulfilledRequestIds() external view returns (uint256[] memory) {
+        return fulfilledRequestIds.values();
+    }
+
+    function getAllUnfulfilledRequestIds() external view returns (uint256[] memory) {
+        return unfulfilledRequestIds.values();
+    }
+
+    function getCountOfFulfilledRequestIds() external view returns (uint256) {
+        return fulfilledRequestIds.length();
+    }
+
+    function getCountOfUnfulfilledRequestIds() external view returns (uint256) {
+        return unfulfilledRequestIds.length();
     }
 
     /**

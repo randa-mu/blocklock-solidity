@@ -183,7 +183,9 @@ contract BlocklockSender is
      */
     function isInFlight(uint256 requestID) external view returns (bool) {
         uint256 signatureRequestID = blocklockRequestsWithDecryptionKey[requestID].decryptionRequestID;
-        require(signatureRequestID > 0, "blocklock request not found");
+        if (signatureRequestID == 0) {
+            return false;
+        }
 
         return decryptionSender.isInFlight(signatureRequestID);
     }
