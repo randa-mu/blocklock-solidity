@@ -14,18 +14,10 @@ import { keccak_256 } from "@noble/hashes/sha3";
 // yarn ts-node scripts/mocks/create-timelock-request.ts 
 
 const RPC_URL = process.env.CALIBRATIONNET_RPC_URL;
-// const walletAddr = "0x5d84b82b750B996BFC1FA7985D90Ae8Fbe773364"
-const walletAddr = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
+const walletAddr = "0x5d84b82b750B996BFC1FA7985D90Ae8Fbe773364"
 const blocklockSenderAddr = "0xfF66908E1d7d23ff62791505b2eC120128918F44"
 const decryptionSenderAddr = "0x9297Bb1d423ef7386C8b2e6B7BdE377977FBedd3";
 const mockBlocklockReceiverAddr = "0x6f637EcB3Eaf8bEd0fc597Dc54F477a33BBCA72B";
-
-// const RPC_URL = "http://127.0.0.1:8545"
-// const walletAddr = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
-
-// const blocklockSenderAddr = "0xC6bA8C3233eCF65B761049ef63466945c362EdD2";
-// const decryptionSenderAddr = "0xbCF26943C0197d2eE0E5D05c716Be60cc2761508";
-// const mockBlocklockReceiverAddr = "0x0b48aF34f4c854F5ae1A3D587da471FeA45bAD52";
 
 const BLOCKLOCK_IBE_OPTS: IbeOpts = {
     hash: keccak_256,
@@ -122,7 +114,7 @@ async function main() {
         const mockBlocklockReceiver = MockBlocklockReceiver__factory.connect(mockBlocklockReceiverAddr, signer);
 
         // create a timelock request from mockBlocklockReceiver contract and check it is fulfilled by blocklock agent
-        const blockHeight = BigInt(await provider.getBlockNumber() + 5);
+        const blockHeight = BigInt(await provider.getBlockNumber() + 6);
         const msg = ethers.parseEther("4");
         const abiCoder = AbiCoder.defaultAbiCoder();
         const msgBytes = abiCoder.encode(["uint256"], [msg]);
