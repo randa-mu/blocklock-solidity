@@ -416,7 +416,67 @@ describe("BlocklockSender", function () {
     ).to.be.reverted;
   });
 
+  it("enumerable set can track multiple requests", async function () {
+    let numberOfPendingRequests = await decryptionSender.getCountOfUnfulfilledRequestIds();
+    let numberOfFulfilledRequests = await decryptionSender.getCountOfFulfilledRequestIds();
+    let pendingRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
+    let nonPendingRequestIds = await decryptionSender.getAllFulfilledRequestIds();
+
+    expect(numberOfPendingRequests).to.be.equal(0);
+    expect(numberOfFulfilledRequests).to.be.equal(0);
+    expect(pendingRequestIds.length).to.be.equal(0);
+    expect(nonPendingRequestIds.length).to.be.equal(0);
+
+    let blockHeight = await ethers.provider.getBlockNumber();
+
+    const msg = "mainnet launch soon";
+    const msgBytes = AbiCoder.defaultAbiCoder().encode(["string"], [msg]);
+    const encodedMessage = getBytes(msgBytes);
+
+    const ct = encrypt(encodedMessage, BigInt(blockHeight + 2), BLOCKLOCK_DEFAULT_PUBLIC_KEY);
+    const ct2 = encrypt(encodedMessage, BigInt(blockHeight + 3), BLOCKLOCK_DEFAULT_PUBLIC_KEY);
+
+    let tx = await blocklockStringReceiver
+      .connect(owner)
+      .createTimelockRequest(BigInt(blockHeight + 2), encodeCiphertextToSolidity(ct));
+    let receipt = await tx.wait(1);
+    if (!receipt) {
+      throw new Error("transaction has not been mined");
+    }
+
+    tx = await blocklockStringReceiver
+      .connect(owner)
+      .createTimelockRequest(BigInt(blockHeight + 3), encodeCiphertextToSolidity(ct2));
+    receipt = await tx.wait(1);
+    if (!receipt) {
+      throw new Error("transaction has not been mined");
+    }
+
+    numberOfPendingRequests = await decryptionSender.getCountOfUnfulfilledRequestIds();
+    numberOfFulfilledRequests = await decryptionSender.getCountOfFulfilledRequestIds();
+    pendingRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
+    nonPendingRequestIds = await decryptionSender.getAllFulfilledRequestIds();
+
+    expect(numberOfPendingRequests).to.be.equal(2);
+    expect(numberOfFulfilledRequests).to.be.equal(0);
+    expect(pendingRequestIds.length).to.be.equal(2);
+    expect(nonPendingRequestIds.length).to.be.equal(0);
+    expect(pendingRequestIds[0]).to.be.equal(1);
+    expect(pendingRequestIds[1]).to.be.equal(2);
+    expect(await decryptionSender.isInFlight(1)).to.be.equal(true);
+  });
+
   it("can request blocklock decryption from user contract for string and receive decryption key callback", async function () {
+    let numberOfPendingRequests = await decryptionSender.getCountOfUnfulfilledRequestIds();
+    let numberOfFulfilledRequests = await decryptionSender.getCountOfFulfilledRequestIds();
+    let pendingRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
+    let nonPendingRequestIds = await decryptionSender.getAllFulfilledRequestIds();
+
+    expect(numberOfPendingRequests).to.be.equal(0);
+    expect(numberOfFulfilledRequests).to.be.equal(0);
+    expect(pendingRequestIds.length).to.be.equal(0);
+    expect(nonPendingRequestIds.length).to.be.equal(0);
+    
     let blockHeight = await ethers.provider.getBlockNumber();
 
     const msg = "mainnet launch soon";
@@ -440,6 +500,18 @@ describe("BlocklockSender", function () {
       await decryptionSender.getAddress(),
       decryptionSenderIface.getEvent("DecryptionRequested"),
     );
+
+    numberOfPendingRequests = await decryptionSender.getCountOfUnfulfilledRequestIds();
+    numberOfFulfilledRequests = await decryptionSender.getCountOfFulfilledRequestIds();
+    pendingRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
+    nonPendingRequestIds = await decryptionSender.getAllFulfilledRequestIds();
+
+    expect(numberOfPendingRequests).to.be.equal(1);
+    expect(numberOfFulfilledRequests).to.be.equal(0);
+    expect(pendingRequestIds.length).to.be.equal(1);
+    expect(nonPendingRequestIds.length).to.be.equal(0);
+    
+    expect(pendingRequestIds[0]).to.be.equal(1);
 
     console.log("callback and blocklock address", callback, await blocklock.getAddress());
 
@@ -479,6 +551,19 @@ describe("BlocklockSender", function () {
       await blocklock.getAddress(),
       iface.getEvent("BlocklockCallbackSuccess"),
     );
+
+    numberOfPendingRequests = await decryptionSender.getCountOfUnfulfilledRequestIds();
+    numberOfFulfilledRequests = await decryptionSender.getCountOfFulfilledRequestIds();
+    pendingRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
+    nonPendingRequestIds = await decryptionSender.getAllFulfilledRequestIds();
+
+    expect(numberOfPendingRequests).to.be.equal(0);
+    expect(numberOfFulfilledRequests).to.be.equal(1);
+    expect(pendingRequestIds.length).to.be.equal(0);
+    expect(nonPendingRequestIds.length).to.be.equal(1);
+
+    expect(nonPendingRequestIds[0]).to.be.equal(1);
+    expect(await decryptionSender.isInFlight(1)).to.be.equal(false);
 
     // ciphertext should not be deleted after successful callback
     req = await blocklock.getRequest(BigInt(requestID));
