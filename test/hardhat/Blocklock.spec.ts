@@ -418,12 +418,10 @@ describe("BlocklockSender", function () {
 
   it("enumerable set can track multiple requests", async function () {
     let numberOfPendingRequests = await decryptionSender.getCountOfUnfulfilledRequestIds();
-    let numberOfFulfilledRequests = await decryptionSender.getCountOfFulfilledRequestIds();
     let pendingRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
     let nonPendingRequestIds = await decryptionSender.getAllFulfilledRequestIds();
 
     expect(numberOfPendingRequests).to.be.equal(0);
-    expect(numberOfFulfilledRequests).to.be.equal(0);
     expect(pendingRequestIds.length).to.be.equal(0);
     expect(nonPendingRequestIds.length).to.be.equal(0);
 
@@ -453,12 +451,10 @@ describe("BlocklockSender", function () {
     }
 
     numberOfPendingRequests = await decryptionSender.getCountOfUnfulfilledRequestIds();
-    numberOfFulfilledRequests = await decryptionSender.getCountOfFulfilledRequestIds();
     pendingRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
     nonPendingRequestIds = await decryptionSender.getAllFulfilledRequestIds();
 
     expect(numberOfPendingRequests).to.be.equal(2);
-    expect(numberOfFulfilledRequests).to.be.equal(0);
     expect(pendingRequestIds.length).to.be.equal(2);
     expect(nonPendingRequestIds.length).to.be.equal(0);
     expect(pendingRequestIds[0]).to.be.equal(1);
@@ -468,15 +464,13 @@ describe("BlocklockSender", function () {
 
   it("can request blocklock decryption from user contract for string and receive decryption key callback", async function () {
     let numberOfPendingRequests = await decryptionSender.getCountOfUnfulfilledRequestIds();
-    let numberOfFulfilledRequests = await decryptionSender.getCountOfFulfilledRequestIds();
     let pendingRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
     let nonPendingRequestIds = await decryptionSender.getAllFulfilledRequestIds();
 
     expect(numberOfPendingRequests).to.be.equal(0);
-    expect(numberOfFulfilledRequests).to.be.equal(0);
     expect(pendingRequestIds.length).to.be.equal(0);
     expect(nonPendingRequestIds.length).to.be.equal(0);
-    
+
     let blockHeight = await ethers.provider.getBlockNumber();
 
     const msg = "mainnet launch soon";
@@ -502,15 +496,13 @@ describe("BlocklockSender", function () {
     );
 
     numberOfPendingRequests = await decryptionSender.getCountOfUnfulfilledRequestIds();
-    numberOfFulfilledRequests = await decryptionSender.getCountOfFulfilledRequestIds();
     pendingRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
     nonPendingRequestIds = await decryptionSender.getAllFulfilledRequestIds();
 
     expect(numberOfPendingRequests).to.be.equal(1);
-    expect(numberOfFulfilledRequests).to.be.equal(0);
     expect(pendingRequestIds.length).to.be.equal(1);
     expect(nonPendingRequestIds.length).to.be.equal(0);
-    
+
     expect(pendingRequestIds[0]).to.be.equal(1);
 
     console.log("callback and blocklock address", callback, await blocklock.getAddress());
@@ -553,12 +545,10 @@ describe("BlocklockSender", function () {
     );
 
     numberOfPendingRequests = await decryptionSender.getCountOfUnfulfilledRequestIds();
-    numberOfFulfilledRequests = await decryptionSender.getCountOfFulfilledRequestIds();
     pendingRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
     nonPendingRequestIds = await decryptionSender.getAllFulfilledRequestIds();
 
     expect(numberOfPendingRequests).to.be.equal(0);
-    expect(numberOfFulfilledRequests).to.be.equal(1);
     expect(pendingRequestIds.length).to.be.equal(0);
     expect(nonPendingRequestIds.length).to.be.equal(1);
 

@@ -42,7 +42,7 @@ contract DecryptionSender is
 
     uint256 public lastRequestID = 0;
     BLS.PointG2 private publicKey = BLS.PointG2({x: [uint256(0), uint256(0)], y: [uint256(0), uint256(0)]});
-    
+
     // Mapping from decryption requestID to conditional decryption request
     mapping(uint256 => TypesLib.DecryptionRequest) public requests;
 
@@ -220,10 +220,6 @@ contract DecryptionSender is
 
     function getAllUnfulfilledRequestIds() external view returns (uint256[] memory) {
         return unfulfilledRequestIds.values();
-    }
-
-    function getCountOfFulfilledRequestIds() external view returns (uint256) {
-        return fulfilledRequestIds.length();
     }
 
     function getCountOfUnfulfilledRequestIds() external view returns (uint256) {
