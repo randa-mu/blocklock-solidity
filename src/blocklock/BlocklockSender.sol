@@ -34,8 +34,7 @@ contract BlocklockSender is
     bytes public constant DST_H3 = "BLOCKLOCK_BN254_XMD:KECCAK-256_H3_";
     bytes public constant DST_H4 = "BLOCKLOCK_BN254_XMD:KECCAK-256_H4_";
 
-    // Mapping from decryption requestID to blocklock status
-    mapping(uint256 => TypesLib.BlocklockRequest) public blocklockRequests;
+    // Mapping from decryption requestID to conditional decryption request
     mapping(uint256 => TypesLib.BlocklockRequest) public blocklockRequestsWithDecryptionKey;
 
     event BlocklockRequested(
@@ -183,6 +182,7 @@ contract BlocklockSender is
      */
     function isInFlight(uint256 requestID) external view returns (bool) {
         uint256 signatureRequestID = blocklockRequestsWithDecryptionKey[requestID].decryptionRequestID;
+        
         if (signatureRequestID == 0) {
             return false;
         }

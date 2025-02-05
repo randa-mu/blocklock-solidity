@@ -42,8 +42,8 @@ contract DecryptionSender is
 
     uint256 public lastRequestID = 0;
     BLS.PointG2 private publicKey = BLS.PointG2({x: [uint256(0), uint256(0)], y: [uint256(0), uint256(0)]});
-    mapping(uint256 => TypesLib.DecryptionRequest) public requestsInFlight;
     
+    // Mapping from decryption requestID to conditional decryption request
     mapping(uint256 => TypesLib.DecryptionRequest) public requests;
 
     ISignatureSchemeAddressProvider public signatureSchemeAddressProvider;
@@ -125,7 +125,7 @@ contract DecryptionSender is
         address schemeContractAddress = signatureSchemeAddressProvider.getSignatureSchemeAddress(schemeID);
         require(schemeContractAddress > address(0), "invalid signature scheme");
 
-        requestsInFlight[lastRequestID] = TypesLib.DecryptionRequest({
+        requests[lastRequestID] = TypesLib.DecryptionRequest({
             schemeID: schemeID,
             ciphertext: ciphertext,
             condition: condition,
@@ -149,7 +149,7 @@ contract DecryptionSender is
         onlyOwner
     {
         require(isInFlight(requestID), "No request with specified requestID");
-        TypesLib.DecryptionRequest memory request = requestsInFlight[requestID];
+        TypesLib.DecryptionRequest memory request = requests[requestID];
 
         string memory schemeID = request.schemeID;
         address schemeContractAddress = signatureSchemeAddressProvider.getSignatureSchemeAddress(schemeID);
@@ -204,7 +204,7 @@ contract DecryptionSender is
      * @dev See {IDecryptionSender-isInFlight}.
      */
     function isInFlight(uint256 requestID) public view returns (bool) {
-        return requestsInFlight[requestID].isFulfilled;
+        return !requests[requestID].isFulfilled;
     }
 
     /**
