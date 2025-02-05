@@ -208,7 +208,7 @@ contract DecryptionSender is
     }
 
     /**
-     * @dev See {IDecryptionSender-getRequestInFlight}.
+     * @dev See {IDecryptionSender-getRequest}.
      */
     function getRequest(uint256 requestID) external view returns (TypesLib.DecryptionRequest memory) {
         return requests[requestID];
