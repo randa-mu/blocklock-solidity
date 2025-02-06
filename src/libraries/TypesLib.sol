@@ -37,5 +37,6 @@ library TypesLib {
         bytes decryptionKey;
         bytes signature;
         address callback;
+        bool isFulfilled;
     }
 }
