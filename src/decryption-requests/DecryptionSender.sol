@@ -50,6 +50,7 @@ contract DecryptionSender is
 
     EnumerableSet.UintSet private fulfilledRequestIds;
     EnumerableSet.UintSet private unfulfilledRequestIds;
+    EnumerableSet.UintSet private erroredRequestIds;
 
     event SignatureSchemeAddressProviderUpdated(address indexed newSignatureSchemeAddressProvider);
     event DecryptionRequested(
@@ -62,7 +63,7 @@ contract DecryptionSender is
     );
     event DecryptionReceiverCallbackSuccess(uint256 indexed requestID, bytes decryptionKey, bytes signature);
 
-    error DecryptionReceiverCallbackFailed(uint256 requestID);
+    event DecryptionReceiverCallbackFailed(uint256 requestID);
 
     modifier onlyOwner() {
         _checkRole(ADMIN_ROLE);
@@ -166,15 +167,15 @@ contract DecryptionSender is
             )
         );
 
+        requests[requestID].decryptionKey = decryptionKey;
+        requests[requestID].isFulfilled = true;
+        unfulfilledRequestIds.remove(requestID);
         if (!success) {
-            revert DecryptionReceiverCallbackFailed(requestID);
+            erroredRequestIds.add(requestID);
+            emit DecryptionReceiverCallbackFailed(requestID);
         } else {
-            emit DecryptionReceiverCallbackSuccess(requestID, decryptionKey, signature);
-            requests[requestID].decryptionKey = decryptionKey;
-            requests[requestID].isFulfilled = true;
-
-            unfulfilledRequestIds.remove(requestID);
             fulfilledRequestIds.add(requestID);
+            emit DecryptionReceiverCallbackSuccess(requestID, decryptionKey, signature);
         }
     }
 
