@@ -268,8 +268,8 @@ describe("BlocklockSender", function () {
       decryptionSenderIface.getEvent("DecryptionRequested"),
     );
 
-    console.log(`received decryption request ${requestID}`);
-    console.log(`call back address ${callback}, scheme id ${schemeID}`);
+    // console.log(`received decryption request ${requestID}`);
+    // console.log(`call back address ${callback}, scheme id ${schemeID}`);
 
     const bls = await BlsBn254.create();
     const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
@@ -346,13 +346,13 @@ describe("BlocklockSender", function () {
       decryptionSenderIface.getEvent("DecryptionRequested"),
     );
 
-    console.log("callback and blocklock address", callback, await blocklock.getAddress());
+    // console.log("callback and blocklock address", callback, await blocklock.getAddress());
 
     let req = await blocklock.getRequest(BigInt(requestID));
     expect(req.blockHeight).to.be.equal(BigInt(blockHeight + 2));
 
-    console.log(`received decryption request ${requestID}`);
-    console.log(`call back address ${callback}, scheme id ${schemeID}`);
+    // console.log(`received decryption request ${requestID}`);
+    // console.log(`call back address ${callback}, scheme id ${schemeID}`);
 
     const bls = await BlsBn254.create();
     const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
@@ -505,13 +505,13 @@ describe("BlocklockSender", function () {
 
     expect(pendingRequestIds[0]).to.be.equal(1);
 
-    console.log("callback and blocklock address", callback, await blocklock.getAddress());
+    // console.log("callback and blocklock address", callback, await blocklock.getAddress());
 
     let req = await blocklock.getRequest(BigInt(requestID));
     expect(req.blockHeight).to.be.equal(BigInt(blockHeight + 2));
 
-    console.log(`received decryption request ${requestID}`);
-    console.log(`call back address ${callback}, scheme id ${schemeID}`);
+    // console.log(`received decryption request ${requestID}`);
+    // console.log(`call back address ${callback}, scheme id ${schemeID}`);
 
     const bls = await BlsBn254.create();
     const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
@@ -572,6 +572,153 @@ describe("BlocklockSender", function () {
     expect(Array.from(getBytes(encodedMessage))).to.have.members(Array.from(decryptedM2));
 
     expect(await blocklockStringReceiver.plainTextValue()).to.be.equal(msg);
-    console.log(await blocklockStringReceiver.plainTextValue(), msg);
+    // console.log(await blocklockStringReceiver.plainTextValue(), msg);
+  });
+
+  it("can process multiple requests for the same decrtyption block from user contracts for string and uint256", async function () {
+    // expected request ids
+    const requestIDs = [1, 2];
+
+    let numberOfPendingRequests = await decryptionSender.getCountOfUnfulfilledRequestIds();
+    let pendingRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
+    let nonPendingRequestIds = await decryptionSender.getAllFulfilledRequestIds();
+
+    expect(numberOfPendingRequests).to.be.equal(0);
+    expect(pendingRequestIds.length).to.be.equal(0);
+    expect(nonPendingRequestIds.length).to.be.equal(0);
+
+    let blockHeight = await ethers.provider.getBlockNumber();
+    let decryptionBlockHeight = BigInt(blockHeight + 5);
+    // console.log("current block height", blockHeight);
+
+    // string message
+    const stringmsg = "mainnet launch soon";
+    const stringmsgBytes = AbiCoder.defaultAbiCoder().encode(["string"], [stringmsg]);
+    const stringencodedMessage = getBytes(stringmsgBytes);
+
+    // uint256 message
+    const uintmsg = ethers.parseEther("4");
+    const uintmsgBytes = AbiCoder.defaultAbiCoder().encode(["uint256"], [uintmsg]);
+    const uintencodedMessage = getBytes(uintmsgBytes);
+
+    // ciphertexts
+    const stringct = encrypt(stringencodedMessage, decryptionBlockHeight, BLOCKLOCK_DEFAULT_PUBLIC_KEY);
+    const uintct = encrypt(uintencodedMessage, decryptionBlockHeight, BLOCKLOCK_DEFAULT_PUBLIC_KEY);
+
+    // on-chain timelock request transactions
+    let tx1 = await blocklockStringReceiver
+      .connect(owner)
+      .createTimelockRequest(decryptionBlockHeight, encodeCiphertextToSolidity(stringct));
+
+    let tx2 = await blocklockReceiver
+      .connect(owner)
+      .createTimelockRequest(decryptionBlockHeight, encodeCiphertextToSolidity(uintct));
+
+    let receipt1 = await tx1.wait(1);
+    if (!receipt1) {
+      throw new Error("transaction has not been mined");
+    }
+
+    let receipt2 = await tx2.wait(1);
+    if (!receipt2) {
+      throw new Error("transaction has not been mined");
+    }
+
+    // decryption block number checks from blocklock contract events
+    let req1 = await blocklock.getRequest(BigInt(1));
+    expect(req1.blockHeight).to.be.equal(BigInt(blockHeight + 5));
+
+    let req2 = await blocklock.getRequest(BigInt(2));
+    expect(req2.blockHeight).to.be.equal(BigInt(blockHeight + 5));
+
+    // fetch requests
+    const firstRequest = await decryptionSender.getRequest(requestIDs[0]);
+    const secondRequest = await decryptionSender.getRequest(requestIDs[1]);
+
+    numberOfPendingRequests = await decryptionSender.getCountOfUnfulfilledRequestIds();
+    pendingRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
+    nonPendingRequestIds = await decryptionSender.getAllFulfilledRequestIds();
+
+    expect(numberOfPendingRequests).to.be.equal(2);
+    expect(pendingRequestIds.length).to.be.equal(2);
+    expect(nonPendingRequestIds.length).to.be.equal(0);
+
+    // generate signatures and decryption keys
+    const bls = await BlsBn254.create();
+    const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
+
+    const conditionBytes1 = isHexString(firstRequest.condition)
+      ? getBytes(firstRequest.condition)
+      : toUtf8Bytes(firstRequest.condition);
+    const m1 = bls.hashToPoint(BLOCKLOCK_IBE_OPTS.dsts.H1_G1, conditionBytes1);
+
+    const hexCondition1 = Buffer.from(conditionBytes1).toString("hex");
+    blockHeight = BigInt("0x" + hexCondition1);
+
+    const parsedCiphertext1 = parseSolidityCiphertextString(firstRequest.ciphertext);
+
+    const conditionBytes2 = isHexString(secondRequest.condition)
+      ? getBytes(secondRequest.condition)
+      : toUtf8Bytes(secondRequest.condition);
+    const m2 = bls.hashToPoint(BLOCKLOCK_IBE_OPTS.dsts.H1_G1, conditionBytes2);
+
+    const hexCondition2 = Buffer.from(conditionBytes2).toString("hex");
+    blockHeight = BigInt("0x" + hexCondition2);
+
+    const parsedCiphertext2 = parseSolidityCiphertextString(secondRequest.ciphertext);
+
+    const signature1 = bls.sign(m1, secretKey).signature;
+    const sig1 = bls.serialiseG1Point(signature1);
+    const sigBytes1 = AbiCoder.defaultAbiCoder().encode(["uint256", "uint256"], [sig1[0], sig1[1]]);
+
+    const decryption_key1 = preprocess_decryption_key_g1(
+      parsedCiphertext1,
+      { x: sig1[0], y: sig1[1] },
+      BLOCKLOCK_IBE_OPTS,
+    );
+
+    const signature2 = bls.sign(m2, secretKey).signature;
+    const sig2 = bls.serialiseG1Point(signature2);
+    const sigBytes2 = AbiCoder.defaultAbiCoder().encode(["uint256", "uint256"], [sig2[0], sig2[1]]);
+
+    const decryption_key2 = preprocess_decryption_key_g1(
+      parsedCiphertext2,
+      { x: sig2[0], y: sig2[1] },
+      BLOCKLOCK_IBE_OPTS,
+    );
+
+    // use the signatures and decryption keys to generate a multicall transaction 
+    // to fulfill both requests in a single transaction
+    const decryptionKeys = [decryption_key1, decryption_key2];
+    const signatures = [sigBytes1, sigBytes2];
+
+    const encodedCalls = requestIDs.map((id, index) =>
+      decryptionSender.interface.encodeFunctionData("fulfilDecryptionRequest", [
+        id,
+        decryptionKeys[index],
+        signatures[index],
+      ]),
+    );
+
+    try {
+      // Send multicall
+      const tx = await decryptionSender.multicall(encodedCalls);
+      // console.log("Transaction sent:", tx.hash);
+
+      // Wait for confirmation
+      const receipt = await tx.wait(1);
+      // console.log("Transaction confirmed:", receipt);
+    } catch (error) {
+      console.error("Error executing multicall:", error);
+    }
+
+    // verify that both reqests have been fulfilled
+    numberOfPendingRequests = await decryptionSender.getCountOfUnfulfilledRequestIds();
+    pendingRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
+    nonPendingRequestIds = await decryptionSender.getAllFulfilledRequestIds();
+
+    expect(numberOfPendingRequests).to.be.equal(0);
+    expect(pendingRequestIds.length).to.be.equal(0);
+    expect(nonPendingRequestIds.length).to.be.equal(2);
   });
 });
