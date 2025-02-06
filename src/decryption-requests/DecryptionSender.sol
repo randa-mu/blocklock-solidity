@@ -50,6 +50,7 @@ contract DecryptionSender is
 
     EnumerableSet.UintSet private fulfilledRequestIds;
     EnumerableSet.UintSet private unfulfilledRequestIds;
+    EnumerableSet.UintSet private erroredRequestIds;
 
     event SignatureSchemeAddressProviderUpdated(address indexed newSignatureSchemeAddressProvider);
     event DecryptionRequested(
@@ -62,7 +63,7 @@ contract DecryptionSender is
     );
     event DecryptionReceiverCallbackSuccess(uint256 indexed requestID, bytes decryptionKey, bytes signature);
 
-    error DecryptionReceiverCallbackFailed(uint256 requestID);
+    event DecryptionReceiverCallbackFailed(uint256 requestID);
 
     modifier onlyOwner() {
         _checkRole(ADMIN_ROLE);
@@ -166,15 +167,33 @@ contract DecryptionSender is
             )
         );
 
+        requests[requestID].decryptionKey = decryptionKey;
+        requests[requestID].isFulfilled = true;
+        unfulfilledRequestIds.remove(requestID);
         if (!success) {
-            revert DecryptionReceiverCallbackFailed(requestID);
+            erroredRequestIds.add(requestID);
+            emit DecryptionReceiverCallbackFailed(requestID);
         } else {
-            emit DecryptionReceiverCallbackSuccess(requestID, decryptionKey, signature);
-            requests[requestID].decryptionKey = decryptionKey;
-            requests[requestID].isFulfilled = true;
-
-            unfulfilledRequestIds.remove(requestID);
             fulfilledRequestIds.add(requestID);
+            emit DecryptionReceiverCallbackSuccess(requestID, decryptionKey, signature);
+        }
+    }
+
+    function retryCallback(uint256 requestID) external {
+        require(hasErrored(requestID), "No request with specified requestID");
+        TypesLib.DecryptionRequest memory request = requests[requestID];
+        (bool success,) = request.callback.call(
+            abi.encodeWithSelector(
+                IDecryptionReceiver.receiveDecryptionData.selector, requestID, request.decryptionKey, request.signature
+            )
+        );
+
+        if (!success) {
+            emit DecryptionReceiverCallbackFailed(requestID);
+        } else {
+            erroredRequestIds.remove(requestID);
+            fulfilledRequestIds.add(requestID);
+            emit DecryptionReceiverCallbackSuccess(requestID, request.decryptionKey, request.signature);
         }
     }
 
@@ -205,6 +224,10 @@ contract DecryptionSender is
      */
     function isInFlight(uint256 requestID) public view returns (bool) {
         return unfulfilledRequestIds.contains(requestID);
+    }
+
+    function hasErrored(uint256 requestID) public view returns (bool) {
+        return erroredRequestIds.contains(requestID);
     }
 
     /**
