@@ -31,6 +31,16 @@ interface IDecryptionSender {
         external;
 
     /**
+ * @notice Retry an request that has previously failed during callback
+     * @dev This function is intended to be called after a decryption key has been generated off-chain but failed to
+     * call back into the originating contract.
+     *
+     * @param requestID The unique identifier for the encryption request. This should match the ID used
+     *                  when the encryption was initially requested.
+     */
+    function retryCallback(uint256 requestID) external;
+
+    /**
      * @notice Updates the signature scheme address provider contract address
      * @param newSignatureSchemeAddressProvider The signature address provider address to set
      */
@@ -54,7 +64,15 @@ interface IDecryptionSender {
     function isInFlight(uint256 requestID) external view returns (bool);
 
     /**
-     * @notice Retrieves the public key associated with the decryption process.
+     * @notice returns whether a specific request errored during callback or not.
+     * @param requestID The ID of the request to check.
+     * @return boolean indicating whether the request has errored or not.
+     */
+    function hasErrored(uint256 requestID) external view returns (bool);
+
+
+        /**
+         * @notice Retrieves the public key associated with the decryption process.
      * @dev Returns the public key as two elliptic curve points.
      * @return Two pairs of coordinates representing the public key points on the elliptic curve.
      */

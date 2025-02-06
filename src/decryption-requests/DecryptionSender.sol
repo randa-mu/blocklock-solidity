@@ -179,6 +179,24 @@ contract DecryptionSender is
         }
     }
 
+    function retryCallback(uint256 requestID) external {
+        require(hasErrored(requestID), "No request with specified requestID");
+        TypesLib.DecryptionRequest memory request = requests[requestID];
+        (bool success,) = request.callback.call(
+            abi.encodeWithSelector(
+                IDecryptionReceiver.receiveDecryptionData.selector, requestID, request.decryptionKey, request.signature
+            )
+        );
+
+        if (!success) {
+            emit DecryptionReceiverCallbackFailed(requestID);
+        } else {
+            erroredRequestIds.remove(requestID);
+            fulfilledRequestIds.add(requestID);
+            emit DecryptionReceiverCallbackSuccess(requestID, request.decryptionKey, request.signature);
+        }
+    }
+
     /**
      * @dev See {IDecryptionSender-setSignatureSchemeAddressProvider}.
      */
@@ -206,6 +224,10 @@ contract DecryptionSender is
      */
     function isInFlight(uint256 requestID) public view returns (bool) {
         return unfulfilledRequestIds.contains(requestID);
+    }
+
+    function hasErrored(uint256 requestID) public view returns (bool) {
+        return erroredRequestIds.contains(requestID);
     }
 
     /**
