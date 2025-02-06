@@ -31,7 +31,7 @@ interface IDecryptionSender {
         external;
 
     /**
- * @notice Retry an request that has previously failed during callback
+     * @notice Retry an request that has previously failed during callback
      * @dev This function is intended to be called after a decryption key has been generated off-chain but failed to
      * call back into the originating contract.
      *
@@ -70,9 +70,8 @@ interface IDecryptionSender {
      */
     function hasErrored(uint256 requestID) external view returns (bool);
 
-
-        /**
-         * @notice Retrieves the public key associated with the decryption process.
+    /**
+     * @notice Retrieves the public key associated with the decryption process.
      * @dev Returns the public key as two elliptic curve points.
      * @return Two pairs of coordinates representing the public key points on the elliptic curve.
      */
