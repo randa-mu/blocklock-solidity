@@ -32,6 +32,7 @@ import {
   EventFragment,
   Result,
   toUtf8Bytes,
+  zeroPadBytes,
 } from "ethers";
 
 dotenv.config();
@@ -274,9 +275,6 @@ describe("BlocklockSender", function () {
       decryptionSenderIface.getEvent("DecryptionRequested"),
     );
 
-    console.log(`received decryption request ${requestID}`);
-    console.log(`call back address ${callback}, scheme id ${schemeID}`);
-
     const bls = await BlsBn254.create();
     const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
 
@@ -352,13 +350,8 @@ describe("BlocklockSender", function () {
       decryptionSenderIface.getEvent("DecryptionRequested"),
     );
 
-    console.log("callback and blocklock address", callback, await blocklock.getAddress());
-
     let req = await blocklock.getRequest(BigInt(requestID));
     expect(req.blockHeight).to.be.equal(BigInt(blockHeight + 2));
-
-    console.log(`received decryption request ${requestID}`);
-    console.log(`call back address ${callback}, scheme id ${schemeID}`);
 
     const bls = await BlsBn254.create();
     const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
@@ -511,13 +504,8 @@ describe("BlocklockSender", function () {
 
     expect(pendingRequestIds[0]).to.be.equal(1);
 
-    console.log("callback and blocklock address", callback, await blocklock.getAddress());
-
     let req = await blocklock.getRequest(BigInt(requestID));
     expect(req.blockHeight).to.be.equal(BigInt(blockHeight + 2));
-
-    console.log(`received decryption request ${requestID}`);
-    console.log(`call back address ${callback}, scheme id ${schemeID}`);
 
     const bls = await BlsBn254.create();
     const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
@@ -578,7 +566,6 @@ describe("BlocklockSender", function () {
     expect(Array.from(getBytes(encodedMessage))).to.have.members(Array.from(decryptedM2));
 
     expect(await blocklockStringReceiver.plainTextValue()).to.be.equal(msg);
-    console.log(await blocklockStringReceiver.plainTextValue(), msg);
   });
 
   it("reverting callback should add request id to the erroredRequestIds set", async function () {
@@ -612,13 +599,8 @@ describe("BlocklockSender", function () {
       decryptionSenderIface.getEvent("DecryptionRequested"),
     );
 
-    console.log("callback and blocklock address", callback, await blocklock.getAddress());
-
     let req = await blocklock.getRequest(BigInt(requestID));
     expect(req.blockHeight).to.be.equal(BigInt(blockHeight + 2));
-
-    console.log(`received decryption request ${requestID}`);
-    console.log(`call back address ${callback}, scheme id ${schemeID}`);
 
     const bls = await BlsBn254.create();
     const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
@@ -650,9 +632,11 @@ describe("BlocklockSender", function () {
       decryptionSenderIface.getEvent("DecryptionReceiverCallbackFailed"),
     );
 
+    const fetchedRequest = await decryptionSender.getRequest(requestID);
+
     expect(await decryptionSender.hasErrored(requestID)).to.be.equal(true);
     // expecting isFulfilled to be true for failing callbacks
-    expect((await decryptionSender.getRequest(requestID)).isFulfilled).to.be.equal(true);
+    expect(fetchedRequest.isFulfilled).to.be.equal(true);
 
     const erroredRequestIds = await decryptionSender.getAllErroredRequestIds();
     const fulfilledIds = await decryptionSender.getAllFulfilledRequestIds();
@@ -662,5 +646,8 @@ describe("BlocklockSender", function () {
 
     expect(fulfilledIds.length).to.be.equal(0);
     expect(nonFulfilledIds.length).to.be.equal(0);
+
+    expect(fetchedRequest.signature).to.not.equal(zeroPadBytes);
+    expect(getBytes(fetchedRequest.decryptionKey)).to.deep.equal(decryption_key);
   });
 });

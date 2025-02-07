@@ -38,7 +38,6 @@ describe("ibe bn254", () => {
     const ct = await encrypt_towards_identity_g1(m, identity, X_G2);
     const decryption_key = await preprocess_decryption_key_g1(ct, sig);
 
-    console.log(decryption_key);
     const m2 = decrypt_g1_with_preprocess(ct, decryption_key);
 
     expect(m).to.deep.equal(m2);
