@@ -584,6 +584,11 @@ describe("BlocklockSender", function () {
   it("reverting callback should add request id to the erroredRequestIds set", async function () {
     let blockHeight = await ethers.provider.getBlockNumber();
 
+    // non-existing request id
+    expect(await decryptionSender.isInFlight(0)).to.be.equal(false);
+    // our expected request id
+    expect(await decryptionSender.isInFlight(1)).to.be.equal(false);
+
     const msg = ethers.parseEther("4");
     const msgBytes = AbiCoder.defaultAbiCoder().encode(["uint256"], [msg]);
     const encodedMessage = getBytes(msgBytes);
@@ -646,6 +651,16 @@ describe("BlocklockSender", function () {
     );
 
     expect(await decryptionSender.hasErrored(requestID)).to.be.equal(true);
-    expect((await decryptionSender.getRequest(requestID)).isFulfilled).to.be.equal(false);
+    // expecting isFulfilled to be true for failing callbacks
+    expect((await decryptionSender.getRequest(requestID)).isFulfilled).to.be.equal(true);
+
+    const erroredRequestIds = await decryptionSender.getAllErroredRequestIds();
+    const fulfilledIds = await decryptionSender.getAllFulfilledRequestIds();
+    const nonFulfilledIds = await decryptionSender.getAllUnfulfilledRequestIds();
+    expect(erroredRequestIds[0]).to.be.equal(requestID);
+    expect(await decryptionSender.isInFlight(requestID)).to.be.equal(true);
+
+    expect(fulfilledIds.length).to.be.equal(0);
+    expect(nonFulfilledIds.length).to.be.equal(0);
   });
 });

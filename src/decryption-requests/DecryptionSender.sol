@@ -168,6 +168,7 @@ contract DecryptionSender is
         );
 
         requests[requestID].decryptionKey = decryptionKey;
+        requests[requestID].signature = signature;
         requests[requestID].isFulfilled = true;
         unfulfilledRequestIds.remove(requestID);
         if (!success) {
