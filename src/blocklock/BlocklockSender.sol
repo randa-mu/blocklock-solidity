@@ -125,6 +125,7 @@ contract BlocklockSender is
         } else {
             emit BlocklockCallbackSuccess(decryptionRequestID, r.blockHeight, r.ciphertext, decryptionKey);
             blocklockRequestsWithDecryptionKey[decryptionRequestID].decryptionKey = decryptionKey;
+            blocklockRequestsWithDecryptionKey[decryptionRequestID].signature = signature;
         }
     }
 
