@@ -168,6 +168,7 @@ contract DecryptionSender is
         );
 
         requests[requestID].decryptionKey = decryptionKey;
+        requests[requestID].signature = signature;
         requests[requestID].isFulfilled = true;
         unfulfilledRequestIds.remove(requestID);
         if (!success) {
@@ -223,7 +224,7 @@ contract DecryptionSender is
      * @dev See {IDecryptionSender-isInFlight}.
      */
     function isInFlight(uint256 requestID) public view returns (bool) {
-        return unfulfilledRequestIds.contains(requestID);
+        return unfulfilledRequestIds.contains(requestID) || erroredRequestIds.contains(requestID);
     }
 
     function hasErrored(uint256 requestID) public view returns (bool) {
@@ -243,6 +244,10 @@ contract DecryptionSender is
 
     function getAllUnfulfilledRequestIds() external view returns (uint256[] memory) {
         return unfulfilledRequestIds.values();
+    }
+
+    function getAllErroredRequestIds() external view returns (uint256[] memory) {
+        return erroredRequestIds.values();
     }
 
     function getCountOfUnfulfilledRequestIds() external view returns (uint256) {
