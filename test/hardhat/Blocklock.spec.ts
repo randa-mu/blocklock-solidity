@@ -9,6 +9,7 @@ import {
 import {
   MockBlocklockReceiver,
   MockBlocklockStringReceiver,
+  RevertingReceiver,
   SignatureSchemeAddressProvider,
   SignatureSender,
   BlocklockSender,
@@ -154,6 +155,7 @@ describe("BlocklockSender", function () {
   let decryptionSender: DecryptionSender;
   let schemeProvider: SignatureSchemeAddressProvider;
   let blocklockScheme: BlocklockSignatureScheme;
+  let revertingReceiver: RevertingReceiver;
 
   let owner: Signer;
 
@@ -207,6 +209,10 @@ describe("BlocklockSender", function () {
       await blocklock.getAddress(),
     ]);
     await blocklockStringReceiver.waitForDeployment();
+
+    revertingReceiver = await ethers.deployContract("RevertingReceiver", [
+      await blocklock.getAddress(),
+    ]);
   });
 
   async function encryptAndRegister(
@@ -573,5 +579,72 @@ describe("BlocklockSender", function () {
 
     expect(await blocklockStringReceiver.plainTextValue()).to.be.equal(msg);
     console.log(await blocklockStringReceiver.plainTextValue(), msg);
+  });
+
+  it("reverting callback should add request id to the erroredRequestIds set", async function () {
+    let blockHeight = await ethers.provider.getBlockNumber();
+
+    const msg = ethers.parseEther("4");
+    const msgBytes = AbiCoder.defaultAbiCoder().encode(["uint256"], [msg]);
+    const encodedMessage = getBytes(msgBytes);
+    // encodedMessage = 0x00000000000000000000000000000000000000000000000029a2241af62c0000
+
+    const ct = encrypt(encodedMessage, BigInt(blockHeight + 2), BLOCKLOCK_DEFAULT_PUBLIC_KEY);
+
+    let tx = await revertingReceiver
+      .connect(owner)
+      .createTimelockRequest(BigInt(blockHeight + 2), encodeCiphertextToSolidity(ct));
+    let receipt = await tx.wait(1);
+    if (!receipt) {
+      throw new Error("transaction has not been mined");
+    }
+
+    const decryptionSenderIface = DecryptionSender__factory.createInterface();
+    const [requestID, callback, schemeID, condition, ciphertext] = extractSingleLog(
+      decryptionSenderIface,
+      receipt,
+      await decryptionSender.getAddress(),
+      decryptionSenderIface.getEvent("DecryptionRequested"),
+    );
+
+    console.log("callback and blocklock address", callback, await blocklock.getAddress());
+
+    let req = await blocklock.getRequest(BigInt(requestID));
+    expect(req.blockHeight).to.be.equal(BigInt(blockHeight + 2));
+
+    console.log(`received decryption request ${requestID}`);
+    console.log(`call back address ${callback}, scheme id ${schemeID}`);
+
+    const bls = await BlsBn254.create();
+    const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
+
+    const conditionBytes = isHexString(condition) ? getBytes(condition) : toUtf8Bytes(condition);
+    const m = bls.hashToPoint(BLOCKLOCK_IBE_OPTS.dsts.H1_G1, conditionBytes);
+
+    const hexCondition = Buffer.from(conditionBytes).toString("hex");
+    blockHeight = BigInt("0x" + hexCondition);
+
+    const parsedCiphertext = parseSolidityCiphertextString(ciphertext);
+
+    const signature = bls.sign(m, secretKey).signature;
+    const sig = bls.serialiseG1Point(signature);
+    const sigBytes = AbiCoder.defaultAbiCoder().encode(["uint256", "uint256"], [sig[0], sig[1]]);
+
+    const decryption_key = preprocess_decryption_key_g1(parsedCiphertext, { x: sig[0], y: sig[1] }, BLOCKLOCK_IBE_OPTS);
+
+    tx = await decryptionSender.connect(owner).fulfilDecryptionRequest(requestID, decryption_key, sigBytes);
+    receipt = await tx.wait(1);
+    if (!receipt) {
+      throw new Error("transaction has not been mined");
+    }
+
+    const [] = extractSingleLog(
+      decryptionSenderIface,
+      receipt,
+      await decryptionSender.getAddress(),
+      decryptionSenderIface.getEvent("DecryptionReceiverCallbackFailed"),
+    );
+
+    expect(await decryptionSender.hasErrored(requestID)).to.be.equal(true);
   });
 });
