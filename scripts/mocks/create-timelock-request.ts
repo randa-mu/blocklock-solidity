@@ -1,4 +1,4 @@
-import { JsonRpcProvider, ethers, AbiCoder, getBytes } from "ethers";
+import { JsonRpcProvider, ethers, AbiCoder, getBytes, AddressLike } from "ethers";
 import 'dotenv/config'
 import {
     DecryptionSender__factory,
@@ -14,8 +14,6 @@ import { keccak_256 } from "@noble/hashes/sha3";
 // yarn ts-node scripts/mocks/create-timelock-request.ts 
 
 const RPC_URL = process.env.CALIBRATIONNET_RPC_URL;
-const walletAddr = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
-// const walletAddr = "0x5d84b82b750B996BFC1FA7985D90Ae8Fbe773364"
 const blocklockSenderAddr = "0xfF66908E1d7d23ff62791505b2eC120128918F44"
 const decryptionSenderAddr = "0x9297Bb1d423ef7386C8b2e6B7BdE377977FBedd3";
 const mockBlocklockReceiverAddr = "0x6f637EcB3Eaf8bEd0fc597Dc54F477a33BBCA72B";
@@ -108,8 +106,8 @@ async function createTimelockRequest() {
     const mockBlocklockReceiver = MockBlocklockReceiver__factory.connect(mockBlocklockReceiverAddr, signer);
 
     // create a timelock request from mockBlocklockReceiver contract and check it is fulfilled by blocklock agent
-    const blockHeight = BigInt(await provider.getBlockNumber() + 6);
-    const msg = ethers.parseEther("3");
+    const blockHeight = BigInt(await provider.getBlockNumber() + 5);
+    const msg = ethers.parseEther("21.3");
     const abiCoder = AbiCoder.defaultAbiCoder();
     const msgBytes = abiCoder.encode(["uint256"], [msg]);
     const encodedMessage = getBytes(msgBytes);
@@ -126,8 +124,9 @@ async function createTimelockRequest() {
     }
     const reqId = await mockBlocklockReceiver.requestId();
     console.log("Created request id on filecoin testnet:", reqId);
-    console.log("Decryption block number:", blockHeight);
-    console.log("Request creation block number:", await provider.getBlockNumber())
+    
+    console.log("Request creation block height:", await provider.getBlockNumber())
+    console.log("Desired decryption block height:", blockHeight);
     console.log("is created blocklock request id inFlight?:", await decryptionSender.isInFlight(reqId));
 
 }
@@ -149,11 +148,13 @@ async function replacePendingTransaction() {
     console.log(receipt)
 }
 
-async function getTransactionCount() {
+async function getTransactionCount(walletAddr: AddressLike) {
     return await provider.getTransactionCount(walletAddr)
 }
 
 async function main() {
+    const walletAddr = await signer.getAddress()
+
     try {
         // Get latest block number
         await latestBlockNumber(provider);
@@ -161,8 +162,7 @@ async function main() {
         // Get wallet ETH balance
         await getWalletBalance(RPC_URL!, walletAddr);
 
-        // await createTimelockRequest();
-        await replacePendingTransaction();
+        await createTimelockRequest();
     } catch (error) {
         console.error("Error fetching latest block number:", error);
     }

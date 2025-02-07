@@ -61,14 +61,23 @@ async function main() {
         console.log("Version number from decryptionSender proxy", await decryptionSender.version());
 
         // Create mockBlocklockReceiver instance with implementation contract address
-        // const mockBlocklockReceiver = MockBlocklockReceiver__factory.connect(mockBlocklockReceiverAddr, signer);
-        // console.log("blocklockSender addr from mockBlocklockReceiver", await mockBlocklockReceiver.blocklock());
-        // console.log("Plaintext value from mockBlocklockReceiver", await mockBlocklockReceiver.plainTextValue());
-        // console.log("Current requestId value from mockBlocklockReceiver", await mockBlocklockReceiver.requestId());
-        // console.log("is request id in flight?", await decryptionSender.isInFlight(await mockBlocklockReceiver.requestId()));
+        const mockBlocklockReceiver = MockBlocklockReceiver__factory.connect(mockBlocklockReceiverAddr, signer);
+        console.log("blocklockSender addr from mockBlocklockReceiver", await mockBlocklockReceiver.blocklock());
+        console.log("Plaintext value from mockBlocklockReceiver", await mockBlocklockReceiver.plainTextValue());
+        console.log("Current requestId value from mockBlocklockReceiver", await mockBlocklockReceiver.requestId());
+        console.log("is request id in flight?", await decryptionSender.isInFlight(await mockBlocklockReceiver.requestId()));
 
-        console.log(await blocklockSender.getRequest(65))
-        console.log("\n", await decryptionSender.getRequest(65))
+        // console.log(await blocklockSender.getRequest(65))
+        // console.log("\n", await decryptionSender.getRequest(65))
+
+        const erroredRequestIds = await decryptionSender.getAllErroredRequestIds()
+        console.log(erroredRequestIds)
+
+        const unfilfilledRequestIds = await decryptionSender.getAllUnfulfilledRequestIds()
+        console.log(unfilfilledRequestIds)
+
+        const fulfilledRequestIds = await decryptionSender.getAllFulfilledRequestIds()
+        console.log(fulfilledRequestIds)
     } catch (error) {
         console.error("Error fetching latest block number:", error);
     }
