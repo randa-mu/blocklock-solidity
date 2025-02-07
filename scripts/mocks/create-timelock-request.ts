@@ -14,7 +14,8 @@ import { keccak_256 } from "@noble/hashes/sha3";
 // yarn ts-node scripts/mocks/create-timelock-request.ts 
 
 const RPC_URL = process.env.CALIBRATIONNET_RPC_URL;
-const walletAddr = "0x5d84b82b750B996BFC1FA7985D90Ae8Fbe773364"
+const walletAddr = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+// const walletAddr = "0x5d84b82b750B996BFC1FA7985D90Ae8Fbe773364"
 const blocklockSenderAddr = "0xfF66908E1d7d23ff62791505b2eC120128918F44"
 const decryptionSenderAddr = "0x9297Bb1d423ef7386C8b2e6B7BdE377977FBedd3";
 const mockBlocklockReceiverAddr = "0x6f637EcB3Eaf8bEd0fc597Dc54F477a33BBCA72B";
@@ -55,6 +56,12 @@ function encodeCiphertextToSolidity(ciphertext: Ciphertext): BlocklockTypes.Ciph
     };
 }
 
+// Create a provider using the RPC URL
+const provider = new ethers.JsonRpcProvider(RPC_URL);
+
+// Create a signer using the private key
+const signer = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
+
 function blockHeightToBEBytes(blockHeight: bigint) {
     const buffer = new ArrayBuffer(32)
     const dataView = new DataView(buffer)
@@ -87,53 +94,75 @@ async function latestBlockNumber(provider: JsonRpcProvider) {
     console.log(`Latest Block Number: ${latestBlockNumber}`);
 }
 
+async function createTimelockRequest() {
+    // Create blocklockSender instance with proxy contract address
+    const blocklockSender = new ethers.Contract(blocklockSenderAddr, BlocklockSender__factory.abi, provider);
+    // cast call 0xfF66908E1d7d23ff62791505b2eC120128918F44 "version()(string)" --rpc-url https://rpc.ankr.com/filecoin_testnet
+    console.log("decryptionSender address from blocklockSender proxy", await blocklockSender.decryptionSender());
+
+    // Create decryptionSender instance with proxy contract address
+    const decryptionSender = new ethers.Contract(decryptionSenderAddr, DecryptionSender__factory.abi, provider);
+    console.log("Version number from decryptionSender proxy", await decryptionSender.version());
+
+    // Create mockBlocklockReceiver instance with implementation contract address
+    const mockBlocklockReceiver = MockBlocklockReceiver__factory.connect(mockBlocklockReceiverAddr, signer);
+
+    // create a timelock request from mockBlocklockReceiver contract and check it is fulfilled by blocklock agent
+    const blockHeight = BigInt(await provider.getBlockNumber() + 6);
+    const msg = ethers.parseEther("3");
+    const abiCoder = AbiCoder.defaultAbiCoder();
+    const msgBytes = abiCoder.encode(["uint256"], [msg]);
+    const encodedMessage = getBytes(msgBytes);
+    const conditions = {
+        blockHeight: blockHeight
+    }
+    const encodedConditions = blockHeightToBEBytes(conditions.blockHeight);
+    const ct = encrypt_towards_identity_g1(encodedMessage, encodedConditions, BLOCKLOCK_DEFAULT_PUBLIC_KEY, BLOCKLOCK_IBE_OPTS);
+
+    let tx = await mockBlocklockReceiver.connect(signer).createTimelockRequest(blockHeight, encodeCiphertextToSolidity(ct));
+    let receipt = await tx.wait(1);
+    if (!receipt) {
+        throw new Error("transaction has not been mined");
+    }
+    const reqId = await mockBlocklockReceiver.requestId();
+    console.log("Created request id on filecoin testnet:", reqId);
+    console.log("Decryption block number:", blockHeight);
+    console.log("Request creation block number:", await provider.getBlockNumber())
+    console.log("is created blocklock request id inFlight?:", await decryptionSender.isInFlight(reqId));
+
+}
+
+async function replacePendingTransaction() {
+    let txData = {
+        to: "0x5d84b82b750B996BFC1FA7985D90Ae8Fbe773364",
+        value: "0", 
+        chainId: 314159,
+        nonce: 1420,
+        gasLimit: 10000000000,
+        gasPrice: 2000000000
+    }
+    // let estimate = await provider.estimateGas(tx)
+    // tx.gasLimit = estimate;
+    // tx.gasPrice = ethers.parseUnits("0.14085197", "gwei");
+    let tx = await signer.sendTransaction(txData)
+    let receipt = await tx.wait(1)
+    console.log(receipt)
+}
+
+async function getTransactionCount() {
+    return await provider.getTransactionCount(walletAddr)
+}
+
 async function main() {
     try {
-        // Create a provider using the RPC URL
-        const provider = new ethers.JsonRpcProvider(RPC_URL);
-
-        // Create a signer using the private key
-        const signer = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
-
         // Get latest block number
         await latestBlockNumber(provider);
 
         // Get wallet ETH balance
         await getWalletBalance(RPC_URL!, walletAddr);
 
-        // Create blocklockSender instance with proxy contract address
-        const blocklockSender = new ethers.Contract(blocklockSenderAddr, BlocklockSender__factory.abi, provider);
-        // cast call 0xfF66908E1d7d23ff62791505b2eC120128918F44 "version()(string)" --rpc-url https://rpc.ankr.com/filecoin_testnet
-        console.log("decryptionSender address from blocklockSender proxy", await blocklockSender.decryptionSender());
-
-        // Create decryptionSender instance with proxy contract address
-        const decryptionSender = new ethers.Contract(decryptionSenderAddr, DecryptionSender__factory.abi, provider);
-        console.log("Version number from decryptionSender proxy", await decryptionSender.version());
-
-        // Create mockBlocklockReceiver instance with implementation contract address
-        const mockBlocklockReceiver = MockBlocklockReceiver__factory.connect(mockBlocklockReceiverAddr, signer);
-
-        // create a timelock request from mockBlocklockReceiver contract and check it is fulfilled by blocklock agent
-        const blockHeight = BigInt(await provider.getBlockNumber() + 6);
-        const msg = ethers.parseEther("4");
-        const abiCoder = AbiCoder.defaultAbiCoder();
-        const msgBytes = abiCoder.encode(["uint256"], [msg]);
-        const encodedMessage = getBytes(msgBytes);
-        const conditions = {
-            blockHeight: blockHeight
-        }
-        const encodedConditions = blockHeightToBEBytes(conditions.blockHeight);
-        const ct = encrypt_towards_identity_g1(encodedMessage, encodedConditions, BLOCKLOCK_DEFAULT_PUBLIC_KEY, BLOCKLOCK_IBE_OPTS);
-
-        let tx = await mockBlocklockReceiver.connect(signer).createTimelockRequest(blockHeight, encodeCiphertextToSolidity(ct));
-        let receipt = await tx.wait(1);
-        if (!receipt) {
-            throw new Error("transaction has not been mined");
-        }
-        const reqId = await mockBlocklockReceiver.requestId();
-        console.log("Created blocklock request id on filecoin testnet", reqId);
-        console.log("is created blocklock request id inFlight?", await decryptionSender.isInFlight(reqId));
-
+        // await createTimelockRequest();
+        await replacePendingTransaction();
     } catch (error) {
         console.error("Error fetching latest block number:", error);
     }

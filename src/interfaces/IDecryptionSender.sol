@@ -95,7 +95,7 @@ interface IDecryptionSender {
      * @return A uint array representing a set containing all request ids that are yet to be fulfilled.
      */
     function getAllUnfulfilledRequestIds() external view returns (uint256[] memory);
-    
+
     /**
      * @notice Returns all the request ids where the callback reverted but a decryption key was provided, i.e., "fulfilled" but still in flight.
      * @return A uint array representing a set containing all request ids with reverting callbacks.
