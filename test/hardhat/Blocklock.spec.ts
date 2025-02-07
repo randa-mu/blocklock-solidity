@@ -646,5 +646,6 @@ describe("BlocklockSender", function () {
     );
 
     expect(await decryptionSender.hasErrored(requestID)).to.be.equal(true);
+    expect((await decryptionSender.getRequest(requestID)).isFulfilled).to.be.equal(false);
   });
 });

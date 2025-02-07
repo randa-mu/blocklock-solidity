@@ -245,6 +245,10 @@ contract DecryptionSender is
         return unfulfilledRequestIds.values();
     }
 
+    function getAllErroredRequestIds() external view returns (uint256[] memory) {
+        return erroredRequestIds.values();
+    }
+
     function getCountOfUnfulfilledRequestIds() external view returns (uint256) {
         return unfulfilledRequestIds.length();
     }
