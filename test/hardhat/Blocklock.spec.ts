@@ -619,6 +619,9 @@ describe("BlocklockSender", function () {
 
     const decryption_key = preprocess_decryption_key_g1(parsedCiphertext, { x: sig[0], y: sig[1] }, BLOCKLOCK_IBE_OPTS);
 
+    expect(await decryptionSender.hasErrored(requestID)).to.be.equal(false);
+    expect(await decryptionSender.isInFlight(requestID)).to.be.equal(true);
+
     tx = await decryptionSender.connect(owner).fulfilDecryptionRequest(requestID, decryption_key, sigBytes);
     receipt = await tx.wait(1);
     if (!receipt) {
