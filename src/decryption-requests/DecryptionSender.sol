@@ -223,7 +223,7 @@ contract DecryptionSender is
      * @dev See {IDecryptionSender-isInFlight}.
      */
     function isInFlight(uint256 requestID) public view returns (bool) {
-        return unfulfilledRequestIds.contains(requestID);
+        return unfulfilledRequestIds.contains(requestID) || erroredRequestIds.contains(requestID);
     }
 
     function hasErrored(uint256 requestID) public view returns (bool) {
