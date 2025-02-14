@@ -26,7 +26,7 @@ This library is designed with modularity and simplicity in mind, allowing develo
 | MockBlocklockReceiver | 0x6f637EcB3Eaf8bEd0fc597Dc54F477a33BBCA72B   | Filecoin Testnet |
 
 
-### Using the Solidity Interfaces
+### Using the Solidity Interfaces
 
 #### Installation
 
