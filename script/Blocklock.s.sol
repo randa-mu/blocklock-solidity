@@ -15,19 +15,6 @@ import {TypesLib} from "../src/libraries/TypesLib.sol";
 import {UUPSProxy} from "../src/proxy/UUPSProxy.sol";
 
 contract BlocklockScript is Script {
-    BlocklockSignatureScheme blocklockSignatureScheme;
-    SignatureSchemeAddressProvider signatureSchemeAddressProvider;
-
-    UUPSProxy decryptionSenderProxy;
-    DecryptionSender decryptionSenderImplementation;
-    DecryptionSender decryptionSenderInstance;
-
-    UUPSProxy blocklockSenderProxy;
-    BlocklockSender blocklockSenderImplementation;
-    BlocklockSender blocklockSenderInstance;
-
-    MockBlocklockReceiver mockBlocklockReceiver;
-
     string SCHEME_ID = "BN254-BLS-BLOCKLOCK";
 
     BLS.PointG2 pk = BLS.PointG2({
@@ -43,38 +30,37 @@ contract BlocklockScript is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-
         vm.startBroadcast(deployerPrivateKey);
 
         address admin = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
 
-        SignatureSchemeAddressProvider sigAddrProvider = new SignatureSchemeAddressProvider(admin);
-        BlocklockSignatureScheme tlockScheme = new BlocklockSignatureScheme();
-        sigAddrProvider.updateSignatureScheme(SCHEME_ID, address(tlockScheme));
+        SignatureSchemeAddressProvider signatureSchemeAddressProvider = new SignatureSchemeAddressProvider(admin);
+        BlocklockSignatureScheme blocklockSignatureScheme = new BlocklockSignatureScheme();
+        signatureSchemeAddressProvider.updateSignatureScheme(SCHEME_ID, address(blocklockSignatureScheme));
 
-        console.log("\nSignatureSchemeAddressProvider contract deployed to: ", address(sigAddrProvider));
+        console.log("\nSignatureSchemeAddressProvider contract deployed to: ", address(signatureSchemeAddressProvider));
 
-        console.log("BlocklockSignatureScheme contract deployed to: ", address(tlockScheme));
+        console.log("BlocklockSignatureScheme contract deployed to: ", address(blocklockSignatureScheme));
 
-        decryptionSenderImplementation = new DecryptionSender();
+        DecryptionSender decryptionSenderImplementation = new DecryptionSender();
         console.log("\nDecryptionSender implementation contract deployed at: ", address(decryptionSenderImplementation));
 
-        decryptionSenderProxy = new UUPSProxy(address(decryptionSenderImplementation), "");
+        UUPSProxy decryptionSenderProxy = new UUPSProxy(address(decryptionSenderImplementation), "");
         console.log("DecryptionSender proxy contract deployed at: ", address(decryptionSenderProxy));
 
-        blocklockSenderImplementation = new BlocklockSender();
+        BlocklockSender blocklockSenderImplementation = new BlocklockSender();
         console.log("\nBlocklockSender implementation contract deployed at: ", address(blocklockSenderImplementation));
 
-        blocklockSenderProxy = new UUPSProxy(address(blocklockSenderImplementation), "");
+        UUPSProxy blocklockSenderProxy = new UUPSProxy(address(blocklockSenderImplementation), "");
         console.log("BlocklockSender proxy contract deployed at: ", address(blocklockSenderProxy));
 
-        decryptionSenderInstance = DecryptionSender(address(decryptionSenderProxy));
-        blocklockSenderInstance = BlocklockSender(address(blocklockSenderProxy));
+        DecryptionSender decryptionSender = DecryptionSender(address(decryptionSenderProxy));
+        BlocklockSender blocklockSender = BlocklockSender(address(blocklockSenderProxy));
 
-        decryptionSenderInstance.initialize(pk.x, pk.y, admin, address(sigAddrProvider));
-        blocklockSenderInstance.initialize(admin, address(decryptionSenderProxy));
+        decryptionSender.initialize(pk.x, pk.y, admin, address(signatureSchemeAddressProvider));
+        blocklockSender.initialize(admin, address(decryptionSenderProxy));
 
-        mockBlocklockReceiver = new MockBlocklockReceiver(address(blocklockSenderProxy));
+        MockBlocklockReceiver mockBlocklockReceiver = new MockBlocklockReceiver(address(blocklockSenderProxy));
         console.log("\nMockBlocklockReceiver deployed at: ", address(mockBlocklockReceiver));
 
         vm.stopBroadcast();
