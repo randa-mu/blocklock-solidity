@@ -12,13 +12,16 @@ import {BLS} from "../../src/libraries/BLS.sol";
 import {TypesLib} from "../../src/libraries/TypesLib.sol";
 import {UUPSProxy} from "../../src/proxy/UUPSProxy.sol";
 
+import {MockBlocklockReceiver} from "../../src/mocks/MockBlocklockReceiver.sol";
+
 contract SimpleAuctionTest is Test {
     UUPSProxy decryptionSenderProxy;
     UUPSProxy blocklockSenderProxy;
 
     SignatureSender public sigSender;
     DecryptionSender public decryptionSender;
-    BlocklockSender public tlock;
+    BlocklockSender public blocklock;
+    MockBlocklockReceiver public mockBlocklockReceiver;
 
     string SCHEME_ID = "BN254-BLS-BLOCKLOCK";
 
@@ -26,9 +29,9 @@ contract SimpleAuctionTest is Test {
 
     address owner;
 
-    // create ciphertexts
-    // e.g., 3 ether - 3000000000000000000 wei
-    TypesLib.Ciphertext sealedBidBidder1 = TypesLib.Ciphertext({
+    uint plaintext = 3 ether;
+
+    TypesLib.Ciphertext ciphertext = TypesLib.Ciphertext({
         u: BLS.PointG2({
             x: [
                 14142380308423906610328325205633754694002301558654408701934220147059967542660,
@@ -42,9 +45,9 @@ contract SimpleAuctionTest is Test {
         v: hex"63f745f4240f4708db37b0fa0e40309a37ab1a65f9b1be4ac716a347d4fe57fe",
         w: hex"e8aadd66a9a67c00f134b1127b7ef85046308c340f2bb7cee431bd7bfe950bd4"
     });
-    bytes signatureBidder1 =
+    bytes signature =
         hex"02b3b2fa2c402d59e22a2f141e32a092603862a06a695cbfb574c440372a72cd0636ba8092f304e7701ae9abe910cb474edf0408d9dd78ea7f6f97b7f2464711";
-    bytes decryptionKeyBidder1 = hex"7ec49d8f06b34d8d6b2e060ea41652f25b1325fafb041bba9cf24f094fbca259";
+    bytes decryptionKey = hex"7ec49d8f06b34d8d6b2e060ea41652f25b1325fafb041bba9cf24f094fbca259";
 
     function setUp() public {
         owner = vm.addr(1);
@@ -52,8 +55,8 @@ contract SimpleAuctionTest is Test {
         vm.startPrank(owner);
 
         SignatureSchemeAddressProvider sigAddrProvider = new SignatureSchemeAddressProvider(owner);
-        BlocklockSignatureScheme tlockScheme = new BlocklockSignatureScheme();
-        sigAddrProvider.updateSignatureScheme(SCHEME_ID, address(tlockScheme));
+        BlocklockSignatureScheme blocklockScheme = new BlocklockSignatureScheme();
+        sigAddrProvider.updateSignatureScheme(SCHEME_ID, address(blocklockScheme));
 
         BLS.PointG2 memory pk = BLS.PointG2({
             x: [
@@ -80,19 +83,84 @@ contract SimpleAuctionTest is Test {
 
         // wrap proxy address in implementation ABI to support delegate calls
         decryptionSender = DecryptionSender(address(decryptionSenderProxy));
-        tlock = BlocklockSender(address(blocklockSenderProxy));
+        blocklock = BlocklockSender(address(blocklockSenderProxy));
 
         // initialize the contracts
         decryptionSender.initialize(pk.x, pk.y, owner, address(sigAddrProvider));
-        tlock.initialize(owner, address(decryptionSender));
+        blocklock.initialize(owner, address(decryptionSender));
 
+        mockBlocklockReceiver = new MockBlocklockReceiver(address(blocklockSenderProxy));
         vm.stopPrank();
     }
 
     function test_DeploymentConfigurations() public view {
         assertTrue(decryptionSender.hasRole(ADMIN_ROLE, owner));
-        assert(address(tlock) != address(0));
+        assert(address(blocklock) != address(0));
         assert(address(decryptionSender) != address(0));
         assert(address(sigSender) != address(0));
+    }
+
+    function test_FulfilledBlocklockRequest() public {
+        assert(mockBlocklockReceiver.plainTextValue() == 0);
+        assert(mockBlocklockReceiver.requestId() == 0);
+
+        uint requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
+
+        vm.startPrank(owner);
+
+        decryptionSender.fulfilDecryptionRequest(requestId, decryptionKey, signature);
+
+        assert(mockBlocklockReceiver.plainTextValue() == plaintext);
+        assert(mockBlocklockReceiver.requestId() == 1);
+        vm.stopPrank();
+    }   
+
+    function test_UnauthorisedCaller() public {
+        assert(mockBlocklockReceiver.plainTextValue() == 0);
+        assert(mockBlocklockReceiver.requestId() == 0);
+
+        uint requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
+
+        vm.startPrank(owner);
+        vm.expectRevert("Only timelock contract can call this.");
+        mockBlocklockReceiver.receiveBlocklock(requestId, decryptionKey);
+
+        assert(mockBlocklockReceiver.plainTextValue() == 0);
+        assert(mockBlocklockReceiver.requestId() == 1);
+        vm.stopPrank();
+    }
+
+    function test_InvalidRequestId() public {
+        assert(mockBlocklockReceiver.plainTextValue() == 0);
+        assert(mockBlocklockReceiver.requestId() == 0);
+
+        uint requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
+
+        vm.startPrank(owner);
+
+        vm.expectRevert("No request with specified requestID");
+        decryptionSender.fulfilDecryptionRequest(requestId + 1, decryptionKey, signature);
+        
+        assert(mockBlocklockReceiver.plainTextValue() == 0);
+        assert(mockBlocklockReceiver.requestId() == 1);
+
+        vm.stopPrank();
+    }
+
+    function test_InvalidSignature() public {
+        assert(mockBlocklockReceiver.plainTextValue() == 0);
+        assert(mockBlocklockReceiver.requestId() == 0);
+
+        uint requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
+
+        vm.startPrank(owner);
+        bytes memory invalidSignature =
+        hex"02a3b2fa2c402d59e22a2f141e32a092603862a06a695cbfb574c440372a72cd0636ba8092f304e7701ae9abe910cb474edf0408d9dd78ea7f6f97b7f2464711";
+        vm.expectRevert("Signature verification failed");
+        decryptionSender.fulfilDecryptionRequest(requestId, decryptionKey, invalidSignature);
+
+        assert(mockBlocklockReceiver.plainTextValue() == 0);
+        assert(mockBlocklockReceiver.requestId() == 1);
+        vm.stopPrank();
     }
 }

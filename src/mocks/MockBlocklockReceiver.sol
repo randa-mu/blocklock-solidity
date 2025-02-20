@@ -27,7 +27,7 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
         override
         onlyBlocklockContract
     {
-        require(requestID == requestId, "Invalid request id");
+        require(requestID == requestId, "Invalid request id.");
         // decrypt stored Ciphertext with decryption key
         plainTextValue = abi.decode(blocklock.decrypt(encrytpedValue, decryptionKey), (uint256));
     }
