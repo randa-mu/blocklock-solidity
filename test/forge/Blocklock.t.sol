@@ -29,7 +29,7 @@ contract SimpleAuctionTest is Test {
 
     address owner;
 
-    uint plaintext = 3 ether;
+    uint256 plaintext = 3 ether;
 
     TypesLib.Ciphertext ciphertext = TypesLib.Ciphertext({
         u: BLS.PointG2({
@@ -104,7 +104,7 @@ contract SimpleAuctionTest is Test {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
-        uint requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
 
         vm.startPrank(owner);
 
@@ -113,13 +113,13 @@ contract SimpleAuctionTest is Test {
         assert(mockBlocklockReceiver.plainTextValue() == plaintext);
         assert(mockBlocklockReceiver.requestId() == 1);
         vm.stopPrank();
-    }   
+    }
 
     function test_UnauthorisedCaller() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
-        uint requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
 
         vm.startPrank(owner);
         vm.expectRevert("Only timelock contract can call this.");
@@ -134,13 +134,13 @@ contract SimpleAuctionTest is Test {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
-        uint requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
 
         vm.startPrank(owner);
 
         vm.expectRevert("No request with specified requestID");
         decryptionSender.fulfilDecryptionRequest(requestId + 1, decryptionKey, signature);
-        
+
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 1);
 
@@ -151,11 +151,11 @@ contract SimpleAuctionTest is Test {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
-        uint requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
 
         vm.startPrank(owner);
         bytes memory invalidSignature =
-        hex"02a3b2fa2c402d59e22a2f141e32a092603862a06a695cbfb574c440372a72cd0636ba8092f304e7701ae9abe910cb474edf0408d9dd78ea7f6f97b7f2464711";
+            hex"02a3b2fa2c402d59e22a2f141e32a092603862a06a695cbfb574c440372a72cd0636ba8092f304e7701ae9abe910cb474edf0408d9dd78ea7f6f97b7f2464711";
         vm.expectRevert("Signature verification failed");
         decryptionSender.fulfilDecryptionRequest(requestId, decryptionKey, invalidSignature);
 
