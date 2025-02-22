@@ -56,7 +56,7 @@ import {AbstractBlocklockReceiver} from "blocklock-solidity/src/AbstractBlockloc
 
 ```solidity
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity ^0.8.24;
 
 import {TypesLib} from "blocklock-solidity/src/libraries/TypesLib.sol";
 import {AbstractBlocklockReceiver} from "blocklock-solidity/src/AbstractBlocklockReceiver.sol";

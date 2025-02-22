@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity ^0.8.24;
 
 import {TypesLib} from "../libraries/TypesLib.sol";
 import {AbstractBlocklockReceiver} from "../AbstractBlocklockReceiver.sol";
@@ -27,7 +27,7 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
         override
         onlyBlocklockContract
     {
-        require(requestID == requestId, "Invalid request id");
+        require(requestID == requestId, "Invalid request id.");
         // decrypt stored Ciphertext with decryption key
         plainTextValue = abi.decode(blocklock.decrypt(encrytpedValue, decryptionKey), (uint256));
     }
