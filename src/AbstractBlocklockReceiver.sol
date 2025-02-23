@@ -20,6 +20,10 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver {
         requestID = blocklockProvider.requestBlocklock(uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext);
     }
 
+    function decrypt(TypesLib.Ciphertext calldata ciphertext, bytes calldata decryptionKey) internal view returns (bytes memory){
+        return blocklockProvider.decrypt(ciphertext, decryptionKey);
+    }
+
     function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey) external virtual onlyBlocklockContract {
         onBlocklockReceived(requestID, decryptionKey);
     }
