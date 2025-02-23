@@ -16,7 +16,9 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver {
         blocklock = IBlocklockSender(blocklockSender);
     }
 
-    function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey) external virtual onlyBlocklockContract {}
+    function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey) external virtual onlyBlocklockContract {
+        onBlocklockReceived(requestID, decryptionKey);
+    }
 
     /**
      * @notice Handles the reception of a generated random value for a specific request.
