@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {IBlocklockReceiver} from "./interfaces/IBlocklockReceiver.sol";
-import {IBlocklockSender} from "./interfaces/IBlocklockSender.sol";
+import {IBlocklockSender, TypesLib} from "./interfaces/IBlocklockSender.sol";
 
 abstract contract AbstractBlocklockReceiver is IBlocklockReceiver {
     IBlocklockSender public blocklockProvider;
@@ -20,9 +20,12 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver {
         requestID = blocklockProvider.requestBlocklock(blockHeight, ciphertext);
     }
 
-    function decrypt(TypesLib.Ciphertext calldata ciphertext, bytes calldata decryptionKey) internal view returns (bytes memory){
-        return blocklockProvider.decrypt(ciphertext, decryptionKey);
-    }
+    function decrypt(TypesLib.Ciphertext calldata ciphertext, bytes calldata decryptionKey)
+        internal
+        view
+        returns (bytes memory){
+            return blocklockProvider.decrypt(ciphertext, decryptionKey);
+        }
 
     function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey) external virtual onlyBlocklockContract {
         onBlocklockReceived(requestID, decryptionKey);
