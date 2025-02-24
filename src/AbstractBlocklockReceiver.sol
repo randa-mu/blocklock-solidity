@@ -12,8 +12,8 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver {
         _;
     }
 
-    constructor(address blocklockSender) {
-        blocklockProvider = IBlocklockSender(blocklockSender);
+    constructor(address blocklockProvider) {
+        blocklockProvider = IBlocklockSender(blocklockProvider);
     }
 
     function requestBlocklock(uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext) internal returns (uint256 requestID) {
