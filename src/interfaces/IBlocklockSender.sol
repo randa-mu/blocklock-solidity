@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8;
 
-import "../libraries/TypesLib.sol";
+import {TypesLib} from "../libraries/TypesLib.sol";
 
-interface IBlocklockSender {
+import {ISubscription} from "../interfaces/ISubscription.sol";
+
+interface IBlocklockSender is ISubscription {
     /**
      * @notice Requests the generation of a blocklock decryption key at a specific blockHeight.
      * @dev Initiates a blocklock decryption key request.

@@ -17,11 +17,12 @@ import {SignatureReceiverBase} from "../signature-requests/SignatureReceiverBase
 import {DecryptionReceiverBase} from "../decryption-requests/DecryptionReceiverBase.sol";
 import {IDecryptionSender} from "../interfaces/IDecryptionSender.sol";
 
-import {console} from "forge-std/console.sol";
+import {SubscriptionAPI} from "../subscription/SubscriptionAPI.sol";
 
 contract BlocklockSender is
     IBlocklockSender,
     DecryptionReceiverBase,
+    SubscriptionAPI,
     Initializable,
     UUPSUpgradeable,
     AccessControlEnumerableUpgradeable

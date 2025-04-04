@@ -10,7 +10,6 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 import {BLS} from "../libraries/BLS.sol";
 import {TypesLib} from "../libraries/TypesLib.sol";
-import {console} from "forge-std/console.sol";
 import {BytesLib} from "../libraries/BytesLib.sol";
 
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";

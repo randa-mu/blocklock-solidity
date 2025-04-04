@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8;
 
-import "../libraries/TypesLib.sol";
+import {TypesLib} from "../libraries/TypesLib.sol";
 
 interface ISignatureSender {
     /// Setters
