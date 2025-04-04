@@ -22,14 +22,12 @@ contract RevertingReceiver is AbstractBlocklockReceiver {
         return requestId;
     }
 
-    function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey)
+    function receiveBlocklock(uint256 /*requestID*/, bytes calldata /*decryptionKey*/)
         external
+        view
         override
         onlyBlocklockContract
     {
         revert();
-        // require(requestID == requestId, "Invalid request id");
-        // // decrypt stored Ciphertext with decryption key
-        // plainTextValue = abi.decode(blocklock.decrypt(encrytpedValue, decryptionKey), (uint256));
     }
 }
