@@ -4,7 +4,7 @@ pragma solidity ^0.8;
 import {TypesLib} from "../libraries/TypesLib.sol";
 import {AbstractBlocklockReceiver} from "../AbstractBlocklockReceiver.sol";
 
-contract RevertingReceiver is AbstractBlocklockReceiver {
+contract MockBlocklockRevertingReceiver is AbstractBlocklockReceiver {
     uint256 public requestId;
     TypesLib.Ciphertext public encrytpedValue;
     uint256 public plainTextValue;
@@ -22,7 +22,7 @@ contract RevertingReceiver is AbstractBlocklockReceiver {
         return requestId;
     }
 
-    function receiveBlocklock(uint256 /*requestID*/, bytes calldata /*decryptionKey*/)
+    function receiveBlocklock(uint256, /*requestID*/ bytes calldata /*decryptionKey*/ )
         external
         view
         override

@@ -9,7 +9,7 @@ import {
 import {
   MockBlocklockReceiver,
   MockBlocklockStringReceiver,
-  RevertingReceiver,
+  MockBlocklockRevertingReceiver,
   SignatureSchemeAddressProvider,
   SignatureSender,
   BlocklockSender,
@@ -156,7 +156,7 @@ describe("BlocklockSender", function () {
   let decryptionSender: DecryptionSender;
   let schemeProvider: SignatureSchemeAddressProvider;
   let blocklockScheme: BlocklockSignatureScheme;
-  let revertingReceiver: RevertingReceiver;
+  let blocklockRevertingReceiver: MockBlocklockRevertingReceiver;
 
   let owner: Signer;
 
@@ -211,7 +211,7 @@ describe("BlocklockSender", function () {
     ]);
     await blocklockStringReceiver.waitForDeployment();
 
-    revertingReceiver = await ethers.deployContract("RevertingReceiver", [await blocklock.getAddress()]);
+    blocklockRevertingReceiver = await ethers.deployContract("MockBlocklockRevertingReceiver", [await blocklock.getAddress()]);
   });
 
   async function encryptAndRegister(
@@ -581,7 +581,7 @@ describe("BlocklockSender", function () {
 
     const ct = encrypt(encodedMessage, BigInt(blockHeight + 2), BLOCKLOCK_DEFAULT_PUBLIC_KEY);
 
-    let tx = await revertingReceiver
+    let tx = await blocklockRevertingReceiver
       .connect(owner)
       .createTimelockRequest(BigInt(blockHeight + 2), encodeCiphertextToSolidity(ct));
     let receipt = await tx.wait(1);
