@@ -22,10 +22,9 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
         return requestId;
     }
 
-    function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey)
-        external
+    function _onBlocklockReceived(uint256 requestID, bytes calldata decryptionKey)
+        internal
         override
-        onlyBlocklockContract
     {
         require(requestID == requestId, "Invalid request id.");
         // decrypt stored Ciphertext with decryption key

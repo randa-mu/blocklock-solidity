@@ -16,19 +16,14 @@ contract MockBlocklockStringReceiver is AbstractBlocklockReceiver {
         returns (uint256)
     {
         // create timelock request
-        requestId = blocklock.requestBlocklock(decryptionBlockNumber, encryptedData);
+        requestId = requestBlocklock(decryptionBlockNumber, encryptedData);
         // store Ciphertext
         encrytpedValue = encryptedData;
         return requestId;
     }
 
-    function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey)
-        external
-        override
-        onlyBlocklockContract
-    {
+    function _onBlocklockReceived(uint256 requestID, bytes calldata decryptionKey) internal override {
         require(requestID == requestId, "Invalid request id");
-        // decrypt stored Ciphertext with decryption key
-        plainTextValue = abi.decode(blocklock.decrypt(encrytpedValue, decryptionKey), (string));
+        plainTextValue = abi.decode(decrypt(encrytpedValue, decryptionKey), (string));
     }
 }

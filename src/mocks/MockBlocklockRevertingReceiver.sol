@@ -22,11 +22,10 @@ contract MockBlocklockRevertingReceiver is AbstractBlocklockReceiver {
         return requestId;
     }
 
-    function receiveBlocklock(uint256, /*requestID*/ bytes calldata /*decryptionKey*/ )
-        external
-        view
+    function _onBlocklockReceived(uint256, /*requestID*/ bytes calldata /*decryptionKey*/ )
+        internal
+        pure
         override
-        onlyBlocklockContract
     {
         revert();
     }
