@@ -10,7 +10,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     IBlocklockSender public blocklock;
 
     /// @notice The Randamu subscription ID used for conditional encryption.
-    /// @dev Used in interactions with IBlocklockSender for subscription management, e.g., 
+    /// @dev Used in interactions with IBlocklockSender for subscription management, e.g.,
     /// @dev funding and consumer contract address registration.
     uint256 public subscriptionId;
 

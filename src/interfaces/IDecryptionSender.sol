@@ -7,13 +7,13 @@ import {TypesLib} from "../libraries/TypesLib.sol";
 interface IDecryptionSender {
     /// Setters
 
-    /// @notice Registers a Ciphertext and associated conditions for decryption
-    /// @notice creation of the `Ciphertext` and `conditions` bytes will be managed by a javascript client library off-chain
-    /// @dev The creation of `Ciphertext` and `conditions` bytes will be managed by the JavaScript client library
+    /// @notice Registers a Ciphertext and associated condition for decryption
+    /// @notice creation of the `Ciphertext` and `condition` bytes will be managed by a javascript client library off-chain
+    /// @dev The creation of `Ciphertext` and `condition` bytes will be managed by the JavaScript client library
     /// @param ciphertext The encrypted data to be registered
-    /// @param conditions The conditions that need to be met to decrypt the ciphertext
+    /// @param condition The condition that need to be met to decrypt the ciphertext
     /// @return requestID The unique ID assigned to the registered decryption request
-    function registerCiphertext(string calldata schemeID, bytes calldata ciphertext, bytes calldata conditions)
+    function registerCiphertext(string calldata schemeID, bytes calldata ciphertext, bytes calldata condition)
         external
         returns (uint256 requestID);
 

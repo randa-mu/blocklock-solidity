@@ -24,9 +24,7 @@ import {ISignatureSender} from "../interfaces/ISignatureSender.sol";
 import {ISignatureScheme} from "../interfaces/ISignatureScheme.sol";
 import {ISignatureSchemeAddressProvider} from "../interfaces/ISignatureSchemeAddressProvider.sol";
 
-/// @notice Smart Contract for Conditional Threshold Signing of messages sent within signature requests.
-/// by contract addresses implementing the SignatureReceiverBase abstract contract which implements the ISignatureReceiver interface.
-/// @notice Signature requests can also be made for requests requiring immediate signing of messages as the conditions are optional.
+/// fixme update natspec
 contract DecryptionSender is
     IDecryptionSender,
     Multicall,

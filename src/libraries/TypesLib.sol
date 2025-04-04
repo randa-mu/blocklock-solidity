@@ -39,4 +39,27 @@ library TypesLib {
         address callback;
         bool isFulfilled;
     }
+
+    // fixme replace existing structs in blocklockSender and decryptionSender
+    struct BlocklockRequestV2 {
+        uint256 subId; // new // 0 for direct funding
+        uint256 directFundingPayment; // new // > 0 for direct funding or if subId == 0
+        uint256 decryptionRequestID;
+        uint256 blockHeight;
+        Ciphertext ciphertext;
+        bytes signature;
+        bytes decryptionKey;
+        address callback;
+    }
+
+    struct DecryptionRequestV2 {
+        string schemeID; // signature scheme id, e.g., "BN254", "BLS12-381", "TESS"
+        bytes ciphertext;
+        bytes condition;
+        bytes decryptionKey;
+        bytes signature;
+        address callback;
+        uint32 callbackGasLimit; // new // fixme use in offchain agent / oracle for callback gasLimit
+        bool isFulfilled;
+    }
 }

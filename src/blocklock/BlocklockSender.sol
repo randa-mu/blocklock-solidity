@@ -17,12 +17,12 @@ import {SignatureReceiverBase} from "../signature-requests/SignatureReceiverBase
 import {DecryptionReceiverBase} from "../decryption-requests/DecryptionReceiverBase.sol";
 import {IDecryptionSender} from "../interfaces/IDecryptionSender.sol";
 
-import {SubscriptionAPI} from "../subscription/SubscriptionAPI.sol";
+import {BlocklockFeeCollector} from "./BlocklockFeeCollector.sol";
 
 contract BlocklockSender is
     IBlocklockSender,
     DecryptionReceiverBase,
-    SubscriptionAPI,
+    BlocklockFeeCollector,
     Initializable,
     UUPSUpgradeable,
     AccessControlEnumerableUpgradeable
@@ -79,7 +79,10 @@ contract BlocklockSender is
      */
     function requestBlocklock(uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext)
         external
-        returns (uint256)
+        returns (
+            // payable // fixme uncommend code
+            uint256
+        )
     {
         require(blockHeight > block.number, "blockHeight must be strictly greater than current");
 
@@ -92,10 +95,16 @@ contract BlocklockSender is
             callback: msg.sender
         });
 
-        // New decryption request
-        bytes memory conditions = abi.encode(blockHeight);
+        // fixme uncomment code
+        // subId can be zero for direct funding or non zero for active subscription
+        // callbackGasLimit can be zero but user will not get anything in callback. Only signature verification in
+        // decryption sender will be done and decryption key saved
+        // _validateAndUpdateSubscription(callbackGasLimit, subId);
 
-        uint256 decryptionRequestID = decryptionSender.registerCiphertext(SCHEME_ID, abi.encode(ciphertext), conditions);
+        // New decryption request
+        bytes memory condition = abi.encode(blockHeight);
+
+        uint256 decryptionRequestID = decryptionSender.registerCiphertext(SCHEME_ID, abi.encode(ciphertext), condition);
         r.decryptionRequestID = decryptionRequestID;
 
         // Store the signature requestID for this blockHeight
@@ -103,6 +112,38 @@ contract BlocklockSender is
 
         emit BlocklockRequested(decryptionRequestID, blockHeight, ciphertext, msg.sender, block.timestamp);
         return decryptionRequestID;
+    }
+
+    // fixme natspec
+    function _validateAndUpdateSubscription(uint32 _callbackGasLimit, uint256 _subId) internal {
+        // fixme test subId always > 0 for createSubscription() in SubscriptionAPI
+        uint32 callbackGasLimit = 0;
+        if (_subId > 0) {
+            _requireValidSubscription(s_subscriptionConfigs[_subId].owner);
+            // Its important to ensure that the consumer is in fact who they say they
+            // are, otherwise they could use someone else's subscription balance.
+            mapping(uint256 => ConsumerConfig) storage consumerConfigs = s_consumers[msg.sender];
+
+            ConsumerConfig memory consumerConfig = consumerConfigs[_subId];
+            require(consumerConfig.active, "No valid active subscription for caller");
+
+            ++consumerConfig.nonce;
+            ++consumerConfig.pendingReqCount;
+            consumerConfigs[_subId] = consumerConfig;
+
+            callbackGasLimit = _callbackGasLimit;
+        } else {
+            uint32 eip150Overhead = _getEIP150Overhead(_callbackGasLimit);
+            uint256 price = _calculateRequestPriceNative(_callbackGasLimit, tx.gasprice);
+            callbackGasLimit = _callbackGasLimit + eip150Overhead;
+
+            require(msg.value >= price, "Fee too low");
+        }
+
+        // No lower bound on the requested gas limit. A user could request 0
+        // and they would simply be billed for the signature verification and wouldn't be
+        // able to do anything with the decryption key.
+        require(callbackGasLimit <= s_config.maxGasLimit, "Callback gasLimit too high");
     }
 
     /**
@@ -179,11 +220,83 @@ contract BlocklockSender is
         emit DecryptionSenderUpdated(newDecryptionSender);
     }
 
+    /// @notice disable this contract so that new requests will be rejected. When disabled, new requests
+    /// @notice will revert but existing requests can still be fulfilled.
+    function disable() external override onlyOwner {
+        s_disabled = true;
+
+        emit Disabled();
+    }
+
+    /// @notice Enables the contract, allowing new requests to be accepted.
+    /// @dev Can only be called by an admin.
+    function enable() external override onlyOwner {
+        s_disabled = false;
+        emit Enabled();
+    }
+
+    /**
+     * @dev See {BlocklockFeeCollector-setConfig}.
+     */
+    function setConfig(
+        uint32 maxGasLimit,
+        uint32 gasAfterPaymentCalculation,
+        uint32 fulfillmentFlatFeeNativePPM,
+        uint8 nativePremiumPercentage
+    ) external override onlyOwner {
+        require(nativePremiumPercentage > PREMIUM_PERCENTAGE_MAX, "Invalid Premium Percentage");
+
+        s_config = Config({
+            maxGasLimit: maxGasLimit,
+            gasAfterPaymentCalculation: gasAfterPaymentCalculation,
+            fulfillmentFlatFeeNativePPM: fulfillmentFlatFeeNativePPM,
+            nativePremiumPercentage: nativePremiumPercentage
+        });
+
+        s_configured = true;
+
+        emit ConfigSet(maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage);
+    }
+
+    /// @notice Owner cancel subscription, sends remaining native tokens directly to the subscription owner.
+    /// @param subId subscription id
+    /// @dev notably can be called even if there are pending requests, outstanding ones may fail onchain
+    function ownerCancelSubscription(uint256 subId) external override onlyOwner {
+        address subOwner = s_subscriptionConfigs[subId].owner;
+        _requireValidSubscription(subOwner);
+        _cancelSubscriptionHelper(subId, subOwner);
+    }
+
+    /// @notice withdraw native earned through fulfilling requests
+    /// @param recipient where to send the funds
+    function withdrawNative(address payable recipient) external override nonReentrant onlyOwner {
+        uint96 amount = s_withdrawableNative;
+        _requireSufficientBalance(amount > 0);
+        // Prevent re-entrancy by updating state before transfer.
+        s_withdrawableNative = 0;
+        s_totalNativeBalance -= amount;
+        _mustSendNative(recipient, amount);
+    }
+
+    function _handlePaymentAndCharge(uint256 requestId, uint256 startGas) internal override {
+        // fixme uncomment code
+        // TypesLib.BlocklockRequest memory request = getRequest(requestId);
+        // if (request.subId > 0) {
+        //     ++s_subscriptions[request.subId].reqCount;
+        //     --s_consumers[request.callback][request.subId].pendingReqCount;
+
+        //     uint96 payment = _calculatePaymentAmountNative(startGas, tx.gasprice);
+        //     _chargePayment(payment, request.subId);
+        // } else {
+        //     _chargePayment(uint96(request.directFundingPayment), request.subId);
+        // }
+    }
+
     /**
      * @dev See {ISignatureSender-isInFlight}.
      */
     function isInFlight(uint256 requestID) external view returns (bool) {
-        uint256 signatureRequestID = blocklockRequestsWithDecryptionKey[requestID].decryptionRequestID;
+        uint256 signatureRequestID = getRequest(requestID).decryptionRequestID;
 
         if (signatureRequestID == 0) {
             return false;
@@ -195,7 +308,7 @@ contract BlocklockSender is
     /**
      * @dev See {IBlocklockSender-getRequest}.
      */
-    function getRequest(uint256 requestID) external view returns (TypesLib.BlocklockRequest memory) {
+    function getRequest(uint256 requestID) public view returns (TypesLib.BlocklockRequest memory) {
         TypesLib.BlocklockRequest memory r = blocklockRequestsWithDecryptionKey[requestID];
         require(r.decryptionRequestID > 0, "invalid requestID");
 

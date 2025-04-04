@@ -22,11 +22,7 @@ contract MockBlocklockRevertingReceiver is AbstractBlocklockReceiver {
         return requestId;
     }
 
-    function _onBlocklockReceived(uint256, /*requestID*/ bytes calldata /*decryptionKey*/ )
-        internal
-        pure
-        override
-    {
+    function _onBlocklockReceived(uint256, /*requestID*/ bytes calldata /*decryptionKey*/ ) internal pure override {
         revert();
     }
 }
