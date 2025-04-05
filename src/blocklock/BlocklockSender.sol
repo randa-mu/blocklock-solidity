@@ -412,5 +412,5 @@ contract BlocklockSender is
         // _chargePayment(uint96(msg.value), 0);
     }
 
-    function retryCallbackWithSubscription(uint256 requestID, uint32 newCallbackGasLimit) external payable {}
+    function retryCallbackWithSubscription(uint256 requestID, uint32 newCallbackGasLimit) external {}
 }
