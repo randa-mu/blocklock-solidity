@@ -8,6 +8,8 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 import {BLS} from "../libraries/BLS.sol";
 import {TypesLib} from "../libraries/TypesLib.sol";
 import {BytesLib} from "../libraries/BytesLib.sol";
@@ -27,6 +29,7 @@ import {ISignatureSchemeAddressProvider} from "../interfaces/ISignatureSchemeAdd
 /// fixme update natspec
 contract DecryptionSender is
     IDecryptionSender,
+    ReentrancyGuard,
     Multicall,
     Initializable,
     UUPSUpgradeable,
@@ -139,11 +142,19 @@ contract DecryptionSender is
         return lastRequestID;
     }
 
+    // fixme rename to fulfillDecryptionRequest and update natspec
+    // when fulfilling decryption request, blocklocksender will use gas limit specified by user
+    // with some overhead for decryptionsender and blocklocksender logic and event emission
+    // it will only work if blocklocksender is able to charge in callback to receiveBlocklock selector
+    // in subscribers or direct funders contracts
+    // and decryptionsender only knows about callbackgaslimit not subscription id
+    // blocklocksender handles subscription ids and fee collection from consumer contracts
     /**
      * @dev See {IDecryptionSender-fulfilSignatureRequest}.
      */
     function fulfilDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
         external
+        nonReentrant
         onlyOwner
     {
         require(isInFlight(requestID), "No request with specified requestID");
@@ -163,6 +174,11 @@ contract DecryptionSender is
                 IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature
             )
         );
+        // fixme uncomment code
+        // bytes memory response =
+        //     abi.encodeWithSelector(IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature);
+
+        // bool success = _callWithExactGas(request.callbackGasLimit, request.callback, response);
 
         requests[requestID].decryptionKey = decryptionKey;
         requests[requestID].signature = signature;

@@ -80,7 +80,8 @@ contract BlocklockSender is
     function requestBlocklock(uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext)
         external
         returns (
-            // payable // fixme uncommend code
+            // payable // fixme uncomment code
+            // onlyConfiguredNotDisabled // fixme uncomment code
             uint256
         )
     {
@@ -153,6 +154,9 @@ contract BlocklockSender is
         internal
         override
     {
+        // fixme uncomment code
+        // uint256 startGas = gasleft();
+
         TypesLib.BlocklockRequest memory r = blocklockRequestsWithDecryptionKey[decryptionRequestID];
         require(r.decryptionRequestID > 0, "no matching blocklock request for that id");
 
@@ -162,13 +166,33 @@ contract BlocklockSender is
             abi.encodeWithSelector(IBlocklockReceiver.receiveBlocklock.selector, decryptionRequestID, decryptionKey)
         );
 
+        // fixme uncomment code
+        // fixme ensure _handlePaymentAndCharge is called in both if else cases to charge before revert
         if (!success) {
+            // _handlePaymentAndCharge(decryptionRequestID, startGas);
             revert BlocklockCallbackFailed(decryptionRequestID);
         } else {
             emit BlocklockCallbackSuccess(decryptionRequestID, r.blockHeight, r.ciphertext, decryptionKey);
             blocklockRequestsWithDecryptionKey[decryptionRequestID].decryptionKey = decryptionKey;
             blocklockRequestsWithDecryptionKey[decryptionRequestID].signature = signature;
+            // _handlePaymentAndCharge(decryptionRequestID, startGas);
         }
+    }
+
+    // fixme natspec
+    function _handlePaymentAndCharge(uint256 requestId, uint256 startGas) internal override {
+        // fixme uncomment code
+        // TypesLib.BlocklockRequest memory request = getRequest(requestId);
+
+        // if (request.subId > 0) {
+        //     ++s_subscriptions[request.subId].reqCount;
+        //     --s_consumers[request.callback][request.subId].pendingReqCount;
+
+        //     uint96 payment = _calculatePaymentAmountNative(startGas, tx.gasprice);
+        //     _chargePayment(payment, request.subId);
+        // } else {
+        //     _chargePayment(uint96(request.directFundingPayment), request.subId);
+        // }
     }
 
     /**
@@ -258,6 +282,24 @@ contract BlocklockSender is
         emit ConfigSet(maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage);
     }
 
+    function getConfig()
+        external
+        view
+        returns (
+            uint32 maxGasLimit,
+            uint32 gasAfterPaymentCalculation,
+            uint32 fulfillmentFlatFeeNativePPM,
+            uint8 nativePremiumPercentage
+        )
+    {
+        return (
+            s_config.maxGasLimit,
+            s_config.gasAfterPaymentCalculation,
+            s_config.fulfillmentFlatFeeNativePPM,
+            s_config.nativePremiumPercentage
+        );
+    }
+
     /// @notice Owner cancel subscription, sends remaining native tokens directly to the subscription owner.
     /// @param subId subscription id
     /// @dev notably can be called even if there are pending requests, outstanding ones may fail onchain
@@ -276,20 +318,6 @@ contract BlocklockSender is
         s_withdrawableNative = 0;
         s_totalNativeBalance -= amount;
         _mustSendNative(recipient, amount);
-    }
-
-    function _handlePaymentAndCharge(uint256 requestId, uint256 startGas) internal override {
-        // fixme uncomment code
-        // TypesLib.BlocklockRequest memory request = getRequest(requestId);
-        // if (request.subId > 0) {
-        //     ++s_subscriptions[request.subId].reqCount;
-        //     --s_consumers[request.callback][request.subId].pendingReqCount;
-
-        //     uint96 payment = _calculatePaymentAmountNative(startGas, tx.gasprice);
-        //     _chargePayment(payment, request.subId);
-        // } else {
-        //     _chargePayment(uint96(request.directFundingPayment), request.subId);
-        // }
     }
 
     /**
@@ -321,4 +349,68 @@ contract BlocklockSender is
     function version() external pure returns (string memory) {
         return "0.0.1";
     }
+
+    // fixme review and modify code for retry
+    // if we allow users call retry, why should they bother calling it and paying when they can simply read
+    // the request data from blocklocksender or decryptionsender?
+    // chainlinkvrf does not have retry.
+    // In chainlink vrfwrapperpluswrapper, for failed callbacks, nothing is stored in the contract, only
+    // event emitted and callback is deleted at the start of the function call
+    // in chainlink vrf coordinator, function fulfillRandomWords(, keys are deleted and no success checks
+    // they simply emit event with whatever the success bool was.
+    // delete s_requestCommitments[output.requestId];
+    // bool success = _deliverRandomness(output.requestId, rc, randomWords);
+    /*
+    function fulfillRandomWords(uint256 _requestId, uint256[] calldata _randomWords) internal override {
+    Callback memory callback = s_callbacks[_requestId];
+    delete s_callbacks[_requestId];
+
+    address callbackAddress = callback.callbackAddress;
+    // solhint-disable-next-line gas-custom-errors
+    require(callbackAddress != address(0), "request not found"); // This should never happen
+
+    VRFV2PlusWrapperConsumerBase c;
+    bytes memory resp = abi.encodeWithSelector(c.rawFulfillRandomWords.selector, _requestId, _randomWords);
+
+    bool success = _callWithExactGas(callback.callbackGasLimit, callbackAddress, resp);
+    if (!success) {
+      emit WrapperFulfillmentFailed(_requestId, callbackAddress);
+    }
+    }
+    */
+
+    /// @notice Allows any direct funding request owner/callback to retry
+    /// a failed callback for a direct funding request.
+    /// @dev The caller must pay the gas cost for retrying the callback execution.
+    ///      Ensures that a failed callback exists and that sufficient funds are provided.
+    /// @param requestID The ID of the failed decryption request.
+    /// @param newCallbackGasLimit The new gas limit for retrying the callback.
+    function retryCallbackWithDirectFunding(uint256 requestID, uint32 newCallbackGasLimit) external payable {
+        // require(hasErrored(requestID), "No failed callback with specified requestID");
+
+        // uint256 requestPrice = calculateRequestPriceNative(newCallbackGasLimit);
+        // require(msg.value >= requestPrice, "Insufficient native token for retry");
+
+        // TypesLib.DecryptionRequest memory request = requests[requestID];
+
+        // bytes memory response =
+        //     abi.encodeWithSelector(IDecryptionReceiver.receiveDecryptionKey.selector, requestID, request.decryptionKey);
+
+        // bool success = _callWithExactGas(request.callbackGasLimit, request.callback, response);
+
+        // if (!success) {
+        //     emit DecryptionReceiverCallbackFailed(requestID, request.subId, request.callback);
+        // } else {
+        //     erroredRequestIds.remove(requestID);
+        //     fulfilledRequestIds.add(requestID);
+        //     emit DecryptionReceiverCallbackSuccess(
+        //         requestID, request.subId, request.callback, request.decryptionKey, request.signature
+        //     );
+        // }
+
+        // // Collect direct funding payment
+        // _chargePayment(uint96(msg.value), 0);
+    }
+
+    function retryCallbackWithSubscription(uint256 requestID, uint32 newCallbackGasLimit) external payable {}
 }
