@@ -211,7 +211,9 @@ describe("BlocklockSender", function () {
     ]);
     await blocklockStringReceiver.waitForDeployment();
 
-    blocklockRevertingReceiver = await ethers.deployContract("MockBlocklockRevertingReceiver", [await blocklock.getAddress()]);
+    blocklockRevertingReceiver = await ethers.deployContract("MockBlocklockRevertingReceiver", [
+      await blocklock.getAddress(),
+    ]);
   });
 
   async function encryptAndRegister(

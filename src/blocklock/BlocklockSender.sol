@@ -126,7 +126,7 @@ contract BlocklockSender is
             mapping(uint256 => ConsumerConfig) storage consumerConfigs = s_consumers[msg.sender];
 
             ConsumerConfig memory consumerConfig = consumerConfigs[_subId];
-            require(consumerConfig.active, "No valid active subscription for caller");
+            require(consumerConfig.active, "No active subscription for caller");
 
             ++consumerConfig.nonce;
             ++consumerConfig.pendingReqCount;
@@ -158,7 +158,7 @@ contract BlocklockSender is
         // uint256 startGas = gasleft();
 
         TypesLib.BlocklockRequest memory r = blocklockRequestsWithDecryptionKey[decryptionRequestID];
-        require(r.decryptionRequestID > 0, "no matching blocklock request for that id");
+        require(r.decryptionRequestID > 0, "No request for request id");
 
         r.signature = signature;
 

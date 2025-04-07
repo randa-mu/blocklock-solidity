@@ -104,7 +104,7 @@ For example, running the following command writes a JSON property `{"signatureSc
 forge script script/single-deployments/DeploySignatureSchemeAddressProvider.s.sol:DeploySignatureSchemeAddressProvider --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 ```
 
-Which is used by the [DeployBlocklockSignatureScheme.sol](script/single-deployments/DeployBlocklockSignatureScheme.s.sol) deployment script when deploying [BlocklockSignatureScheme.sol](src/blocklock/BlocklockSignatureScheme.sol).
+Which is used by the [DeployBlocklockSignatureScheme.sol](script/single-deployments/DeployBlocklockSignatureScheme.s.sol) deployment script when deploying [BlocklockSignatureScheme.sol](src/signature-schemes/BlocklockSignatureScheme.sol).
 
 
 #### Upgrade a Single Contract
