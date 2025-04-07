@@ -139,11 +139,12 @@ bash utils/generate-contract-addresses.sh > contract-addresses.json
 | MockBlocklockReceiver | 0x6f637EcB3Eaf8bEd0fc597Dc54F477a33BBCA72B   | Filecoin Calibration Testnet |
 
 
-### Using the Solidity Interfaces
+### Using the Solidity Interface
 
-#### Importing
 
-To use this abstract contract in your project, import the required files into your contract and use the proxy contract address for BlocklockSender in the constructor as the blocklockContract parameter:
+#### Importing the Interface
+
+To use this abstract contract in your project, the first step is to import the required files into your contract and use the proxy contract address for BlocklockSender in the constructor as the blocklockContract parameter:
 
 ```solidity
 // Import the Types library for managing ciphertexts
@@ -213,7 +214,7 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
 
 #### How It Works
 
-* Encryption: Use the off-chain TypeScript library to generate the encrypted data (`TypesLib.Ciphertext`) with a threshold network public key. The following solidity types are supported by the TypeScript library - uint256, int256, address, string, bool, bytes32, bytes, uint256 array, address array, and struct.
+* Encryption: Use the off-chain TypeScript library ([blocklock-js](https://github.com/randa-mu/blocklock-js)) to generate the encrypted data (`TypesLib.Ciphertext`) with a threshold network public key. The following solidity types are supported by the TypeScript library - uint256, int256, address, string, bool, bytes32, bytes, uint256 array, address array, and struct.
 * Timelock Request: Call `requestBlocklock` with the chain height after which decryption is allowed and the encrypted data or Ciphertext.
 * Decryption: Once the specified chain height is reached, a callback to your `receiveBlocklock` logic is triggered with the decryption key to unlock the data.
 
