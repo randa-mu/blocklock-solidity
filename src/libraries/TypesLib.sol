@@ -44,6 +44,8 @@ library TypesLib {
     struct BlocklockRequestV2 {
         uint256 subId; // new // 0 for direct funding
         uint256 directFundingPayment; // new // > 0 for direct funding or if subId == 0
+        // fixme uncomment code
+        // uint64 decryptionRequestID;
         uint256 decryptionRequestID;
         uint256 blockHeight;
         Ciphertext ciphertext;

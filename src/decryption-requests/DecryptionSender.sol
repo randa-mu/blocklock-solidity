@@ -76,6 +76,7 @@ contract DecryptionSender is
     }
 
     function initialize(
+        // fixme remove x and y keys from decryption sender
         uint256[2] memory x,
         uint256[2] memory y,
         address owner,

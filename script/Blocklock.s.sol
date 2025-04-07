@@ -6,7 +6,7 @@ import {console} from "forge-std/console.sol";
 
 import {MockBlocklockReceiver} from "../src/mocks/MockBlocklockReceiver.sol";
 import {SignatureSchemeAddressProvider} from "../src/signature-schemes/SignatureSchemeAddressProvider.sol";
-import {BlocklockSignatureScheme} from "../src/blocklock/BlocklockSignatureScheme.sol";
+import {BlocklockSignatureScheme} from "../src/signature-schemes/BlocklockSignatureScheme.sol";
 import {SignatureSender} from "../src/signature-requests/SignatureSender.sol";
 import {BlocklockSender} from "../src/blocklock/BlocklockSender.sol";
 import {DecryptionSender} from "../src/decryption-requests/DecryptionSender.sol";
