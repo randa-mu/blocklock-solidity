@@ -23,7 +23,6 @@ This library is designed with modularity and simplicity in mind, allowing develo
 | DecryptionSender (Impl) | [0xea9111e44D23029945f2E46b2bFf26b04D15bd6F](https://calibration.filfox.info/en/address/0xea9111e44D23029945f2E46b2bFf26b04D15bd6F)   | Filecoin Calibration Testnet |
 | SignatureSchemeAddressProvider | [0xD2b5084E68230D609AEaAe5E4cF7df9ebDd6375A](https://calibration.filfox.info/en/address/0xD2b5084E68230D609AEaAe5E4cF7df9ebDd6375A)   | Filecoin Calibration Testnet |
 | BlocklockSignatureScheme | [0x62C9CF8Ff30177d8479eDaB017f38017bEbf10C2](https://calibration.filfox.info/en/address/0x62C9CF8Ff30177d8479eDaB017f38017bEbf10C2)   | Filecoin Calibration Testnet |
-| MockBlocklockReceiver | 0x6f637EcB3Eaf8bEd0fc597Dc54F477a33BBCA72B   | Filecoin Calibration Testnet |
 
 
 ### Using the Solidity Interfaces
