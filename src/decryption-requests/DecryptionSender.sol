@@ -27,7 +27,7 @@ import {ISignatureSender} from "../interfaces/ISignatureSender.sol";
 import {ISignatureScheme} from "../interfaces/ISignatureScheme.sol";
 import {ISignatureSchemeAddressProvider} from "../interfaces/ISignatureSchemeAddressProvider.sol";
 
-import {CallWithExactGas} from "../CallWithExactGas.sol";
+import {CallWithExactGas} from "../utils/CallWithExactGas.sol";
 
 /// @title Decryption Sender contract
 /// @notice Contract used to fulfill conditional encryption requests.

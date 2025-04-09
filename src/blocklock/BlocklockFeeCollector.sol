@@ -5,7 +5,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 import {SubscriptionAPI} from "../subscription/SubscriptionAPI.sol";
 
-import {CallWithExactGas} from "../CallWithExactGas.sol";
+import {CallWithExactGas} from "../utils/CallWithExactGas.sol";
 
 abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, SubscriptionAPI {
     /// @dev Upper bound for premium percentages to prevent overflow in fee calculations.

@@ -14,7 +14,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     event Withdrawn(address indexed recipient, uint256 amount);
     event NewSubscriptionId(uint256 indexed subscriptionId);
 
-    /// @notice The Randamu subscription ID used for conditional encryption.
+    /// @notice The subscription ID used for conditional encryption.
     /// @dev Used in interactions with IBlocklockSender for subscription management, e.g.,
     /// @dev funding and consumer contract address registration.
     uint256 public subscriptionId;
