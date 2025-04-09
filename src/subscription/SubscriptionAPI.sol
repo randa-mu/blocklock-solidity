@@ -185,7 +185,7 @@ abstract contract SubscriptionAPI is ReentrancyGuard, ISubscription {
     function createSubscription() external override nonReentrant returns (uint256 subId) {
         // Generate a subscription id that is globally unique.
         uint64 currentSubNonce = s_currentSubNonce;
-        // fixme test that this never returns zero and overwrites the direct funding subscription
+        // fixme test that this never returns zero
         subId = uint256(
             keccak256(abi.encodePacked(msg.sender, blockhash(block.number - 1), address(this), currentSubNonce))
         );
