@@ -18,6 +18,12 @@ interface IBlocklockSender is ISubscription {
         uint256 blockHeight,
         TypesLib.Ciphertext calldata ciphertext
     ) external payable returns (uint256 requestID);
+    // fixme natspec
+    function calculateRequestPriceNative(uint32 _callbackGasLimit) external view returns (uint256);
+    function estimateRequestPriceNative(uint32 _callbackGasLimit, uint256 _requestGasPriceWei)
+        external
+        view
+        returns (uint256);
 
     /**
      * @notice Updates the decryptionn sender contract address

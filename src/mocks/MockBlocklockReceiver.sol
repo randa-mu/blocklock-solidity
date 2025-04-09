@@ -11,16 +11,28 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
 
     constructor(address blocklockContract) AbstractBlocklockReceiver(blocklockContract) {}
 
-    function createTimelockRequest(
+    function createTimelockRequestWithDirectFunding(
         uint32 callbackGasLimit,
-        uint256 decryptionBlockNumber,
+        uint256 blockHeight,
+        TypesLib.Ciphertext calldata encryptedData
+    ) external payable returns (uint256, uint256) {
+        // create timelock request
+        (uint256 requestID, uint256 requestPrice) = _requestBlocklockPayInNative(callbackGasLimit, blockHeight, encryptedData);
+        // store Ciphertext
+        encrytpedValue = encryptedData;
+        return (requestID, requestPrice);
+    }
+
+    function createTimelockRequestWithSubscription(
+        uint32 callbackGasLimit,
+        uint256 blockHeight,
         TypesLib.Ciphertext calldata encryptedData
     ) external payable returns (uint256) {
         // create timelock request
-        requestId = _requestBlocklock(callbackGasLimit, decryptionBlockNumber, encryptedData);
+        uint256 requestID = _requestBlocklockWithSubscription(callbackGasLimit, blockHeight, encryptedData);
         // store Ciphertext
         encrytpedValue = encryptedData;
-        return requestId;
+        return requestID;
     }
 
     function _onBlocklockReceived(uint256 requestID, bytes calldata decryptionKey) internal override {
