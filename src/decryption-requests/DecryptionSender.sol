@@ -26,7 +26,10 @@ import {ISignatureSender} from "../interfaces/ISignatureSender.sol";
 import {ISignatureScheme} from "../interfaces/ISignatureScheme.sol";
 import {ISignatureSchemeAddressProvider} from "../interfaces/ISignatureSchemeAddressProvider.sol";
 
-/// fixme update natspec
+/// @title Decryption Sender contract
+/// @notice Contract used to fulfill conditional encryption requests. 
+/// @notice Passes decryption keys via callbacks to the BlocklockSender contract 
+/// @notice which then calls the users receiver contract.
 contract DecryptionSender is
     IDecryptionSender,
     ReentrancyGuard,

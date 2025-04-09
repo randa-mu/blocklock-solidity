@@ -4,7 +4,7 @@ pragma solidity ^0.8;
 import {BLS} from "../libraries/BLS.sol";
 
 abstract contract SignautreSchemeBase {
-    // fixme uncomment code
+    // fixme import into signature scheme contracts
     // Link public keys of threshold network statically to signature scheme contracts and remove from constructor of sender contracts. Admin cannot update, simply use new scheme id.
     BLS.PointG2 private publicKey = BLS.PointG2({x: [uint256(0), uint256(0)], y: [uint256(0), uint256(0)]});
 

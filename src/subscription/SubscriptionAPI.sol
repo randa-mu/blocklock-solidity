@@ -6,7 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 import {ISubscription} from "../interfaces/ISubscription.sol";
 
-/// @title Subscription API
+/// @title Subscription API contract
 /// @notice Abstract contract for managing user subscription accounts for onchain services.
 /// @notice Minimal version of Chainlinks SubscriptionAPI contract.
 /// @notice Available at https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/vrf/dev/SubscriptionAPI.sol
