@@ -121,9 +121,6 @@ abstract contract SubscriptionAPI is ReentrancyGuard, ISubscription {
         }
     }
 
-    // fixme remove
-    // constructor() ConfirmedOwner(msg.sender) {}
-
     /**
      * @inheritdoc ISubscription
      */
