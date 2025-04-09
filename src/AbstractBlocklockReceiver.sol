@@ -9,6 +9,10 @@ import {ConfirmedOwner} from "./access/ConfirmedOwner.sol";
 abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwner {
     IBlocklockSender public blocklock;
 
+    // Event to log deposits and withdrawals of native tokens
+    event Funded(address indexed sender, uint256 amount);
+    event Withdrawn(address indexed recipient, uint256 amount);
+
     /// @notice The Randamu subscription ID used for conditional encryption.
     /// @dev Used in interactions with IBlocklockSender for subscription management, e.g.,
     /// @dev funding and consumer contract address registration.
@@ -101,5 +105,19 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// sufficient enough to cover the cost of the request.
     function getBalance() public view returns (uint256) {
         return address(this).balance;
+    }
+
+    // fixme update natspec
+    // Function to fund the contract with native tokens
+    function fund() external payable {
+        require(msg.value > 0, "You must send some ETH");
+        emit Funded(msg.sender, msg.value);
+    }
+
+    // Function to withdraw native tokens from the contract
+    function withdraw(uint256 _amount, address recipient) external onlyOwner {
+        require(address(this).balance >= _amount, "Insufficient funds in contract");
+        payable(recipient).transfer(_amount);
+        emit Withdrawn(recipient, _amount);
     }
 }
