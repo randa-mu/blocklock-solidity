@@ -12,6 +12,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     // Event to log deposits and withdrawals of native tokens
     event Funded(address indexed sender, uint256 amount);
     event Withdrawn(address indexed recipient, uint256 amount);
+    event NewSubscriptionId(uint256 indexed subId);
 
     /// @notice The Randamu subscription ID used for conditional encryption.
     /// @dev Used in interactions with IBlocklockSender for subscription management, e.g.,
@@ -53,6 +54,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @param subId The new subscription ID to be set.
     function setSubId(uint256 subId) external onlyOwner {
         subscriptionId = subId;
+        emit NewSubscriptionId(subId);
     }
 
     /// @notice Sets the address of the IBlocklockSender contract.
