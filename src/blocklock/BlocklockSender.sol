@@ -78,12 +78,12 @@ contract BlocklockSender is
     /**
      * @dev See {IBlocklockSender-requestBlocklock}.
      */
-    function requestBlocklock(uint32 callbackGasLimit, uint256 subId, uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext)
-        external
-        payable
-        onlyConfiguredNotDisabled
-        returns (uint256)
-    {
+    function requestBlocklock(
+        uint32 callbackGasLimit,
+        uint256 subId,
+        uint256 blockHeight,
+        TypesLib.Ciphertext calldata ciphertext
+    ) external payable onlyConfiguredNotDisabled returns (uint256) {
         require(blockHeight > block.number, "blockHeight must be strictly greater than current");
 
         if (subId == 0) {
@@ -109,7 +109,8 @@ contract BlocklockSender is
         // New decryption request
         bytes memory condition = abi.encode(blockHeight);
 
-        uint256 decryptionRequestID = decryptionSender.registerCiphertext(SCHEME_ID, callbackGasLimit, abi.encode(ciphertext), condition);
+        uint256 decryptionRequestID =
+            decryptionSender.registerCiphertext(SCHEME_ID, callbackGasLimit, abi.encode(ciphertext), condition);
         r.decryptionRequestID = uint64(decryptionRequestID);
 
         // Store the signature requestID for this blockHeight

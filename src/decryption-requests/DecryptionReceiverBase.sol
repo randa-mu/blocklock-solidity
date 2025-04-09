@@ -16,10 +16,12 @@ abstract contract DecryptionReceiverBase is IDecryptionReceiver {
     /**
      * @dev See {IDecryptionReceiver-registerCiphertext}.
      */
-    function registerCiphertext(string calldata schemeID, uint32 callbackGasLimit, bytes memory ciphertext, bytes memory conditions)
-        internal
-        returns (uint256 requestID)
-    {
+    function registerCiphertext(
+        string calldata schemeID,
+        uint32 callbackGasLimit,
+        bytes memory ciphertext,
+        bytes memory conditions
+    ) internal returns (uint256 requestID) {
         return decryptionSender.registerCiphertext(schemeID, callbackGasLimit, ciphertext, conditions);
     }
 

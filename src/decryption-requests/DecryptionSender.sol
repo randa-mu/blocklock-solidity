@@ -80,10 +80,7 @@ contract DecryptionSender is
         _disableInitializers();
     }
 
-    function initialize(
-        address owner,
-        address _signatureSchemeAddressProvider
-    ) public initializer {
+    function initialize(address owner, address _signatureSchemeAddressProvider) public initializer {
         __UUPSUpgradeable_init();
         __AccessControlEnumerable_init();
 
@@ -110,10 +107,12 @@ contract DecryptionSender is
     /**
      * @dev See {IDecryptionSender-registerCiphertext}.
      */
-    function registerCiphertext(string calldata schemeID, uint32 callbackGasLimit, bytes calldata ciphertext, bytes calldata condition)
-        external
-        returns (uint256)
-    {
+    function registerCiphertext(
+        string calldata schemeID,
+        uint32 callbackGasLimit,
+        bytes calldata ciphertext,
+        bytes calldata condition
+    ) external returns (uint256) {
         lastRequestID += 1;
 
         require(signatureSchemeAddressProvider.isSupportedScheme(schemeID), "Signature scheme not supported");
@@ -170,7 +169,10 @@ contract DecryptionSender is
         ISignatureScheme sigScheme = ISignatureScheme(schemeContractAddress);
         bytes memory messageHash = sigScheme.hashToBytes(request.condition);
 
-        require(sigScheme.verifySignature(messageHash, signature, sigScheme.getPublicKeyBytes()), "Signature verification failed");
+        require(
+            sigScheme.verifySignature(messageHash, signature, sigScheme.getPublicKeyBytes()),
+            "Signature verification failed"
+        );
 
         bytes memory response = abi.encodeWithSelector(
             IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature

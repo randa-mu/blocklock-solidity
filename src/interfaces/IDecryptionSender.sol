@@ -14,9 +14,12 @@ interface IDecryptionSender {
     /// @param callbackGasLimit The gas limit for the callback.
     /// @param condition The condition that need to be met to decrypt the ciphertext
     /// @return requestID The unique ID assigned to the registered decryption request
-    function registerCiphertext(string calldata schemeID, uint32 callbackGasLimit, bytes calldata ciphertext, bytes calldata condition)
-        external
-        returns (uint256 requestID);
+    function registerCiphertext(
+        string calldata schemeID,
+        uint32 callbackGasLimit,
+        bytes calldata ciphertext,
+        bytes calldata condition
+    ) external returns (uint256 requestID);
 
     /**
      * @notice Provide the decryption key for a specific requestID alongside a signature.
