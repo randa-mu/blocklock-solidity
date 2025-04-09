@@ -6,7 +6,11 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 import {ISubscription} from "../interfaces/ISubscription.sol";
 
-// fixme natspec
+/// @title Subscription API
+/// @notice Abstract contract for managing user subscription accounts for onchain services.
+/// @notice Minimal version of Chainlinks SubscriptionAPI contract.
+/// @notice Available at https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/vrf/dev/SubscriptionAPI.sol
+/// @notice License: MIT
 abstract contract SubscriptionAPI is ReentrancyGuard, ISubscription {
     using EnumerableSet for EnumerableSet.UintSet;
 
