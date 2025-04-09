@@ -45,7 +45,6 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
         _;
     }
 
-    // fixme override with modifier
     /// @notice Configures the contract's settings.
     /// @dev This function sets the global gas limit, post-fulfillment gas usage, and fee structure.
     ///      Can only be called by an admin.
@@ -96,18 +95,17 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
     function _calculateRequestPriceNative(uint256 _gas, uint256 _requestGasPrice) internal view returns (uint256) {
         // costWei is the base fee denominated in wei (native)
         // (wei/gas) * gas
-        // fixme rename coordinator
-        // coordinatorCostWei takes into account the L1 posting costs of the fulfillment transaction, if we are on an L2.
+        // blocklockSenderCostWei takes into account the L1 posting costs of the fulfillment transaction, if we are on an L2.
         // (wei/gas) * gas + l1wei
-        uint256 coordinatorCostWei = _requestGasPrice * (_gas + _getL1CostWei());
+        uint256 blocklockSenderCostWei = _requestGasPrice * (_gas + _getL1CostWei());
 
-        // coordinatorCostWithPremiumAndFlatFeeWei is the coordinator cost with the percentage premium and flat fee applied
-        // coordinator cost * premium multiplier + flat fee
-        uint256 coordinatorCostWithPremiumAndFlatFeeWei = (
-            (coordinatorCostWei * (s_config.nativePremiumPercentage + 100)) / 100
+        // blocklockSenderCostWithPremiumAndFlatFeeWei is the blocklockSender cost with the percentage premium and flat fee applied
+        // blocklockSender cost * premium multiplier + flat fee
+        uint256 blocklockSenderCostWithPremiumAndFlatFeeWei = (
+            (blocklockSenderCostWei * (s_config.nativePremiumPercentage + 100)) / 100
         ) + (1e12 * uint256(s_config.fulfillmentFlatFeeNativePPM));
 
-        return coordinatorCostWithPremiumAndFlatFeeWei;
+        return blocklockSenderCostWithPremiumAndFlatFeeWei;
     }
 
     /// @notice Returns the L1 fee for fulfilling a request.

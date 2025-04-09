@@ -115,7 +115,13 @@ contract BlocklockSender is
         return decryptionRequestID;
     }
 
-    // fixme natspec
+    /// @notice Validates the subscription if subId > 0 and _callbackGasLimit 
+    /// @notice and updates the subscription for a given consumer.
+    /// @dev This function checks the validity of the subscription and updates the subscription's state. 
+    /// @dev If the subscription ID is greater than zero, it ensures that the consumer has an active subscription.
+    /// @dev If the subscription ID is zero, it processes a new subscription by calculating the necessary fees.
+    /// @param _callbackGasLimit The gas limit for the callback function.
+    /// @param _subId The subscription ID. If greater than zero, it indicates an existing subscription, otherwise, a new subscription is created.
     function _validateAndUpdateSubscription(uint32 _callbackGasLimit, uint256 _subId) internal {
         // fixme test subId always > 0 for createSubscription() in SubscriptionAPI
         uint32 callbackGasLimit = 0;
@@ -179,20 +185,25 @@ contract BlocklockSender is
         }
     }
 
-    // fixme natspec
+    /// @notice Handles the payment and charges for a request based on the subscription or direct funding.
+    /// @dev This function calculates the payment for a given request, either based on a subscription or direct funding. 
+    /// @dev It updates the subscription and consumer state and 
+    ///     charges the appropriate amount based on the gas usage and payment parameters.
+    /// @param requestId The ID of the request to handle payment for.
+    /// @param startGas The amount of gas used at the start of the transaction, 
+    ///     used for calculating payment based on gas consumption.
     function _handlePaymentAndCharge(uint256 requestId, uint256 startGas) internal override {
-        // fixme uncomment code
-        // TypesLib.BlocklockRequest memory request = getRequest(requestId);
+        TypesLib.BlocklockRequest memory request = getRequest(requestId);
 
-        // if (request.subId > 0) {
-        //     ++s_subscriptions[request.subId].reqCount;
-        //     --s_consumers[request.callback][request.subId].pendingReqCount;
+        if (request.subId > 0) {
+            ++s_subscriptions[request.subId].reqCount;
+            --s_consumers[request.callback][request.subId].pendingReqCount;
 
-        //     uint96 payment = _calculatePaymentAmountNative(startGas, tx.gasprice);
-        //     _chargePayment(payment, request.subId);
-        // } else {
-        //     _chargePayment(uint96(request.directFundingPayment), request.subId);
-        // }
+            uint96 payment = _calculatePaymentAmountNative(startGas, tx.gasprice);
+            _chargePayment(payment, request.subId);
+        } else {
+            _chargePayment(uint96(request.directFundingPayment), request.subId);
+        }
     }
 
     // fixme move function to BLS library and call from here

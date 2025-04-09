@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8;
 
-// fixme natspec
+/// @notice ISubscription interface
+/// @notice interface for contracts supporting user subscription for an onchain service.
 interface ISubscription {
     /// @notice Add a consumer to a subscription.
     /// @param subId - ID of the subscription
