@@ -207,7 +207,6 @@ contract BlocklockSender is
         }
     }
 
-    // fixme move function to BLS library and call from here if needed for contract size optimisation
     /**
      * Decrypt a ciphertext into a plaintext using a decryption key.
      * @param ciphertext The ciphertext to decrypt.
