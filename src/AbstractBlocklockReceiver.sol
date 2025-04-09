@@ -100,24 +100,26 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         blocklock.fundSubscriptionWithNative{value: msg.value}(subscriptionId);
     }
 
-    /// @notice getBalance returns the native balance of the consumer contract
+    /// @notice getBalance returns the native balance of the consumer contract.
     /// @notice For direct funding requests, the contract needs to hold native tokens to
     /// sufficient enough to cover the cost of the request.
     function getBalance() public view returns (uint256) {
         return address(this).balance;
     }
 
-    // fixme update natspec
-    // Function to fund the contract with native tokens
+    /// @notice Function to fund the contract with native tokens for direct funding requests.
     function fund() external payable {
         require(msg.value > 0, "You must send some ETH");
         emit Funded(msg.sender, msg.value);
     }
 
-    // Function to withdraw native tokens from the contract
-    function withdraw(uint256 _amount, address recipient) external onlyOwner {
-        require(address(this).balance >= _amount, "Insufficient funds in contract");
-        payable(recipient).transfer(_amount);
-        emit Withdrawn(recipient, _amount);
+    /// @notice Function to withdraw native tokens from the contract.
+    /// @dev Only callable by contract owner.
+    /// @param amount The amount to withdraw.
+    /// @param recipient The address to send the tokens to.
+    function withdraw(uint256 amount, address recipient) external onlyOwner {
+        require(getBalance() >= amount, "Insufficient funds in contract");
+        payable(recipient).transfer(amount);
+        emit Withdrawn(recipient, amount);
     }
 }
