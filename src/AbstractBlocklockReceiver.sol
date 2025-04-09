@@ -12,7 +12,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     // Event to log deposits and withdrawals of native tokens
     event Funded(address indexed sender, uint256 amount);
     event Withdrawn(address indexed recipient, uint256 amount);
-    event NewSubscriptionId(uint256 indexed subId);
+    event NewSubscriptionId(uint256 indexed subscriptionId);
 
     /// @notice The Randamu subscription ID used for conditional encryption.
     /// @dev Used in interactions with IBlocklockSender for subscription management, e.g.,
