@@ -48,6 +48,7 @@ contract BlocklockSender is
     event BlocklockCallbackSuccess(
         uint256 indexed requestID, uint256 blockHeight, TypesLib.Ciphertext ciphertext, bytes decryptionKey
     );
+
     event DecryptionSenderUpdated(address indexed decryptionSender);
 
     error BlocklockCallbackFailed(uint256 requestID);
@@ -77,17 +78,21 @@ contract BlocklockSender is
     /**
      * @dev See {IBlocklockSender-requestBlocklock}.
      */
-    function requestBlocklock(uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext)
+    function requestBlocklock(uint32 callbackGasLimit, uint256 subId, uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext)
         external
-        returns (
-            // payable // fixme uncomment code
-            // onlyConfiguredNotDisabled // fixme uncomment code
-            uint256
-        )
+        payable
+        onlyConfiguredNotDisabled
+        returns (uint256)
     {
         require(blockHeight > block.number, "blockHeight must be strictly greater than current");
 
+        if (subId == 0) {
+            require(msg.value > 0, "Direct funding required for request fulfillment callback");
+        }
+
         TypesLib.BlocklockRequest memory r = TypesLib.BlocklockRequest({
+            subId: subId,
+            directFundingPayment: msg.value,
             decryptionRequestID: 0,
             blockHeight: blockHeight,
             ciphertext: ciphertext,
@@ -96,17 +101,16 @@ contract BlocklockSender is
             callback: msg.sender
         });
 
-        // fixme uncomment code
         // subId can be zero for direct funding or non zero for active subscription
-        // callbackGasLimit can be zero but user will not get anything in callback. Only signature verification in
+        // fixme test that callbackGasLimit can be zero but user will not get anything in callback. Only signature verification in
         // decryption sender will be done and decryption key saved
-        // _validateAndUpdateSubscription(callbackGasLimit, subId);
+        _validateAndUpdateSubscription(callbackGasLimit, subId);
 
         // New decryption request
         bytes memory condition = abi.encode(blockHeight);
 
-        uint256 decryptionRequestID = decryptionSender.registerCiphertext(SCHEME_ID, abi.encode(ciphertext), condition);
-        r.decryptionRequestID = decryptionRequestID;
+        uint256 decryptionRequestID = decryptionSender.registerCiphertext(SCHEME_ID, callbackGasLimit, abi.encode(ciphertext), condition);
+        r.decryptionRequestID = uint64(decryptionRequestID);
 
         // Store the signature requestID for this blockHeight
         blocklockRequestsWithDecryptionKey[decryptionRequestID] = r;
@@ -115,9 +119,9 @@ contract BlocklockSender is
         return decryptionRequestID;
     }
 
-    /// @notice Validates the subscription if subId > 0 and _callbackGasLimit 
+    /// @notice Validates the subscription if subId > 0 and _callbackGasLimit
     /// @notice and updates the subscription for a given consumer.
-    /// @dev This function checks the validity of the subscription and updates the subscription's state. 
+    /// @dev This function checks the validity of the subscription and updates the subscription's state.
     /// @dev If the subscription ID is greater than zero, it ensures that the consumer has an active subscription.
     /// @dev If the subscription ID is zero, it processes a new subscription by calculating the necessary fees.
     /// @param _callbackGasLimit The gas limit for the callback function.
@@ -160,8 +164,7 @@ contract BlocklockSender is
         internal
         override
     {
-        // fixme uncomment code
-        // uint256 startGas = gasleft();
+        uint256 startGas = gasleft();
 
         TypesLib.BlocklockRequest memory r = blocklockRequestsWithDecryptionKey[decryptionRequestID];
         require(r.decryptionRequestID > 0, "No request for request id");
@@ -172,25 +175,22 @@ contract BlocklockSender is
             abi.encodeWithSelector(IBlocklockReceiver.receiveBlocklock.selector, decryptionRequestID, decryptionKey)
         );
 
-        // fixme uncomment code
-        // fixme ensure _handlePaymentAndCharge is called in both if else cases to charge before revert
         if (!success) {
-            // _handlePaymentAndCharge(decryptionRequestID, startGas);
             revert BlocklockCallbackFailed(decryptionRequestID);
         } else {
             emit BlocklockCallbackSuccess(decryptionRequestID, r.blockHeight, r.ciphertext, decryptionKey);
             blocklockRequestsWithDecryptionKey[decryptionRequestID].decryptionKey = decryptionKey;
             blocklockRequestsWithDecryptionKey[decryptionRequestID].signature = signature;
-            // _handlePaymentAndCharge(decryptionRequestID, startGas);
         }
+        _handlePaymentAndCharge(decryptionRequestID, startGas);
     }
 
     /// @notice Handles the payment and charges for a request based on the subscription or direct funding.
-    /// @dev This function calculates the payment for a given request, either based on a subscription or direct funding. 
-    /// @dev It updates the subscription and consumer state and 
+    /// @dev This function calculates the payment for a given request, either based on a subscription or direct funding.
+    /// @dev It updates the subscription and consumer state and
     ///     charges the appropriate amount based on the gas usage and payment parameters.
     /// @param requestId The ID of the request to handle payment for.
-    /// @param startGas The amount of gas used at the start of the transaction, 
+    /// @param startGas The amount of gas used at the start of the transaction,
     ///     used for calculating payment based on gas consumption.
     function _handlePaymentAndCharge(uint256 requestId, uint256 startGas) internal override {
         TypesLib.BlocklockRequest memory request = getRequest(requestId);
@@ -206,7 +206,7 @@ contract BlocklockSender is
         }
     }
 
-    // fixme move function to BLS library and call from here
+    // fixme move function to BLS library and call from here if needed for contract size optimisation
     /**
      * Decrypt a ciphertext into a plaintext using a decryption key.
      * @param ciphertext The ciphertext to decrypt.
@@ -363,6 +363,8 @@ contract BlocklockSender is
     }
 
     // fixme review and modify code for retry
+    // check that handle payment fails if insufficient funds
+    // agent should check callback amount before callback to avoid wasting funds
     // if we allow users call retry, why should they bother calling it and paying when they can simply read
     // the request data from blocklocksender or decryptionsender?
     // chainlinkvrf does not have retry.
@@ -390,7 +392,6 @@ contract BlocklockSender is
     }
     }
     */
-
     /// @notice Allows any direct funding request owner/callback to retry
     /// a failed callback for a direct funding request.
     /// @dev The caller must pay the gas cost for retrying the callback execution.

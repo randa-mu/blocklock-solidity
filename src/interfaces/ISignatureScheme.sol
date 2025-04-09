@@ -33,4 +33,18 @@ interface ISignatureScheme {
      * @return bytes A point on the elliptic curve in G1, represented as bytes.
      */
     function hashToBytes(bytes calldata message) external view returns (bytes memory);
+
+    /**
+     * @notice Retrieves the public key associated with the decryption process.
+     * @dev Returns the public key as two elliptic curve points.
+     * @return Two pairs of coordinates representing the public key points on the elliptic curve.
+     */
+    function getPublicKey() external view returns (uint256[2] memory, uint256[2] memory);
+
+    /**
+     * @notice Retrieves the public key associated with the decryption process.
+     * @dev Returns the public key as bytes.
+     * @return Bytes string representing the public key points on the elliptic curve.
+     */
+    function getPublicKeyBytes() external view returns (bytes memory);
 }

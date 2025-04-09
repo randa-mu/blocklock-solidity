@@ -11,12 +11,13 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
 
     constructor(address blocklockContract) AbstractBlocklockReceiver(blocklockContract) {}
 
-    function createTimelockRequest(uint256 decryptionBlockNumber, TypesLib.Ciphertext calldata encryptedData)
+    function createTimelockRequest(uint32 callbackGasLimit, uint256 decryptionBlockNumber, TypesLib.Ciphertext calldata encryptedData)
         external
+        payable
         returns (uint256)
     {
         // create timelock request
-        requestId = blocklock.requestBlocklock(decryptionBlockNumber, encryptedData);
+        requestId = _requestBlocklock(callbackGasLimit, decryptionBlockNumber, encryptedData);
         // store Ciphertext
         encrytpedValue = encryptedData;
         return requestId;

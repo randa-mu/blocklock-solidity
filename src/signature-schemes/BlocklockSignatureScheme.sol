@@ -2,13 +2,16 @@
 pragma solidity ^0.8;
 
 import {BLS} from "../libraries/BLS.sol";
-import {ISignatureScheme} from "../interfaces/ISignatureScheme.sol";
 
-contract BlocklockSignatureScheme is ISignatureScheme {
+import {SignatureSchemeBase} from "./SignatureSchemeBase.sol";
+
+contract BlocklockSignatureScheme is SignatureSchemeBase {
     using BLS for bytes;
 
     string public constant SCHEME_ID = "BN254-BLS-BLOCKLOCK";
     bytes public constant DST = bytes("BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_");
+
+    constructor(uint256[2] memory x, uint256[2] memory y) SignatureSchemeBase(x, y) {}
 
     /**
      * @dev See {ISignatureScheme-verifySignature}.

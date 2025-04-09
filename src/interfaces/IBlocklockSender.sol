@@ -12,8 +12,9 @@ interface IBlocklockSender is ISubscription {
      * The blocklock decryption key will be generated once the chain reaches the specified `blockHeight`.
      * @return requestID The unique identifier assigned to this blocklock request.
      */
-    function requestBlocklock(uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext)
+    function requestBlocklock(uint32 callbackGasLimit, uint256 subId, uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext)
         external
+        payable
         returns (uint256 requestID);
 
     /**

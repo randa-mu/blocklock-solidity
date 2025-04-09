@@ -26,12 +26,15 @@ import {ISignatureSender} from "../interfaces/ISignatureSender.sol";
 import {ISignatureScheme} from "../interfaces/ISignatureScheme.sol";
 import {ISignatureSchemeAddressProvider} from "../interfaces/ISignatureSchemeAddressProvider.sol";
 
+import {CallWithExactGas} from "../CallWithExactGas.sol";
+
 /// @title Decryption Sender contract
-/// @notice Contract used to fulfill conditional encryption requests. 
-/// @notice Passes decryption keys via callbacks to the BlocklockSender contract 
+/// @notice Contract used to fulfill conditional encryption requests.
+/// @notice Passes decryption keys via callbacks to the BlocklockSender contract
 /// @notice which then calls the users receiver contract.
 contract DecryptionSender is
     IDecryptionSender,
+    CallWithExactGas,
     ReentrancyGuard,
     Multicall,
     Initializable,
@@ -44,7 +47,6 @@ contract DecryptionSender is
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     uint256 public lastRequestID = 0;
-    BLS.PointG2 private publicKey = BLS.PointG2({x: [uint256(0), uint256(0)], y: [uint256(0), uint256(0)]});
 
     // Mapping from decryption requestID to conditional decryption request
     mapping(uint256 => TypesLib.DecryptionRequest) public requests;
@@ -79,16 +81,12 @@ contract DecryptionSender is
     }
 
     function initialize(
-        // fixme remove x and y keys from decryption sender
-        uint256[2] memory x,
-        uint256[2] memory y,
         address owner,
         address _signatureSchemeAddressProvider
     ) public initializer {
         __UUPSUpgradeable_init();
         __AccessControlEnumerable_init();
 
-        publicKey = BLS.PointG2({x: x, y: y});
         require(_grantRole(ADMIN_ROLE, owner), "Grant role failed");
         require(_grantRole(DEFAULT_ADMIN_ROLE, owner), "Grant role failed");
         signatureSchemeAddressProvider = ISignatureSchemeAddressProvider(_signatureSchemeAddressProvider);
@@ -112,7 +110,7 @@ contract DecryptionSender is
     /**
      * @dev See {IDecryptionSender-registerCiphertext}.
      */
-    function registerCiphertext(string calldata schemeID, bytes calldata ciphertext, bytes calldata condition)
+    function registerCiphertext(string calldata schemeID, uint32 callbackGasLimit, bytes calldata ciphertext, bytes calldata condition)
         external
         returns (uint256)
     {
@@ -137,6 +135,7 @@ contract DecryptionSender is
             decryptionKey: hex"",
             signature: hex"",
             callback: msg.sender,
+            callbackGasLimit: callbackGasLimit,
             isFulfilled: false
         });
         unfulfilledRequestIds.add(lastRequestID);
@@ -171,18 +170,13 @@ contract DecryptionSender is
         ISignatureScheme sigScheme = ISignatureScheme(schemeContractAddress);
         bytes memory messageHash = sigScheme.hashToBytes(request.condition);
 
-        require(sigScheme.verifySignature(messageHash, signature, getPublicKeyBytes()), "Signature verification failed");
+        require(sigScheme.verifySignature(messageHash, signature, sigScheme.getPublicKeyBytes()), "Signature verification failed");
 
-        (bool success,) = request.callback.call(
-            abi.encodeWithSelector(
-                IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature
-            )
+        bytes memory response = abi.encodeWithSelector(
+            IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature
         );
-        // fixme uncomment code
-        // bytes memory response =
-        //     abi.encodeWithSelector(IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature);
 
-        // bool success = _callWithExactGas(request.callbackGasLimit, request.callback, response);
+        bool success = _callWithExactGas(request.callbackGasLimit, request.callback, response);
 
         requests[requestID].decryptionKey = decryptionKey;
         requests[requestID].signature = signature;
@@ -197,23 +191,25 @@ contract DecryptionSender is
         }
     }
 
-    function retryCallback(uint256 requestID) external {
-        require(hasErrored(requestID), "No request with specified requestID");
-        TypesLib.DecryptionRequest memory request = requests[requestID];
-        (bool success,) = request.callback.call(
-            abi.encodeWithSelector(
-                IDecryptionReceiver.receiveDecryptionData.selector, requestID, request.decryptionKey, request.signature
-            )
-        );
+    // fixme replace with callbackGasLimit options for subscription
+    function retryCallbackWithSubscription(uint256 requestID, uint32 newCallbackGasLimit) external override {}
+    // function retryCallback(uint256 requestID) external {
+    //     require(hasErrored(requestID), "No request with specified requestID");
+    //     TypesLib.DecryptionRequest memory request = requests[requestID];
+    //     (bool success,) = request.callback.call(
+    //         abi.encodeWithSelector(
+    //             IDecryptionReceiver.receiveDecryptionData.selector, requestID, request.decryptionKey, request.signature
+    //         )
+    //     );
 
-        if (!success) {
-            emit DecryptionReceiverCallbackFailed(requestID);
-        } else {
-            erroredRequestIds.remove(requestID);
-            fulfilledRequestIds.add(requestID);
-            emit DecryptionReceiverCallbackSuccess(requestID, request.decryptionKey, request.signature);
-        }
-    }
+    //     if (!success) {
+    //         emit DecryptionReceiverCallbackFailed(requestID);
+    //     } else {
+    //         erroredRequestIds.remove(requestID);
+    //         fulfilledRequestIds.add(requestID);
+    //         emit DecryptionReceiverCallbackSuccess(requestID, request.decryptionKey, request.signature);
+    //     }
+    // }
 
     /**
      * @dev See {IDecryptionSender-setSignatureSchemeAddressProvider}.
@@ -221,20 +217,6 @@ contract DecryptionSender is
     function setSignatureSchemeAddressProvider(address newSignatureSchemeAddressProvider) external onlyOwner {
         signatureSchemeAddressProvider = ISignatureSchemeAddressProvider(newSignatureSchemeAddressProvider);
         emit SignatureSchemeAddressProviderUpdated(newSignatureSchemeAddressProvider);
-    }
-
-    /**
-     * @dev See {IDecryptionSender-getPublicKey}.
-     */
-    function getPublicKey() public view returns (uint256[2] memory, uint256[2] memory) {
-        return (publicKey.x, publicKey.y);
-    }
-
-    /**
-     * @dev See {IDecryptionSender-getPublicKeyBytes}.
-     */
-    function getPublicKeyBytes() public view returns (bytes memory) {
-        return BLS.g2Marshal(publicKey);
     }
 
     /**

@@ -11,9 +11,10 @@ interface IDecryptionSender {
     /// @notice creation of the `Ciphertext` and `condition` bytes will be managed by a javascript client library off-chain
     /// @dev The creation of `Ciphertext` and `condition` bytes will be managed by the JavaScript client library
     /// @param ciphertext The encrypted data to be registered
+    /// @param callbackGasLimit The gas limit for the callback.
     /// @param condition The condition that need to be met to decrypt the ciphertext
     /// @return requestID The unique ID assigned to the registered decryption request
-    function registerCiphertext(string calldata schemeID, bytes calldata ciphertext, bytes calldata condition)
+    function registerCiphertext(string calldata schemeID, uint32 callbackGasLimit, bytes calldata ciphertext, bytes calldata condition)
         external
         returns (uint256 requestID);
 
@@ -31,14 +32,15 @@ interface IDecryptionSender {
         external;
 
     /**
-     * @notice Retry an request that has previously failed during callback
+     * @notice Retry a request from a subscription account that has previously failed during callback
      * @dev This function is intended to be called after a decryption key has been generated off-chain but failed to
      * call back into the originating contract.
      *
      * @param requestID The unique identifier for the encryption request. This should match the ID used
      *                  when the encryption was initially requested.
+     * @param newCallbackGasLimit The callback gas limit for fulfilling the request.
      */
-    function retryCallback(uint256 requestID) external;
+    function retryCallbackWithSubscription(uint256 requestID, uint32 newCallbackGasLimit) external;
 
     /**
      * @notice Updates the signature scheme address provider contract address
@@ -69,20 +71,6 @@ interface IDecryptionSender {
      * @return boolean indicating whether the request has errored or not.
      */
     function hasErrored(uint256 requestID) external view returns (bool);
-
-    /**
-     * @notice Retrieves the public key associated with the decryption process.
-     * @dev Returns the public key as two elliptic curve points.
-     * @return Two pairs of coordinates representing the public key points on the elliptic curve.
-     */
-    function getPublicKey() external view returns (uint256[2] memory, uint256[2] memory);
-
-    /**
-     * @notice Retrieves the public key associated with the decryption process.
-     * @dev Returns the public key as bytes.
-     * @return Bytes string representing the public key points on the elliptic curve.
-     */
-    function getPublicKeyBytes() external view returns (bytes memory);
 
     /**
      * @notice Returns all the fulfilled request ids.

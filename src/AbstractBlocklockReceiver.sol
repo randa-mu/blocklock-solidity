@@ -27,11 +27,11 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         blocklock = IBlocklockSender(blocklockSender);
     }
 
-    function requestBlocklock(uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext)
+    function _requestBlocklock(uint32 callbackGasLimit, uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext)
         internal
         returns (uint256 requestID)
     {
-        requestID = blocklock.requestBlocklock(blockHeight, ciphertext);
+        requestID = blocklock.requestBlocklock(callbackGasLimit, subscriptionId, blockHeight, ciphertext);
     }
 
     function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey) external virtual onlyBlocklockContract {
