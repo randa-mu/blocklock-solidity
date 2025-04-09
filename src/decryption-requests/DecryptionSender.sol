@@ -145,7 +145,7 @@ contract DecryptionSender is
         return lastRequestID;
     }
 
-    // fixme rename to fulfillDecryptionRequest and update natspec
+    
     // when fulfilling decryption request, blocklocksender will use gas limit specified by user
     // with some overhead for decryptionsender and blocklocksender logic and event emission
     // it will only work if blocklocksender is able to charge in callback to receiveBlocklock selector
@@ -155,7 +155,7 @@ contract DecryptionSender is
     /**
      * @dev See {IDecryptionSender-fulfilSignatureRequest}.
      */
-    function fulfilDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
+    function fulfillDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
         external
         nonReentrant
         onlyOwner

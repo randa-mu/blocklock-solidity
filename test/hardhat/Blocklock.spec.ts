@@ -291,7 +291,7 @@ describe("BlocklockSender", function () {
     const sigBytes = AbiCoder.defaultAbiCoder().encode(["uint256", "uint256"], [sig[0], sig[1]]);
 
     const decryption_key = preprocess_decryption_key_g1(parsedCiphertext, { x: sig[0], y: sig[1] }, BLOCKLOCK_IBE_OPTS);
-    let tx = await decryptionSender.connect(owner).fulfilDecryptionRequest(requestID, decryption_key, sigBytes);
+    let tx = await decryptionSender.connect(owner).fulfillDecryptionRequest(requestID, decryption_key, sigBytes);
     const txreceipt = await tx.wait(1);
     if (!txreceipt) {
       throw new Error("transaction has not been mined");
@@ -370,7 +370,7 @@ describe("BlocklockSender", function () {
 
     const decryption_key = preprocess_decryption_key_g1(parsedCiphertext, { x: sig[0], y: sig[1] }, BLOCKLOCK_IBE_OPTS);
 
-    tx = await decryptionSender.connect(owner).fulfilDecryptionRequest(requestID, decryption_key, sigBytes);
+    tx = await decryptionSender.connect(owner).fulfillDecryptionRequest(requestID, decryption_key, sigBytes);
     receipt = await tx.wait(1);
     if (!receipt) {
       throw new Error("transaction has not been mined");
@@ -524,7 +524,7 @@ describe("BlocklockSender", function () {
 
     const decryption_key = preprocess_decryption_key_g1(parsedCiphertext, { x: sig[0], y: sig[1] }, BLOCKLOCK_IBE_OPTS);
 
-    tx = await decryptionSender.connect(owner).fulfilDecryptionRequest(requestID, decryption_key, sigBytes);
+    tx = await decryptionSender.connect(owner).fulfillDecryptionRequest(requestID, decryption_key, sigBytes);
     receipt = await tx.wait(1);
     if (!receipt) {
       throw new Error("transaction has not been mined");
@@ -622,7 +622,7 @@ describe("BlocklockSender", function () {
     expect(await decryptionSender.hasErrored(requestID)).to.be.equal(false);
     expect(await decryptionSender.isInFlight(requestID)).to.be.equal(true);
 
-    tx = await decryptionSender.connect(owner).fulfilDecryptionRequest(requestID, decryption_key, sigBytes);
+    tx = await decryptionSender.connect(owner).fulfillDecryptionRequest(requestID, decryption_key, sigBytes);
     receipt = await tx.wait(1);
     if (!receipt) {
       throw new Error("transaction has not been mined");
@@ -773,7 +773,7 @@ describe("BlocklockSender", function () {
     const signatures = [sigBytes1, sigBytes2];
 
     const encodedCalls = requestIDs.map((id, index) =>
-      decryptionSender.interface.encodeFunctionData("fulfilDecryptionRequest", [
+      decryptionSender.interface.encodeFunctionData("fulfillDecryptionRequest", [
         id,
         decryptionKeys[index],
         signatures[index],

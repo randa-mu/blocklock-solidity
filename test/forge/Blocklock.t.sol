@@ -108,7 +108,7 @@ contract SimpleAuctionTest is Test {
 
         vm.startPrank(owner);
 
-        decryptionSender.fulfilDecryptionRequest(requestId, decryptionKey, signature);
+        decryptionSender.fulfillDecryptionRequest(requestId, decryptionKey, signature);
 
         assert(mockBlocklockReceiver.plainTextValue() == plaintext);
         assert(mockBlocklockReceiver.requestId() == 1);
@@ -139,7 +139,7 @@ contract SimpleAuctionTest is Test {
         vm.startPrank(owner);
 
         vm.expectRevert("No request with specified requestID");
-        decryptionSender.fulfilDecryptionRequest(requestId + 1, decryptionKey, signature);
+        decryptionSender.fulfillDecryptionRequest(requestId + 1, decryptionKey, signature);
 
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 1);
@@ -157,7 +157,7 @@ contract SimpleAuctionTest is Test {
         bytes memory invalidSignature =
             hex"02a3b2fa2c402d59e22a2f141e32a092603862a06a695cbfb574c440372a72cd0636ba8092f304e7701ae9abe910cb474edf0408d9dd78ea7f6f97b7f2464711";
         vm.expectRevert("Signature verification failed");
-        decryptionSender.fulfilDecryptionRequest(requestId, decryptionKey, invalidSignature);
+        decryptionSender.fulfillDecryptionRequest(requestId, decryptionKey, invalidSignature);
 
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 1);

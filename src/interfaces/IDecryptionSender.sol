@@ -31,7 +31,7 @@ interface IDecryptionSender {
      *                      message in its decrypted form.
      * @param signature The signature associated with the request, provided as a byte array
      */
-    function fulfilDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
+    function fulfillDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
         external;
 
     /**
