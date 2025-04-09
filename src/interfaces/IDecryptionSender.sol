@@ -24,7 +24,9 @@ interface IDecryptionSender {
     /**
      * @notice Provide the decryption key for a specific requestID alongside a signature.
      * @dev This function is intended to be called after a decryption key has been generated off-chain.
-     *
+     * @dev When fulfilling a decryption request, BlocklockSender uses the gas limit specified by the user, 
+     * @dev plus some overhead for DecryptionSender logic and event emission. 
+     * @dev The callback will only work if it can be funded by the user's payment.
      * @param requestID The unique identifier for the encryption request. This should match the ID used
      *                  when the encryption was initially requested.
      * @param decryptionKey The decrypted content in bytes format. The data should represent the original

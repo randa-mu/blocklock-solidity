@@ -145,15 +145,8 @@ contract DecryptionSender is
         return lastRequestID;
     }
 
-    
-    // when fulfilling decryption request, blocklocksender will use gas limit specified by user
-    // with some overhead for decryptionsender and blocklocksender logic and event emission
-    // it will only work if blocklocksender is able to charge in callback to receiveBlocklock selector
-    // in subscribers or direct funders contracts
-    // and decryptionsender only knows about callbackgaslimit not subscription id
-    // blocklocksender handles subscription ids and fee collection from consumer contracts
     /**
-     * @dev See {IDecryptionSender-fulfilSignatureRequest}.
+     * @dev See {IDecryptionSender-fulfillDecryptionRequest}.
      */
     function fulfillDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
         external
