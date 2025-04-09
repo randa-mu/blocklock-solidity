@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IOwnable} from "../interfaces/IOwnable.sol";
 
-/// @title The ConfirmedOwner contract
+/// @title ConfirmedOwnerWithProposal contract
 /// @notice A contract with helpers for basic contract ownership.
 /// @notice Adopted from Chainlink. Source code available at: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/shared/access/ConfirmedOwnerWithProposal.sol
 /// @notice License: MIT
