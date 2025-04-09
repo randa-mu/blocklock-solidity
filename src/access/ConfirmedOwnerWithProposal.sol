@@ -15,7 +15,6 @@ contract ConfirmedOwnerWithProposal is IOwnable {
     event OwnershipTransferred(address indexed from, address indexed to);
 
     constructor(address newOwner, address pendingOwner) {
-        // solhint-disable-next-line gas-custom-errors
         require(newOwner != address(0), "Cannot set owner to zero");
 
         s_owner = newOwner;
@@ -31,7 +30,6 @@ contract ConfirmedOwnerWithProposal is IOwnable {
 
     /// @notice Allows an ownership transfer to be completed by the recipient.
     function acceptOwnership() external override {
-        // solhint-disable-next-line gas-custom-errors
         require(msg.sender == s_pendingOwner, "Must be proposed owner");
 
         address oldOwner = s_owner;
