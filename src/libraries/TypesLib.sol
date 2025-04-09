@@ -38,7 +38,7 @@ library TypesLib {
         bytes signature;
         address callback;
         // used by offchain agent / oracle for callback gasLimit
-        // should cover costs for callbacks from decryptionSender and blocklockSender to consumer contract
+        // should cover costs for callbacks from decryptionSender to consumer contract via blocklockSender
         uint32 callbackGasLimit;
         bool isFulfilled;
     }
