@@ -10,7 +10,6 @@ import {TypesLib} from "../libraries/TypesLib.sol";
 import {BLS} from "../libraries/BLS.sol";
 import {IBlocklockSender} from "../interfaces/IBlocklockSender.sol";
 import {IBlocklockReceiver} from "../interfaces/IBlocklockReceiver.sol";
-import {ISignatureSender} from "../interfaces/ISignatureSender.sol";
 import {IDecryptionSender} from "../interfaces/IDecryptionSender.sol";
 
 import {DecryptionReceiverBase} from "../decryption-requests/DecryptionReceiverBase.sol";
