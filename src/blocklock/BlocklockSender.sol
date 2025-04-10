@@ -104,13 +104,13 @@ contract BlocklockSender is
         // subId can be zero for direct funding or non zero for active subscription
         // fixme test that callbackGasLimit can be zero but user will not get anything in callback. Only signature verification in
         // decryption sender will be done and decryption key saved
-        _validateAndUpdateSubscription(callbackGasLimit, subId);
+        uint32 callbackGasLimitWithOverhead = _validateAndUpdateSubscription(callbackGasLimit, subId);
 
         // New decryption request
         bytes memory condition = abi.encode(blockHeight);
 
         uint256 decryptionRequestID =
-            decryptionSender.registerCiphertext(SCHEME_ID, callbackGasLimit, abi.encode(ciphertext), condition);
+            decryptionSender.registerCiphertext(SCHEME_ID, callbackGasLimitWithOverhead, abi.encode(ciphertext), condition);
         r.decryptionRequestID = uint64(decryptionRequestID);
 
         // Store the signature requestID for this blockHeight
@@ -127,9 +127,8 @@ contract BlocklockSender is
     /// @dev If the subscription ID is zero, it processes a new subscription by calculating the necessary fees.
     /// @param _callbackGasLimit The gas limit for the callback function.
     /// @param _subId The subscription ID. If greater than zero, it indicates an existing subscription, otherwise, a new subscription is created.
-    function _validateAndUpdateSubscription(uint32 _callbackGasLimit, uint256 _subId) internal {
+    function _validateAndUpdateSubscription(uint32 _callbackGasLimit, uint256 _subId) internal returns (uint32 callbackGasLimitWithOverhead)  {
         // fixme test subId always > 0 for createSubscription() in SubscriptionAPI
-        uint32 callbackGasLimit = 0;
         if (_subId > 0) {
             _requireValidSubscription(s_subscriptionConfigs[_subId].owner);
             // Its important to ensure that the consumer is in fact who they say they
@@ -142,12 +141,8 @@ contract BlocklockSender is
             ++consumerConfig.nonce;
             ++consumerConfig.pendingReqCount;
             consumerConfigs[_subId] = consumerConfig;
-
-            callbackGasLimit = _callbackGasLimit;
         } else {
-            uint32 eip150Overhead = _getEIP150Overhead(_callbackGasLimit);
             uint256 price = _calculateRequestPriceNative(_callbackGasLimit, tx.gasprice);
-            callbackGasLimit = _callbackGasLimit + eip150Overhead;
 
             require(msg.value >= price, "Fee too low");
         }
@@ -155,7 +150,10 @@ contract BlocklockSender is
         // No lower bound on the requested gas limit. A user could request 0
         // and they would simply be billed for the signature verification and wouldn't be
         // able to do anything with the decryption key.
-        require(callbackGasLimit <= s_config.maxGasLimit, "Callback gasLimit too high");
+        require(_callbackGasLimit <= s_config.maxGasLimit, "Callback gasLimit too high");
+
+        uint32 eip150Overhead = _getEIP150Overhead(_callbackGasLimit);
+        callbackGasLimitWithOverhead = _callbackGasLimit + eip150Overhead;
     }
 
     /**
@@ -184,6 +182,19 @@ contract BlocklockSender is
             blocklockRequestsWithDecryptionKey[decryptionRequestID].signature = signature;
         }
         _handlePaymentAndCharge(decryptionRequestID, startGas);
+    }
+
+    function estimateRequestPriceNative(uint32 _callbackGasLimit, uint256 _requestGasPriceWei)
+        external
+        override(BlocklockFeeCollector, IBlocklockSender)
+        view
+        returns (uint256)
+    {
+        return _calculateRequestPriceNative(_callbackGasLimit, _requestGasPriceWei);
+    }
+
+    function calculateRequestPriceNative(uint32 _callbackGasLimit) public override(BlocklockFeeCollector, IBlocklockSender) view returns (uint256) {
+        return _calculateRequestPriceNative(_callbackGasLimit, tx.gasprice);
     }
 
     /// @notice Handles the payment and charges for a request based on the subscription or direct funding.

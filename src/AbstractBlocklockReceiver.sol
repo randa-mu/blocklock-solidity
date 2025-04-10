@@ -14,7 +14,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     event Withdrawn(address indexed recipient, uint256 amount);
     event NewSubscriptionId(uint256 indexed subscriptionId);
 
-    /// @notice The Randamu subscription ID used for conditional encryption.
+    /// @notice The subscription ID used for conditional encryption.
     /// @dev Used in interactions with IBlocklockSender for subscription management, e.g.,
     /// @dev funding and consumer contract address registration.
     uint256 public subscriptionId;
@@ -28,18 +28,27 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         blocklock = IBlocklockSender(blocklockSender);
     }
 
-    function _requestBlocklock(uint32 callbackGasLimit, uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext)
-        internal
-        returns (uint256 requestID)
-    {
-        requestID = blocklock.requestBlocklock(callbackGasLimit, subscriptionId, blockHeight, ciphertext);
+    function _requestBlocklockPayInNative(
+        uint32 callbackGasLimit,
+        uint256 blockHeight,
+        TypesLib.Ciphertext calldata ciphertext
+    ) internal returns (uint256 requestId, uint256 requestPrice) {
+        requestPrice = blocklock.calculateRequestPriceNative(callbackGasLimit);
+        return (
+            blocklock.requestBlocklock{value: requestPrice}(callbackGasLimit, 0, blockHeight, ciphertext),
+            requestPrice
+        );
+    }
+
+    function _requestBlocklockWithSubscription(uint32 callbackGasLimit, uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext) internal returns (uint256 requestId) {
+        return blocklock.requestBlocklock(callbackGasLimit, subscriptionId, blockHeight, ciphertext);
     }
 
     function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey) external virtual onlyBlocklockContract {
         _onBlocklockReceived(requestID, decryptionKey);
     }
 
-    function decrypt(TypesLib.Ciphertext memory ciphertext, bytes calldata decryptionKey)
+    function _decrypt(TypesLib.Ciphertext memory ciphertext, bytes calldata decryptionKey)
         internal
         view
         returns (bytes memory)
@@ -110,7 +119,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     }
 
     /// @notice Function to fund the contract with native tokens for direct funding requests.
-    function fund() external payable {
+    function fundNative() external payable {
         require(msg.value > 0, "You must send some ETH");
         emit Funded(msg.sender, msg.value);
     }
@@ -119,7 +128,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @dev Only callable by contract owner.
     /// @param amount The amount to withdraw.
     /// @param recipient The address to send the tokens to.
-    function withdraw(uint256 amount, address recipient) external onlyOwner {
+    function withdrawNative(uint256 amount, address recipient) external onlyOwner {
         require(getBalance() >= amount, "Insufficient funds in contract");
         payable(recipient).transfer(amount);
         emit Withdrawn(recipient, amount);

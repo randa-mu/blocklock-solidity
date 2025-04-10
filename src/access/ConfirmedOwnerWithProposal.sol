@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IOwnable} from "../interfaces/IOwnable.sol";
 
-/// @title The ConfirmedOwner contract
+/// @title ConfirmedOwnerWithProposal contract
 /// @notice A contract with helpers for basic contract ownership.
 /// @notice Adopted from Chainlink. Source code available at: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/shared/access/ConfirmedOwnerWithProposal.sol
 /// @notice License: MIT
@@ -15,7 +15,6 @@ contract ConfirmedOwnerWithProposal is IOwnable {
     event OwnershipTransferred(address indexed from, address indexed to);
 
     constructor(address newOwner, address pendingOwner) {
-        // solhint-disable-next-line gas-custom-errors
         require(newOwner != address(0), "Cannot set owner to zero");
 
         s_owner = newOwner;
@@ -31,7 +30,6 @@ contract ConfirmedOwnerWithProposal is IOwnable {
 
     /// @notice Allows an ownership transfer to be completed by the recipient.
     function acceptOwnership() external override {
-        // solhint-disable-next-line gas-custom-errors
         require(msg.sender == s_pendingOwner, "Must be proposed owner");
 
         address oldOwner = s_owner;

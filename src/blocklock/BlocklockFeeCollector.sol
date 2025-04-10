@@ -5,7 +5,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 import {SubscriptionAPI} from "../subscription/SubscriptionAPI.sol";
 
-import {CallWithExactGas} from "../CallWithExactGas.sol";
+import {CallWithExactGas} from "../utils/CallWithExactGas.sol";
 
 abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, SubscriptionAPI {
     /// @dev Upper bound for premium percentages to prevent overflow in fee calculations.
@@ -70,7 +70,7 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
     /// @dev This function relies on the transaction gas price which is not automatically set during
     /// @dev simulation. To estimate the price at a specific gas price, use the estimatePrice function.
     /// @param _callbackGasLimit is the gas limit used to estimate the price.
-    function calculateRequestPriceNative(uint32 _callbackGasLimit) public view returns (uint256) {
+    function calculateRequestPriceNative(uint32 _callbackGasLimit) public virtual view returns (uint256) {
         return _calculateRequestPriceNative(_callbackGasLimit, tx.gasprice);
     }
 
@@ -81,6 +81,7 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
     /// @param _requestGasPriceWei is the gas price in wei used for the estimation.
     function estimateRequestPriceNative(uint32 _callbackGasLimit, uint256 _requestGasPriceWei)
         external
+        virtual
         view
         returns (uint256)
     {
