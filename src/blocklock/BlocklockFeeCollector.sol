@@ -4,9 +4,14 @@ pragma solidity ^0.8;
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {SubscriptionAPI} from "../subscription/SubscriptionAPI.sol";
-
 import {CallWithExactGas} from "../utils/CallWithExactGas.sol";
 
+/// @title BlocklockFeeCollector contract
+/// @notice An abstract contract for collecting fees related to blocklock functionality
+/// @dev This contract is intended to be inherited by other contracts that need to collect fees.
+/// @dev The contract includes functionality from CallWithExactGas, ReentrancyGuard, and SubscriptionAPI.
+/// @dev Inspired by Chainlink's VRFV2PlusWrapper contract at: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/vrf/dev/VRFV2PlusWrapper.sol
+/// @notice License: MIT
 abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, SubscriptionAPI {
     /// @dev Upper bound for premium percentages to prevent overflow in fee calculations.
     uint8 internal constant PREMIUM_PERCENTAGE_MAX = 155;
@@ -37,12 +42,28 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
     /// @dev Ensures function is only called when the contract configuration parameters are set and
     /// the contract is not disabled.
     modifier onlyConfiguredNotDisabled() {
-        // solhint-disable-next-line gas-custom-errors
         require(s_configured, "Contract is not configured");
-        // solhint-disable-next-line gas-custom-errors
         require(!s_disabled, "Contract is disabled");
         _;
     }
+
+    /// @notice Disables the functionality of the contract, preventing further actions
+    /// @dev Can be overridden in derived contracts to implement specific disable behavior
+    function disable() external virtual {}
+
+    /// @notice Enables the functionality of the contract, allowing further actions
+    /// @dev Can be overridden in derived contracts to implement specific enable behavior
+    function enable() external virtual {}
+
+    /// @notice Cancels the subscription for the given subscription ID
+    /// @param subId The ID of the subscription to cancel
+    /// @dev Can be overridden in derived contracts to implement specific cancellation logic
+    function ownerCancelSubscription(uint256 subId) external virtual {}
+
+    /// @notice Withdraws native tokens from the contract to the specified recipient address
+    /// @param recipient The address to send the withdrawn funds to
+    /// @dev The recipient must be a valid address that can receive native tokens
+    function withdrawNative(address payable recipient) external virtual {}
 
     /// @notice Configures the contract's settings.
     /// @dev This function sets the global gas limit, post-fulfillment gas usage, and fee structure.
@@ -57,13 +78,6 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
         uint32 fulfillmentFlatFeeNativePPM,
         uint8 nativePremiumPercentage
     ) external virtual {}
-
-    function disable() external virtual {}
-    function enable() external virtual {}
-
-    function ownerCancelSubscription(uint256 subId) external virtual {}
-
-    function withdrawNative(address payable recipient) external virtual {}
 
     /// @notice Calculates the price of a request with the given callbackGasLimit at the current
     /// @notice block.
@@ -88,65 +102,49 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
         return _calculateRequestPriceNative(_callbackGasLimit, _requestGasPriceWei);
     }
 
-    /// @notice Calculates the total request price including gas costs and additional fees.
-    /// @param _gas The amount of gas required for the request.
-    /// @param _requestGasPrice The gas price in wei per gas unit.
-    /// @return The total cost in native tokens.
+    /// @notice Calculates the total request price including gas costs and additional fees
+    /// @dev blocklockSenderCostWei is the base fee denominated in wei (native) = (wei/gas) * gas
+    ///     It also takes into account the L1 posting costs of the fulfillment transaction,
+    ///     if we are on an L2 = (wei/gas) * gas + l1wei
+    /// @param _gas The amount of gas required for the request
+    /// @param _requestGasPrice The gas price in wei per gas unit
+    /// @return The total cost in native tokens (wei)
     function _calculateRequestPriceNative(uint256 _gas, uint256 _requestGasPrice) internal view returns (uint256) {
-        // costWei is the base fee denominated in wei (native)
-        // (wei/gas) * gas
-        // blocklockSenderCostWei takes into account the L1 posting costs of the fulfillment transaction, if we are on an L2.
-        // (wei/gas) * gas + l1wei
-        // fixme add gas used by decryption sender callback
-        // e.g., _requestGasPrice * (_gas + _getDecryptionSenderGasOverhead() + _getL1CostWei());
+        // Calculate the base fee in wei: (gas required) * (gas price)
         uint256 blocklockSenderCostWei = _requestGasPrice * (_gas + _getL1CostWei());
 
-        // blocklockSenderCostWithPremiumAndFlatFeeWei is the blocklockSender cost with the percentage premium and flat fee applied
-        // blocklockSender cost * premium multiplier + flat fee
-        uint256 blocklockSenderCostWithPremiumAndFlatFeeWei = (
+        // Apply premium and flat fee: cost * (1 + premium) + flat fee
+        uint256 totalCostWithPremiumAndFlatFeeWei = (
             (blocklockSenderCostWei * (s_config.nativePremiumPercentage + 100)) / 100
         ) + (1e12 * uint256(s_config.fulfillmentFlatFeeNativePPM));
 
-        return blocklockSenderCostWithPremiumAndFlatFeeWei;
+        return totalCostWithPremiumAndFlatFeeWei;
     }
 
-    /// @notice Returns the L1 fee for fulfilling a request.
-    /// @dev Always returns `0` on L1 chains. Should be overridden for L2 chains.
-    /// @return The L1 fee in wei.
-    function _getL1CostWei() internal view virtual returns (uint256) {
-        return 0;
-    }
-
-    /// @notice Returns the L1 fee for the calldata payload.
-    /// @dev Always returns `0` on L1 chains. Should be overridden for L2 chains.
-    // /// @param data The calldata payload.
-    /// @return The L1 fee in wei.
-    function _getL1CostWei(bytes calldata /*data*/ ) internal view virtual returns (uint256) {
-        return 0;
-    }
-
-    /// @dev Calculates extra amount of gas required for running an assembly call() post-EIP150.
-    function _getEIP150Overhead(uint32 gas) internal pure returns (uint32) {
-        return gas / 63 + 1;
-    }
-
-    /// @notice Calculates the payment amount in native tokens, considering L1 gas fees if applicable.
-    /// @param startGas The initial gas measurement.
-    /// @param weiPerUnitGas The gas price in wei.
-    /// @return The total payment amount in native tokens.
+    /// @notice Calculates the payment amount in native tokens, considering L1 gas fees if applicable
+    /// @param startGas The initial gas amount at the start of the operation
+    /// @param weiPerUnitGas The gas price in wei
+    /// @return The total payment amount in native tokens (as uint96)
     function _calculatePaymentAmountNative(uint256 startGas, uint256 weiPerUnitGas) internal returns (uint96) {
-        // Will return non-zero on chains that have this enabled
+        // Retrieve L1 cost (non-zero only on L2s that need to reimburse L1 gas usage)
         uint256 l1CostWei = _getL1CostWei(msg.data);
-        // calculate the payment without the premium
-        uint256 baseFeeWei = weiPerUnitGas * (s_config.gasAfterPaymentCalculation + startGas - gasleft());
-        // calculate flat fee in native
+
+        // Calculate base gas fee: (used gas) * gas price
+        uint256 gasUsed = s_config.gasAfterPaymentCalculation + startGas - gasleft();
+        uint256 baseFeeWei = gasUsed * weiPerUnitGas;
+
+        // Flat fee charged in native token (in wei)
         uint256 flatFeeWei = 1e12 * uint256(s_config.fulfillmentFlatFeeNativePPM);
-        // emit this event only if this is an L2 chain that needs to cover for L1 gas fees
+
+        // Emit L1 fee info if applicable
         if (l1CostWei > 0) {
             emit L1GasFee(l1CostWei);
         }
 
-        return uint96((((l1CostWei + baseFeeWei) * (100 + s_config.nativePremiumPercentage)) / 100) + flatFeeWei);
+        // Apply premium percentage and add flat fee
+        uint256 totalFeeWei = ((l1CostWei + baseFeeWei) * (100 + s_config.nativePremiumPercentage)) / 100 + flatFeeWei;
+
+        return uint96(totalFeeWei);
     }
 
     /// @notice Charges a payment against a subscription and updates contract balances
@@ -160,7 +158,7 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
             uint96 prevBal = subcription.nativeBalance;
 
             _requireSufficientBalance(prevBal >= payment);
-            
+
             subcription.nativeBalance = prevBal - payment;
         }
 
@@ -172,4 +170,25 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
     /// @param requestId The unique identifier of the request being processed
     /// @param startGas The amount of gas available at the start of the function execution
     function _handlePaymentAndCharge(uint256 requestId, uint256 startGas) internal virtual {}
+
+    /// @notice Returns the L1 fee for fulfilling a request.
+    /// @dev Always returns `0` on L1 chains.
+    /// @dev Should be overridden for L2 chains.
+    /// @dev E.g., Arbitrum/Optimism to cover cost for L2s posting data to Ethereum (L1).
+    /// @return The L1 fee in wei.
+    function _getL1CostWei() internal view virtual returns (uint256) {
+        return 0;
+    }
+
+    /// @notice Returns the L1 fee for the calldata payload.
+    /// @dev Always returns `0` on L1 chains. Should be overridden for L2 chains.
+    /// @return The L1 fee in wei.
+    function _getL1CostWei(bytes calldata /*data*/ ) internal view virtual returns (uint256) {
+        return 0;
+    }
+
+    /// @dev Calculates extra amount of gas required for running an assembly call() post-EIP150.
+    function _getEIP150Overhead(uint32 gas) internal pure returns (uint32) {
+        return gas / 63 + 1;
+    }
 }
