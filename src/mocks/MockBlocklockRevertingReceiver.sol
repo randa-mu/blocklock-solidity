@@ -4,6 +4,7 @@ pragma solidity ^0.8;
 import {TypesLib} from "../libraries/TypesLib.sol";
 import {AbstractBlocklockReceiver} from "../AbstractBlocklockReceiver.sol";
 
+/// @notice This contract is used for testing only and should not be used for production.
 contract MockBlocklockRevertingReceiver is AbstractBlocklockReceiver {
     uint256 public requestId;
     TypesLib.Ciphertext public encrytpedValue;

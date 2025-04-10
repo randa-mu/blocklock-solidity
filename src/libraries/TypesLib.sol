@@ -3,22 +3,18 @@ pragma solidity ^0.8;
 
 import "./BLS.sol";
 
+/// @title TypesLib
+/// @author Randamu
+/// @notice Library declaring custom data types used for randomness and blocklock requests
 library TypesLib {
-    // Signature request struct for signature request type
-    struct SignatureRequest {
-        bytes message; // plaintext message to hash and sign
-        bytes messageHash; // hashed message to sign
-        bytes condition; // optional condition, length can be zero for immediate message signing
-        string schemeID; // signature scheme id, e.g., "BN254", "BLS12-381", "TESS"
-        address callback; // the requester address to call back. Must implement ISignatureReceiver interface to support the required callback
-    }
-
+    /// @notice  Ciphertext representing data encrypted off-chain
     struct Ciphertext {
         BLS.PointG2 u;
         bytes v;
         bytes w;
     }
 
+    /// @notice  Blocklock request stores details needed to generate blocklock decryption keys
     struct BlocklockRequest {
         uint256 subId; // 0 for direct funding
         uint256 directFundingPayment; // > 0 for direct funding or if subId == 0
@@ -29,7 +25,8 @@ library TypesLib {
         bytes decryptionKey;
         address callback;
     }
-
+    
+    /// @notice  Decryption request stores details for each decryption request
     struct DecryptionRequest {
         string schemeID; // signature scheme id, e.g., "BN254", "BLS12-381", "TESS"
         bytes ciphertext;

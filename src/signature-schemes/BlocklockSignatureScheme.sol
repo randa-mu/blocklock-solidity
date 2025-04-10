@@ -19,11 +19,11 @@ contract BlocklockSignatureScheme is SignatureSchemeBase {
 
     constructor(uint256[2] memory x, uint256[2] memory y) SignatureSchemeBase(x, y) {}
 
-    /// @dev See {ISignatureScheme-verifySignature}.
-    /// @param message The message whose signature is being verified.
-    /// @param signature The BLS signature to be verified.
-    /// @param publicKey The public key associated with the signature.
-    /// @return isValid A boolean value indicating if the signature is valid.
+    /// @notice Verifies a signature using the given signature scheme.
+    /// @param message The message that was signed. Message is a G1 point represented as bytes.
+    /// @param signature The signature to verify. Signature is a G1 point represented as bytes.
+    /// @param publicKey The public key of the signer. Public key is a G2 point represented as bytes.
+    /// @return isValid boolean which evaluates to true if the signature is valid, false otherwise.
     function verifySignature(bytes calldata message, bytes calldata signature, bytes calldata publicKey)
         external
         view
@@ -40,18 +40,17 @@ contract BlocklockSignatureScheme is SignatureSchemeBase {
         return (pairingSuccess && callSuccess);
     }
 
-    /// @dev See {ISignatureScheme-hashToPoint}.
-    /// @param message The message to be hashed to a point on the elliptic curve.
-    /// @return x The x-coordinate of the point.
-    /// @return y The y-coordinate of the point.
+    /// @notice Hashes a message to a G1 point on the elliptic curve.
+    /// @param message The message to be hashed.
+    /// @return (uint256, uint256) A point on the elliptic curve in G1, represented as x and y coordinates.
     function hashToPoint(bytes calldata message) public view returns (uint256, uint256) {
         BLS.PointG1 memory point = BLS.hashToPoint(DST, message);
         return (point.x, point.y);
     }
 
-    /// @dev See {ISignatureScheme-hashToBytes}.
-    /// @param message The message to be hashed to bytes.
-    /// @return The marshaled bytes representing the point corresponding to the message.
+    /// @notice Hashes a message to a G1 point on the elliptic curve.
+    /// @param message The message to be hashed.
+    /// @return bytes The marshaled bytes representing the point corresponding to the message.
     function hashToBytes(bytes calldata message) external view returns (bytes memory) {
         (uint256 x, uint256 y) = hashToPoint(message);
         return BLS.g1Marshal(BLS.PointG1({x: x, y: y}));
