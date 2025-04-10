@@ -109,8 +109,9 @@ contract BlocklockSender is
         // New decryption request
         bytes memory condition = abi.encode(blockHeight);
 
-        uint256 decryptionRequestID =
-            decryptionSender.registerCiphertext(SCHEME_ID, callbackGasLimitWithOverhead, abi.encode(ciphertext), condition);
+        uint256 decryptionRequestID = decryptionSender.registerCiphertext(
+            SCHEME_ID, callbackGasLimitWithOverhead, abi.encode(ciphertext), condition
+        );
         r.decryptionRequestID = uint64(decryptionRequestID);
 
         // Store the signature requestID for this blockHeight
@@ -127,7 +128,10 @@ contract BlocklockSender is
     /// @dev If the subscription ID is zero, it processes a new subscription by calculating the necessary fees.
     /// @param _callbackGasLimit The gas limit for the callback function.
     /// @param _subId The subscription ID. If greater than zero, it indicates an existing subscription, otherwise, a new subscription is created.
-    function _validateAndUpdateSubscription(uint32 _callbackGasLimit, uint256 _subId) internal returns (uint32 callbackGasLimitWithOverhead)  {
+    function _validateAndUpdateSubscription(uint32 _callbackGasLimit, uint256 _subId)
+        internal
+        returns (uint32 callbackGasLimitWithOverhead)
+    {
         // fixme test subId always > 0 for createSubscription() in SubscriptionAPI
         if (_subId > 0) {
             _requireValidSubscription(s_subscriptionConfigs[_subId].owner);
@@ -186,14 +190,19 @@ contract BlocklockSender is
 
     function estimateRequestPriceNative(uint32 _callbackGasLimit, uint256 _requestGasPriceWei)
         external
-        override(BlocklockFeeCollector, IBlocklockSender)
         view
+        override(BlocklockFeeCollector, IBlocklockSender)
         returns (uint256)
     {
         return _calculateRequestPriceNative(_callbackGasLimit, _requestGasPriceWei);
     }
 
-    function calculateRequestPriceNative(uint32 _callbackGasLimit) public override(BlocklockFeeCollector, IBlocklockSender) view returns (uint256) {
+    function calculateRequestPriceNative(uint32 _callbackGasLimit)
+        public
+        view
+        override(BlocklockFeeCollector, IBlocklockSender)
+        returns (uint256)
+    {
         return _calculateRequestPriceNative(_callbackGasLimit, tx.gasprice);
     }
 

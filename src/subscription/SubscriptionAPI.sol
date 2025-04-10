@@ -31,8 +31,6 @@ abstract contract SubscriptionAPI is ReentrancyGuard, ISubscription {
     error IndexOutOfRange();
     error PendingRequestExists();
 
-    event NativeFundsRecovered(address to, uint256 amount);
-
     // We use the subscription struct (1 word)
     // at fulfillment time.
     struct Subscription {
@@ -76,11 +74,11 @@ abstract contract SubscriptionAPI is ReentrancyGuard, ISubscription {
     // single RPC call without violating various size limits.
     EnumerableSet.UintSet internal s_subIds;
     // s_totalNativeBalance tracks the total native sent to/from
-    // this contract through fundSubscription, cancelSubscription and oracleWithdrawNative.
+    // this contract through fundSubscription, cancelSubscription.
     // A discrepancy with this contract's native balance indicates someone
     // sent native using transfer and so we may need to use recoverNativeFunds.
     uint96 public s_totalNativeBalance;
-    uint96 internal s_withdrawableNative;
+    uint96 public s_withdrawableNative;
 
     event SubscriptionCreated(uint256 indexed subId, address owner);
     event SubscriptionFundedWithNative(uint256 indexed subId, uint256 oldNativeBalance, uint256 newNativeBalance);
@@ -112,6 +110,11 @@ abstract contract SubscriptionAPI is ReentrancyGuard, ISubscription {
     }
 
     Config public s_config;
+
+    modifier onlySubOwner(uint256 subId) {
+        _onlySubOwner(subId);
+        _;
+    }
 
     function _requireSufficientBalance(bool condition) internal pure {
         if (!condition) {
@@ -186,7 +189,6 @@ abstract contract SubscriptionAPI is ReentrancyGuard, ISubscription {
     function createSubscription() external override nonReentrant returns (uint256 subId) {
         // Generate a subscription id that is globally unique.
         uint64 currentSubNonce = s_currentSubNonce;
-        // fixme test that this never returns zero
         subId = uint256(
             keccak256(abi.encodePacked(msg.sender, blockhash(block.number - 1), address(this), currentSubNonce))
         );
@@ -341,11 +343,6 @@ abstract contract SubscriptionAPI is ReentrancyGuard, ISubscription {
         // send native to the "to" address using call
         _mustSendNative(to, uint256(nativeBalance));
         emit SubscriptionCanceled(subId, to, nativeBalance);
-    }
-
-    modifier onlySubOwner(uint256 subId) {
-        _onlySubOwner(subId);
-        _;
     }
 
     function _onlySubOwner(uint256 subId) internal view {

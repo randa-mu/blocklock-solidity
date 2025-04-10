@@ -70,7 +70,7 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
     /// @dev This function relies on the transaction gas price which is not automatically set during
     /// @dev simulation. To estimate the price at a specific gas price, use the estimatePrice function.
     /// @param _callbackGasLimit is the gas limit used to estimate the price.
-    function calculateRequestPriceNative(uint32 _callbackGasLimit) public virtual view returns (uint256) {
+    function calculateRequestPriceNative(uint32 _callbackGasLimit) public view virtual returns (uint256) {
         return _calculateRequestPriceNative(_callbackGasLimit, tx.gasprice);
     }
 
@@ -81,8 +81,8 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
     /// @param _requestGasPriceWei is the gas price in wei used for the estimation.
     function estimateRequestPriceNative(uint32 _callbackGasLimit, uint256 _requestGasPriceWei)
         external
-        virtual
         view
+        virtual
         returns (uint256)
     {
         return _calculateRequestPriceNative(_callbackGasLimit, _requestGasPriceWei);
@@ -98,7 +98,7 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
         // blocklockSenderCostWei takes into account the L1 posting costs of the fulfillment transaction, if we are on an L2.
         // (wei/gas) * gas + l1wei
         // fixme add gas used by decryption sender callback
-        // e.g., _requestGasPrice * (_gas + _getDecryptionSenderGasOverhead() + _getL1CostWei()); 
+        // e.g., _requestGasPrice * (_gas + _getDecryptionSenderGasOverhead() + _getL1CostWei());
         uint256 blocklockSenderCostWei = _requestGasPrice * (_gas + _getL1CostWei());
 
         // blocklockSenderCostWithPremiumAndFlatFeeWei is the blocklockSender cost with the percentage premium and flat fee applied

@@ -188,9 +188,9 @@ contract DecryptionSender is
     }
 
     /// @notice Retries the callback to the decryption key receiver with the specified gas limit for a given request ID.
-    /// @dev This function allows the owner to retry sending the decryption key to the consumer's 
-    ///     contract if the original callback failed. 
-    ///     The function checks if the request has errored, retrieves the necessary request 
+    /// @dev This function allows the owner to retry sending the decryption key to the consumer's
+    ///     contract if the original callback failed.
+    ///     The function checks if the request has errored, retrieves the necessary request
     ///     and subscription data, and then tries to resend the decryption key.
     /// @param requestID The ID of the request that failed and needs to be retried.
     /// @param newCallbackGasLimit The new gas limit to be used for the retry callback. This should be estimated based on the consumer's contract requirements.
