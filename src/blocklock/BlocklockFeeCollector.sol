@@ -96,6 +96,8 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
         // (wei/gas) * gas
         // blocklockSenderCostWei takes into account the L1 posting costs of the fulfillment transaction, if we are on an L2.
         // (wei/gas) * gas + l1wei
+        // fixme add gas used by decryption sender callback
+        // e.g., _requestGasPrice * (_gas + _getDecryptionSenderGasOverhead() + _getL1CostWei()); 
         uint256 blocklockSenderCostWei = _requestGasPrice * (_gas + _getL1CostWei());
 
         // blocklockSenderCostWithPremiumAndFlatFeeWei is the blocklockSender cost with the percentage premium and flat fee applied
