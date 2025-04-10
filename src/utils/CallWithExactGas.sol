@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8;
 
+/// @title CallWithExactGas contract
+/// @notice Helper contract for making external calls within contracts with a specified gas amount.
 abstract contract CallWithExactGas {
     /// @dev Gas required for exact EXTCODESIZE call and additional operations.
     uint256 internal constant GAS_FOR_CALL_EXACT_CHECK = 5_000;

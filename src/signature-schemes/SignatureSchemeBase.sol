@@ -6,6 +6,7 @@ import {BLS} from "../libraries/BLS.sol";
 import {ISignatureScheme} from "../interfaces/ISignatureScheme.sol";
 
 /// @title SignatureSchemeBase contract
+/// @author Randamu
 /// @notice Base contract that all signature scheme contracts must implement.
 abstract contract SignatureSchemeBase is ISignatureScheme {
     /// @notice Links public keys of threshold network statically to signature scheme contracts and remove from constructor of sender contracts. Admin cannot update, simply use new scheme id.

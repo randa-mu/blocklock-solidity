@@ -7,6 +7,7 @@ import {IBlocklockSender, TypesLib} from "./interfaces/IBlocklockSender.sol";
 import {ConfirmedOwner} from "./access/ConfirmedOwner.sol";
 
 /// @title AbstractBlocklockReceiver contract
+/// @author Randamu
 /// @notice Base contract which blocklock decryption key receiver contracts must implement
 /// @notice to receive decryption keys via callbacks to the receiveBlocklock function.
 abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwner {

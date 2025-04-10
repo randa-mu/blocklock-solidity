@@ -11,12 +11,9 @@ import {BLS} from "../libraries/BLS.sol";
 import {IBlocklockSender} from "../interfaces/IBlocklockSender.sol";
 import {IBlocklockReceiver} from "../interfaces/IBlocklockReceiver.sol";
 import {ISignatureSender} from "../interfaces/ISignatureSender.sol";
-
-import {SignatureReceiverBase} from "../signature-requests/SignatureReceiverBase.sol";
-
-import {DecryptionReceiverBase} from "../decryption-requests/DecryptionReceiverBase.sol";
 import {IDecryptionSender} from "../interfaces/IDecryptionSender.sol";
 
+import {DecryptionReceiverBase} from "../decryption-requests/DecryptionReceiverBase.sol";
 import {BlocklockFeeCollector} from "./BlocklockFeeCollector.sol";
 
 contract BlocklockSender is
@@ -352,9 +349,6 @@ contract BlocklockSender is
         _mustSendNative(recipient, amount);
     }
 
-    /**
-     * @dev See {ISignatureSender-isInFlight}.
-     */
     function isInFlight(uint256 requestID) external view returns (bool) {
         uint256 signatureRequestID = getRequest(requestID).decryptionRequestID;
 

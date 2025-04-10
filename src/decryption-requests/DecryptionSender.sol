@@ -23,7 +23,6 @@ import {IDecryptionReceiver} from "../interfaces/IDecryptionReceiver.sol";
 import {IBlocklockSender} from "../interfaces/IBlocklockSender.sol";
 
 import {ISignatureReceiver} from "../interfaces/ISignatureReceiver.sol";
-import {ISignatureSender} from "../interfaces/ISignatureSender.sol";
 import {ISignatureScheme} from "../interfaces/ISignatureScheme.sol";
 import {ISignatureSchemeAddressProvider} from "../interfaces/ISignatureSchemeAddressProvider.sol";
 

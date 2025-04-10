@@ -5,6 +5,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ISignatureSchemeAddressProvider} from "../interfaces/ISignatureSchemeAddressProvider.sol";
 
 /// @title SignatureSchemeAddressProvider contract
+/// @author Randamu
 /// @notice Manages and provides addresses of signature scheme contracts using their unique scheme identifier string.
 /// @dev Uses OpenZeppelin's AccessControl for role-based access management.
 contract SignatureSchemeAddressProvider is ISignatureSchemeAddressProvider, AccessControl {
