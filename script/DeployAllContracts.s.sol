@@ -5,17 +5,17 @@ import {Script} from "forge-std/Script.sol";
 
 import {Constants} from "./libraries/Constants.sol";
 
-import {BlocklockSender, DeployBlocklockSender} from "./single-deployments/DeployBlocklockSender.s.sol";
+import {BlocklockSender, DeployBlocklockSender} from "./single-deployment/DeployBlocklockSender.s.sol";
 import {
     SignatureSchemeAddressProvider,
     DeploySignatureSchemeAddressProvider
-} from "./single-deployments/DeploySignatureSchemeAddressProvider.s.sol";
+} from "./single-deployment/DeploySignatureSchemeAddressProvider.s.sol";
 import {
     BlocklockSignatureScheme,
     DeployBlocklockSignatureScheme
-} from "./single-deployments/DeployBlocklockSignatureScheme.s.sol";
-import {DecryptionSender, DeployDecryptionSender} from "./single-deployments/DeployDecryptionSender.s.sol";
-import {MockBlocklockReceiver, DeployBlocklockReceiver} from "./single-deployments/DeployBlocklockReceiver.s.sol";
+} from "./single-deployment/DeployBlocklockSignatureScheme.s.sol";
+import {DecryptionSender, DeployDecryptionSender} from "./single-deployment/DeployDecryptionSender.s.sol";
+import {MockBlocklockReceiver, DeployBlocklockReceiver} from "./single-deployment/DeployBlocklockReceiver.s.sol";
 
 /// @title DeployAllContracts
 /// @author Randamu

@@ -91,10 +91,12 @@ source .env
 forge script script/single-deployment/DeployBlocklockSignatureScheme.s.sol:DeployBlocklockSignatureScheme --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 ```
 
-To resolve dependencies between the contract deployments, a `.json` file named [Deployment_input.json](script/json/Deployment_input.json) in the [script](script) folder is filled with contract addresses for the following contracts after they are deployed (either as single deployments or part of the single run deployment for all contracts):
+To resolve dependencies between the contract deployments, a `.json` file named [Deployment_input.json](script/json/Deployment_input.json) in the [script/json](script/json) folder is filled with contract addresses for the following contracts after they are deployed (either as single deployments or part of the single run deployment for all contracts):
 * BlocklockSender (proxy address)
 * DecryptionSender (proxy address)
 * SignatureSchemeAddressProvider
+
+Create the [script/json](script/json) folder if it does not exist. 
 
 The addresses from this input file are read in by scripts using them. To overwrite the addresses in this file, replace them with the relevant address for each contract.
 
