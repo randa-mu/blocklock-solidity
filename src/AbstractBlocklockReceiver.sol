@@ -11,11 +11,16 @@ import {ConfirmedOwner} from "./access/ConfirmedOwner.sol";
 /// @notice Base contract which blocklock decryption key receiver contracts must implement
 /// @notice to receive decryption keys via callbacks to the receiveBlocklock function.
 abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwner {
+    /// @notice BlocklockSender contract for conditional encryption requests, subscription management and handling decryption keys
     IBlocklockSender public blocklock;
 
-    // Event to log deposits and withdrawals of native tokens
+    /// @notice Event to log deposits of native tokens
     event Funded(address indexed sender, uint256 amount);
+
+    /// @notice Event to log withdrawals of native tokens
     event Withdrawn(address indexed recipient, uint256 amount);
+
+    /// @notice Event logged when a new subscription id is set
     event NewSubscriptionId(uint256 indexed subscriptionId);
 
     /// @notice The subscription ID used for conditional encryption.
@@ -23,6 +28,10 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @dev funding and consumer contract address registration.
     uint256 public subscriptionId;
 
+    /// @notice Ensures that the caller is the designated Blocklock contract.
+    /// @dev This modifier restricts access to the function it modifies to only the Blocklock contract.
+    ///      If the caller is not the Blocklock contract, the transaction will revert with an error message.
+    /// @notice Reverts with the error message "Only blocklock contract can call" if the caller is not the Blocklock contract.
     modifier onlyBlocklockContract() {
         require(msg.sender == address(blocklock), "Only blocklock contract can call");
         _;
@@ -32,6 +41,12 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         blocklock = IBlocklockSender(blocklockSender);
     }
 
+    /// @notice Receives a blocklock request and the associated decryption key.
+    /// @dev This function is only callable by a contract that is recognized as a valid "BlocklockContract".
+    ///      Once the decryption key is received, it triggers the internal function `_onBlocklockReceived` to handle the processing.
+    /// @param requestID The unique identifier of the blocklock request.
+    /// @param decryptionKey The decryption key that will be used to decrypt the associated ciphertext.
+    /// @notice Emits an event or performs additional logic in `_onBlocklockReceived`.
     function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey) external virtual onlyBlocklockContract {
         _onBlocklockReceived(requestID, decryptionKey);
     }
@@ -112,6 +127,14 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         );
     }
 
+    /// @notice Requests a blocklock with a subscription and returns the request ID.
+    /// @dev This function calls the `requestBlocklock` function from the `blocklock` contract, passing the required parameters such as
+    ///      `callbackGasLimit`, `subscriptionId`, `blockHeight`, and `ciphertext`.
+    /// @param callbackGasLimit The gas limit for the callback function to be executed after the blocklock request.
+    /// @param blockHeight The block height for which the blocklock request is made.
+    /// @param ciphertext The ciphertext to be used in the blocklock request.
+    /// @return requestId The unique identifier for the blocklock request.
+    /// @notice This function internally calls the `blocklock.requestBlocklock` function.
     function _requestBlocklockWithSubscription(
         uint32 callbackGasLimit,
         uint256 blockHeight,
@@ -120,6 +143,13 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         return blocklock.requestBlocklock(callbackGasLimit, subscriptionId, blockHeight, ciphertext);
     }
 
+    /// @notice Decrypts the provided ciphertext using the specified decryption key.
+    /// @dev This function calls the `decrypt` function from the `blocklock` contract to perform the decryption operation.
+    ///      It requires that the `blocklock` contract implements decryption logic using the provided ciphertext and decryption key.
+    /// @param ciphertext The ciphertext that needs to be decrypted.
+    /// @param decryptionKey The decryption key to be used for decrypting the ciphertext.
+    /// @return The decrypted plaintext as a `bytes` array.
+    /// @notice This function internally calls the `blocklock.decrypt` function to perform the decryption.
     function _decrypt(TypesLib.Ciphertext memory ciphertext, bytes calldata decryptionKey)
         internal
         view
@@ -128,6 +158,14 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         return blocklock.decrypt(ciphertext, decryptionKey);
     }
 
+    /// @notice Handles the reception of a blocklock with the provided decryption key.
+    /// @dev This function is meant to be overridden in derived contracts to define the specific logic
+    ///      for processing a blocklock upon receipt of a decryption key.
+    /// @param requestID The unique identifier of the blocklock request.
+    /// @param decryptionKey The decryption key that corresponds to the ciphertext in the blocklock request.
+    /// @notice This function does not implement any functionality itself but serves as a placeholder for derived contracts
+    ///         to implement their specific logic when a blocklock is received.
+    /// @dev This function is marked as `internal` and `virtual`, meaning it can be overridden in a derived contract.
     function _onBlocklockReceived(uint256 requestID, bytes calldata decryptionKey) internal virtual;
 
     /// @notice Creates a new Randamu subscription if none exists and registers this contract as a consumer.

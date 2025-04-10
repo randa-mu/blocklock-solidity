@@ -15,6 +15,14 @@ import {IDecryptionSender} from "../interfaces/IDecryptionSender.sol";
 import {DecryptionReceiverBase} from "../decryption-requests/DecryptionReceiverBase.sol";
 import {BlocklockFeeCollector} from "./BlocklockFeeCollector.sol";
 
+/// @title BlocklockSender Contract
+/// @author Randamu
+/// @notice This contract is responsible for managing the blocklock sending functionality,
+///         including handling requests, decryption keys, decryption, fees, and access control.
+/// @dev The contract integrates multiple functionalities including decryption receiver capabilities,
+///      fee collection, and role-based access control. It is also upgradeable and follows the UUPS pattern.
+///      The contract implements the `IBlocklockSender` interface and uses `DecryptionReceiverBase` for handling decryption logic.
+///      Additionally, it collects fees via `BlocklockFeeCollector` and uses OpenZeppelin's upgradeable and access control mechanisms.
 contract BlocklockSender is
     IBlocklockSender,
     DecryptionReceiverBase,
@@ -23,17 +31,45 @@ contract BlocklockSender is
     UUPSUpgradeable,
     AccessControlEnumerableUpgradeable
 {
+    /// @notice This contract manages blocklock requests, decryption keys, and administrative roles.
+    /// @dev The contract includes constants related to blocklock schemes, decryption key processing, and events for blocklock requests and callbacks.
+    ///      It also defines an `ADMIN_ROLE` for managing access control and updates to decryption sender.
+
+    /// @notice The role identifier for the admin role used for access control
+    /// @dev This constant is derived from the keccak256 hash of the string "ADMIN_ROLE" and is used in access control checks
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
+    /// @notice The Scheme ID used for the BLS-based blocklock scheme
+    /// @dev This constant is used for identifying the BLS blocklock scheme, specifically for BN254 elliptic curve operations
     string public constant SCHEME_ID = "BN254-BLS-BLOCKLOCK";
+
+    /// @notice The domain separation constant used for H1 in the blocklock scheme
+    /// @dev This constant is used for hashing and cryptographic operations in the blocklock protocol
     bytes public constant DST_H1_G1 = "BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_";
+
+    /// @notice The domain separation constant used for H2 in the blocklock scheme
+    /// @dev This constant is used for hashing and cryptographic operations in the blocklock protocol
     bytes public constant DST_H2 = "BLOCKLOCK_BN254_XMD:KECCAK-256_H2_";
+
+    /// @notice The domain separation constant used for H3 in the blocklock scheme
+    /// @dev This constant is used for hashing and cryptographic operations in the blocklock protocol
     bytes public constant DST_H3 = "BLOCKLOCK_BN254_XMD:KECCAK-256_H3_";
+
+    /// @notice The domain separation constant used for H4 in the blocklock scheme
+    /// @dev This constant is used for hashing and cryptographic operations in the blocklock protocol
     bytes public constant DST_H4 = "BLOCKLOCK_BN254_XMD:KECCAK-256_H4_";
 
-    // Mapping from decryption requestID to conditional decryption request
+    /// @notice Mapping from a decryption request ID to its corresponding blocklock request containing the decryption key
+    /// @dev The mapping is used to store blocklock requests with their decryption keys by their unique request IDs
     mapping(uint256 => TypesLib.BlocklockRequest) public blocklockRequestsWithDecryptionKey;
 
+    /// @notice Event emitted when a blocklock request is made
+    /// @param requestID The unique identifier of the blocklock request
+    /// @param blockHeight The block height for which the blocklock is requested
+    /// @param ciphertext The ciphertext associated with the blocklock request
+    /// @param requester The address of the requester
+    /// @param requestedAt The timestamp when the request was made
+    /// @dev This event is emitted after a blocklock request has been successfully processed
     event BlocklockRequested(
         uint256 indexed requestID,
         uint256 blockHeight,
@@ -41,14 +77,29 @@ contract BlocklockSender is
         address indexed requester,
         uint256 requestedAt
     );
+
+    /// @notice Event emitted when a blocklock callback is successful
+    /// @param requestID The unique identifier of the blocklock request
+    /// @param blockHeight The block height for which the blocklock is requested
+    /// @param ciphertext The ciphertext associated with the blocklock request
+    /// @param decryptionKey The decryption key used for the blocklock
+    /// @dev This event is emitted when the blocklock callback is successfully processed and the decryption key is provided
     event BlocklockCallbackSuccess(
         uint256 indexed requestID, uint256 blockHeight, TypesLib.Ciphertext ciphertext, bytes decryptionKey
     );
 
+    /// @notice Event emitted when the decryption sender address is updated
+    /// @param decryptionSender The new decryption sender address
+    /// @dev This event is triggered when the address of the decryption sender is updated, allowing for tracking of the changes
     event DecryptionSenderUpdated(address indexed decryptionSender);
 
+    /// @notice Error thrown when a blocklock callback fails
+    /// @param requestID The request ID of the failed blocklock callback
+    /// @dev This error is used to indicate that the blocklock callback process has failed, providing the request ID for troubleshooting
     error BlocklockCallbackFailed(uint256 requestID);
 
+    /// @notice Modifier that restricts access to only accounts with the admin role
+    /// @dev This modifier checks that the caller has the `ADMIN_ROLE` before allowing the function to be executed.
     modifier onlyAdmin() {
         _checkRole(ADMIN_ROLE);
         _;
@@ -68,12 +119,17 @@ contract BlocklockSender is
         decryptionSender = IDecryptionSender(_decryptionSender);
     }
 
-    // OVERRIDDEN UPGRADE FUNCTIONS
+    /// @dev Overridden upgrade authorization function to ensure only an authorized caller can authorize upgrades.
     function _authorizeUpgrade(address newImplementation) internal override onlyAdmin {}
 
-    /**
-     * @dev See {IBlocklockSender-requestBlocklock}.
-     */
+    /// @notice Requests a blocklock for a specified block height with the provided ciphertext and subscription ID
+    /// @param callbackGasLimit The gas limit allocated for the callback execution after the blocklock request
+    /// @param subId The subscription ID associated with the request
+    /// @param blockHeight The block height at which the blocklock is requested
+    /// @param ciphertext The ciphertext that will be used in the blocklock request
+    /// @return requestID The unique identifier for the blocklock request
+    /// @dev This function allows users to request a blocklock for a specific block height. The blocklock is associated with a given subscription ID
+    ///      and requires a ciphertext to be provided. The function checks that the contract is configured and not disabled before processing the request.
     function requestBlocklock(
         uint32 callbackGasLimit,
         uint256 subId,
@@ -156,9 +212,13 @@ contract BlocklockSender is
         callbackGasLimitWithOverhead = _callbackGasLimit + eip150Overhead;
     }
 
-    /**
-     * @dev See {DecryptionReceiverBase-onDecryptionDataReceived}.
-     */
+    /// @notice Handles the reception of decryption data (decryption key and signature) for a specific decryption request
+    /// @param decryptionRequestID The unique identifier for the decryption request, used to correlate the received data
+    /// @param decryptionKey The decryption key received, used to decrypt the associated ciphertext
+    /// @param signature The signature associated with the decryption key, ensuring its validity
+    /// @dev This internal function is intended to be overridden in derived contracts to implement specific logic
+    ///      that should be executed upon receiving the decryption data. It is called when decryption data is received
+    ///      for a decryption request identified by `decryptionRequestID`.
     function onDecryptionDataReceived(uint256 decryptionRequestID, bytes memory decryptionKey, bytes memory signature)
         internal
         override
@@ -184,6 +244,12 @@ contract BlocklockSender is
         _handlePaymentAndCharge(decryptionRequestID, startGas);
     }
 
+    /// @notice Estimates the total request price in native tokens based on the provided callback gas limit and requested gas price in wei
+    /// @param _callbackGasLimit The gas limit allocated for the callback execution
+    /// @param _requestGasPriceWei The gas price in wei for the request
+    /// @return The estimated total price for the request in native tokens (wei)
+    /// @dev This function calls the internal `_calculateRequestPriceNative` function, passing in the provided callback gas limit and requested gas price in wei
+    ///      to estimate the total request price. It overrides the function from both `BlocklockFeeCollector` and `IBlocklockSender` contracts to provide the price estimation.
     function estimateRequestPriceNative(uint32 _callbackGasLimit, uint256 _requestGasPriceWei)
         external
         view
@@ -193,6 +259,12 @@ contract BlocklockSender is
         return _calculateRequestPriceNative(_callbackGasLimit, _requestGasPriceWei);
     }
 
+    /// @notice Calculates the total request price in native tokens, considering the provided callback gas limit and the current gas price
+    /// @param _callbackGasLimit The gas limit allocated for the callback execution
+    /// @return The total price for the request in native tokens (wei)
+    /// @dev This function calls the internal `_calculateRequestPriceNative` function, passing in the provided callback gas limit and the current
+    ///      transaction gas price (`tx.gasprice`) to calculate the total request price. It overrides the function from both `BlocklockFeeCollector`
+    ///      and `IBlocklockSender` contracts to provide the request price calculation.
     function calculateRequestPriceNative(uint32 _callbackGasLimit)
         public
         view
