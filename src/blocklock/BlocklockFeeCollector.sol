@@ -111,7 +111,7 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
     /// @return The total cost in native tokens (wei)
     function _calculateRequestPriceNative(uint256 _gas, uint256 _requestGasPrice) internal view returns (uint256) {
         // Calculate the base fee in wei: (gas required) * (gas price)
-        uint256 blocklockSenderCostWei = _requestGasPrice * (_gas + _getL1CostWei());
+        uint256 blocklockSenderCostWei = _requestGasPrice * _gas + _getL1CostWei();
 
         // Apply premium and flat fee: cost * (1 + premium) + flat fee
         uint256 totalCostWithPremiumAndFlatFeeWei = (

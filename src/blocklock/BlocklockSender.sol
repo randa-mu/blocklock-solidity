@@ -49,7 +49,7 @@ contract BlocklockSender is
 
     error BlocklockCallbackFailed(uint256 requestID);
 
-    modifier onlyOwner() {
+    modifier onlyAdmin() {
         _checkRole(ADMIN_ROLE);
         _;
     }
@@ -69,7 +69,7 @@ contract BlocklockSender is
     }
 
     // OVERRIDDEN UPGRADE FUNCTIONS
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyAdmin {}
 
     /**
      * @dev See {IBlocklockSender-requestBlocklock}.
@@ -223,11 +223,18 @@ contract BlocklockSender is
         }
     }
 
-    /**
-     * Decrypt a ciphertext into a plaintext using a decryption key.
-     * @param ciphertext The ciphertext to decrypt.
-     * @param decryptionKey The decryption key that can be used to decrypt the ciphertext.
-     */
+    /// @notice Decrypts a ciphertext into plaintext using a decryption key
+    /// @param ciphertext The ciphertext to decrypt, containing the necessary data for decryption
+    /// @param decryptionKey The decryption key used to decrypt the ciphertext
+    /// @return The decrypted message (plaintext) as a `bytes` array
+    /// @dev This function performs the decryption process using a series of cryptographic operations:
+    ///     - It first XORs the decryption key with part of the ciphertext to generate a candidate value.
+    ///     - Then it decrypts the message using another XOR operation with a mask derived from the candidate value.
+    ///     - The function verifies the validity of the decryption key and ciphertext by checking the consistency of a derived ephemeral keypair.
+    /// @dev Throws an error if:
+    ///     - The decryption key length is incorrect.
+    ///     - The message length is unsupported.
+    ///     - The decryption key and ciphertext do not match (validation failure).
     function decrypt(TypesLib.Ciphertext calldata ciphertext, bytes calldata decryptionKey)
         public
         view
@@ -264,17 +271,19 @@ contract BlocklockSender is
         return m2;
     }
 
-    /**
-     * @dev See {IBlocklockSender-setDecryptionSender}.
-     */
-    function setDecryptionSender(address newDecryptionSender) external onlyOwner {
+    /// @notice Sets a new decryption sender address
+    /// @param newDecryptionSender The address of the new decryption sender contract
+    /// @dev Only an admin can call this function. The function updates the `decryptionSender` address
+    /// and emits a `DecryptionSenderUpdated` event with the new address.
+    /// @dev The `DecryptionSenderUpdated` event is emitted to notify listeners of the change in decryption sender address.
+    function setDecryptionSender(address newDecryptionSender) external onlyAdmin {
         decryptionSender = IDecryptionSender(newDecryptionSender);
         emit DecryptionSenderUpdated(newDecryptionSender);
     }
 
     /// @notice disable this contract so that new requests will be rejected. When disabled, new requests
     /// @notice will revert but existing requests can still be fulfilled.
-    function disable() external override onlyOwner {
+    function disable() external override onlyAdmin {
         s_disabled = true;
 
         emit Disabled();
@@ -282,20 +291,25 @@ contract BlocklockSender is
 
     /// @notice Enables the contract, allowing new requests to be accepted.
     /// @dev Can only be called by an admin.
-    function enable() external override onlyOwner {
+    function enable() external override onlyAdmin {
         s_disabled = false;
         emit Enabled();
     }
 
-    /**
-     * @dev See {BlocklockFeeCollector-setConfig}.
-     */
+    /// @notice Sets the configuration parameters for the contract
+    /// @param maxGasLimit The maximum gas limit allowed for requests
+    /// @param gasAfterPaymentCalculation The gas used after the payment calculation
+    /// @param fulfillmentFlatFeeNativePPM The flat fee for fulfillment in native tokens, in parts per million (PPM)
+    /// @param nativePremiumPercentage The percentage premium applied to the native token cost
+    /// @dev Only the contract admin can call this function. It validates that the `nativePremiumPercentage` is greater than a predefined maximum value
+    /// (`PREMIUM_PERCENTAGE_MAX`). After validation, it updates the contract's configuration and emits an event `ConfigSet` with the new configuration.
+    /// @dev Emits a `ConfigSet` event after successfully setting the new configuration values.
     function setConfig(
         uint32 maxGasLimit,
         uint32 gasAfterPaymentCalculation,
         uint32 fulfillmentFlatFeeNativePPM,
         uint8 nativePremiumPercentage
-    ) external override onlyOwner {
+    ) external override onlyAdmin {
         require(nativePremiumPercentage > PREMIUM_PERCENTAGE_MAX, "Invalid Premium Percentage");
 
         s_config = Config({
@@ -310,6 +324,13 @@ contract BlocklockSender is
         emit ConfigSet(maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage);
     }
 
+    /// @notice Retrieves the current configuration parameters for the contract
+    /// @return maxGasLimit The maximum gas limit allowed for requests
+    /// @return gasAfterPaymentCalculation The gas used after the payment calculation
+    /// @return fulfillmentFlatFeeNativePPM The flat fee for fulfillment in native tokens, in parts per million (PPM)
+    /// @return nativePremiumPercentage The percentage premium applied to the native token cost
+    /// @dev This function returns the key configuration values from the contract's settings. These values
+    /// are important for calculating request costs and applying the appropriate fees.
     function getConfig()
         external
         view
@@ -331,15 +352,15 @@ contract BlocklockSender is
     /// @notice Owner cancel subscription, sends remaining native tokens directly to the subscription owner.
     /// @param subId subscription id
     /// @dev notably can be called even if there are pending requests, outstanding ones may fail onchain
-    function ownerCancelSubscription(uint256 subId) external override onlyOwner {
+    function ownerCancelSubscription(uint256 subId) external override onlyAdmin {
         address subOwner = s_subscriptionConfigs[subId].owner;
         _requireValidSubscription(subOwner);
         _cancelSubscriptionHelper(subId, subOwner);
     }
 
-    /// @notice withdraw native earned through fulfilling requests
-    /// @param recipient where to send the funds
-    function withdrawNative(address payable recipient) external override nonReentrant onlyOwner {
+    /// @notice Withdraw native tokens earned through fulfilling requests.
+    /// @param recipient The address to send the funds to.
+    function withdrawNative(address payable recipient) external override nonReentrant onlyAdmin {
         uint96 amount = s_withdrawableNative;
         _requireSufficientBalance(amount > 0);
         // Prevent re-entrancy by updating state before transfer.
@@ -348,6 +369,12 @@ contract BlocklockSender is
         _mustSendNative(recipient, amount);
     }
 
+    /// @notice Checks whether a Blocklock request is in flight
+    /// @param requestID The unique identifier for the Blocklock request
+    /// @return A boolean indicating if the request is currently in flight (true) or not (false)
+    /// @dev This function retrieves the associated decryption request ID for the given request ID and checks
+    /// if the decryption request is still in flight using the `decryptionSender`.
+    /// If the `decryptionRequestID` is 0, the request is not in flight.
     function isInFlight(uint256 requestID) external view returns (bool) {
         uint256 signatureRequestID = getRequest(requestID).decryptionRequestID;
 
@@ -358,9 +385,10 @@ contract BlocklockSender is
         return decryptionSender.isInFlight(signatureRequestID);
     }
 
-    /**
-     * @dev See {IBlocklockSender-getRequest}.
-     */
+    /// @notice Retrieves a Blocklock request by its unique request ID
+    /// @param requestID The unique identifier for the Blocklock request
+    /// @return r The BlocklockRequest structure containing details of the request
+    /// @dev Throws an error if the provided request ID is invalid (decryptionRequestID is 0).
     function getRequest(uint256 requestID) public view returns (TypesLib.BlocklockRequest memory) {
         TypesLib.BlocklockRequest memory r = blocklockRequestsWithDecryptionKey[requestID];
         require(r.decryptionRequestID > 0, "invalid requestID");
@@ -368,9 +396,9 @@ contract BlocklockSender is
         return r;
     }
 
-    /**
-     * @dev Returns the version number of the upgradeable contract.
-     */
+    /// @notice Returns the version number of the upgradeable contract
+    /// @return The version number of the contract as a string
+    /// @dev This function is used to identify the current version of the contract for upgrade management and version tracking.
     function version() external pure returns (string memory) {
         return "0.0.1";
     }
