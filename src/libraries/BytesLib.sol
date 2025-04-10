@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8;
 
-/// @title BytesLib
+/// @title BytesLib library
 /// @author Randamu
 /// @notice Utility library for bytes-related operations
 library BytesLib {

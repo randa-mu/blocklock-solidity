@@ -5,11 +5,11 @@ import {BLS} from "../libraries/BLS.sol";
 
 import {SignatureSchemeBase} from "./SignatureSchemeBase.sol";
 
-/// @title BlocklockSignatureScheme
+/// @title BlocklockSignatureScheme contract
 /// @author Randamu
-/// @dev This contract implements the BLS (Boneh-Lynn-Shacham) signature scheme using the 
+/// @dev This contract implements the BLS (Boneh-Lynn-Shacham) signature scheme using the
 /// BN254 curve for the Blocklock protocol.
-/// The contract provides functionality to verify signatures, hash messages to points, 
+/// @dev The contract provides functionality to verify signatures, hash messages to points,
 /// and marshal/unmarshal points for signature verification.
 contract BlocklockSignatureScheme is SignatureSchemeBase {
     using BLS for bytes;
