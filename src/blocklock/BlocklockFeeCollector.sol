@@ -149,25 +149,27 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
         return uint96((((l1CostWei + baseFeeWei) * (100 + s_config.nativePremiumPercentage)) / 100) + flatFeeWei);
     }
 
-    /// @notice Deducts the payment from the subscription balance or charges direct funding.
-    /// @param payment The amount to charge.
-    /// @param subId The subscription ID (0 for direct funding).
+    /// @notice Charges a payment against a subscription and updates contract balances
+    /// @dev If `subId` is 0, payment is treated as a direct charge (no subscription tracking)
+    /// @param payment The amount to charge in native tokens
+    /// @param subId The subscription ID to charge; 0 means no subscription
     function _chargePayment(uint96 payment, uint256 subId) internal {
         Subscription storage subcription = s_subscriptions[subId];
+
         if (subId > 0) {
-            // check that subscription can cover the payment
             uint96 prevBal = subcription.nativeBalance;
+
             _requireSufficientBalance(prevBal >= payment);
-            // deduct payment from subscription
+            
             subcription.nativeBalance = prevBal - payment;
-            // allocate payment to withdrawable native token balance for this contract
-            s_withdrawableNative += payment;
-        } else {
-            // uint96 prevBal = subcription.nativeBalance;
-            // _requireSufficientBalance(prevBal >= payment);
-            s_withdrawableNative += payment;
         }
+
+        s_withdrawableNative += payment;
     }
 
+    /// @notice Handles payment logic and charges gas fees for a given request
+    /// @dev Intended to be overridden by derived contracts to implement custom payment handling
+    /// @param requestId The unique identifier of the request being processed
+    /// @param startGas The amount of gas available at the start of the function execution
     function _handlePaymentAndCharge(uint256 requestId, uint256 startGas) internal virtual {}
 }
