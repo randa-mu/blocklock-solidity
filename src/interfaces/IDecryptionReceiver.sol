@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8;
 
+/// @title IDecryptionReceiver interface
+/// @author Randamu
+/// @notice Interface for smart contract that recieives decryption key and associated
+/// signature for user conditional decryption requests.
 interface IDecryptionReceiver {
-    /// Setters
-
     /// @notice Receives a decryption key that can be used to decrypt the ciphertext
     /// @dev This function is intended to be called by an authorized decrypter contract
     /// @param requestID The ID of the request for which the decryption key is provided

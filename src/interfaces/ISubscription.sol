@@ -3,6 +3,8 @@ pragma solidity ^0.8;
 
 /// @notice ISubscription interface
 /// @notice interface for contracts supporting user subscription for an onchain service.
+/// @notice Inspired by Chainlink's IVRFSubscriptionV2Plus. Source code at: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/vrf/dev/interfaces/IVRFSubscriptionV2Plus.sol
+/// @notice License: MIT
 interface ISubscription {
     /// @notice Add a consumer to a subscription.
     /// @param subId - ID of the subscription
