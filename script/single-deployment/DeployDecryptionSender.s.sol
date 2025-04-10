@@ -55,9 +55,7 @@ contract DeployDecryptionSender is JsonUtils {
             );
 
             vm.broadcast();
-            decryptionSenderInstance.initialize(
-                Constants.ADMIN, signatureSchemeAddressesProviderAddress
-            );
+            decryptionSenderInstance.initialize(Constants.ADMIN, signatureSchemeAddressesProviderAddress);
 
             console.log("DecryptionSender proxy contract deployed at: ", contractAddress);
         }

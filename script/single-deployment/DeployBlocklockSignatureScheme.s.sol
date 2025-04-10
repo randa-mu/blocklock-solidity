@@ -22,7 +22,9 @@ contract DeployBlocklockSignatureScheme is JsonUtils, SignatureUtils {
     }
 
     function deployBlocklockSignatureScheme() internal returns (BlocklockSignatureScheme blocklockSignatureScheme) {
-        bytes memory code = abi.encodePacked(type(BlocklockSignatureScheme).creationCode, abi.encode(BLS_PUBLIC_KEY.x, BLS_PUBLIC_KEY.y));
+        bytes memory code = abi.encodePacked(
+            type(BlocklockSignatureScheme).creationCode, abi.encode(BLS_PUBLIC_KEY.x, BLS_PUBLIC_KEY.y)
+        );
 
         vm.broadcast();
         address contractAddress = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);

@@ -1,18 +1,24 @@
-// // SPDX-License-Identifier: MIT
-// pragma solidity ^0.8;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8;
 
-// import {Test, console} from "forge-std/Test.sol";
+// test
+import {Test, console} from "forge-std/Test.sol";
 
-// import {SignatureSchemeAddressProvider} from "../../src/signature-schemes/SignatureSchemeAddressProvider.sol";
-// import {SignatureSender} from "../../src/signature-requests/SignatureSender.sol";
-// import {BlocklockSender} from "../../src/blocklock/BlocklockSender.sol";
-// import {BlocklockSignatureScheme} from "../../src/signature-schemes/BlocklockSignatureScheme.sol";
-// import {DecryptionSender} from "../../src/decryption-requests/DecryptionSender.sol";
-// import {BLS} from "../../src/libraries/BLS.sol";
-// import {TypesLib} from "../../src/libraries/TypesLib.sol";
-// import {UUPSProxy} from "../../src/proxy/UUPSProxy.sol";
+// helpers
+import {BLS} from "../../src/libraries/BLS.sol";
+import {TypesLib} from "../../src/libraries/TypesLib.sol";
+import {UUPSProxy} from "../../src/proxy/UUPSProxy.sol";
 
-// import {MockBlocklockReceiver} from "../../src/mocks/MockBlocklockReceiver.sol";
+// core contracts
+import {SignatureSchemeAddressProvider} from "../../src/signature-schemes/SignatureSchemeAddressProvider.sol";
+import {BlocklockSender} from "../../src/blocklock/BlocklockSender.sol";
+import {BlocklockSignatureScheme} from "../../src/signature-schemes/BlocklockSignatureScheme.sol";
+import {DecryptionSender} from "../../src/decryption-requests/DecryptionSender.sol";
+
+// mock contracts
+import {MockBlocklockReceiver} from "../../src/mocks/MockBlocklockReceiver.sol";
+
+contract BlocklockTest is Test {}
 
 // contract SimpleAuctionTest is Test {
 //     UUPSProxy decryptionSenderProxy;
