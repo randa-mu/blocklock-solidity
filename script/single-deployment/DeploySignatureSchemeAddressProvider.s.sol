@@ -12,6 +12,7 @@ import {SignatureSchemeAddressProvider} from "src/signature-schemes/SignatureSch
 import {Factory} from "src/factory/Factory.sol";
 
 /// @title DeploySignatureSchemeAddressProvider
+/// @author Randamu
 /// @dev Script for deploying SignatureSchemeAddressProvider contract.
 contract DeploySignatureSchemeAddressProvider is JsonUtils {
     function run() public virtual {

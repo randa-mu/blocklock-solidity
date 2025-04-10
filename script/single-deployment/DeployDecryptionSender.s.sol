@@ -7,16 +7,16 @@ import {console} from "forge-std/console.sol";
 import {Constants} from "../libraries/Constants.sol";
 
 import {JsonUtils} from "../utils/JsonUtils.sol";
-import {SignatureUtils} from "../utils/SignatureUtils.sol";
 
 import {DecryptionSender} from "src/decryption-requests/DecryptionSender.sol";
 import {UUPSProxy} from "src/proxy/UUPSProxy.sol";
 import {Factory} from "src/factory/Factory.sol";
 
 /// @title DeployDecryptionSender
+/// @author Randamu
 /// @dev Script for deploying or upgrading the DecryptionSender contract.
 /// Reads an environment variable to determine if it's an upgrade (new implementation only) or a full deployment.
-contract DeployDecryptionSender is JsonUtils, SignatureUtils {
+contract DeployDecryptionSender is JsonUtils {
     /// @notice Runs the deployment script, checking the environment variable to determine whether to upgrade or deploy.
     function run() public virtual {
         bool isUpgrade = vm.envBool("IS_UPGRADE");
@@ -56,7 +56,7 @@ contract DeployDecryptionSender is JsonUtils, SignatureUtils {
 
             vm.broadcast();
             decryptionSenderInstance.initialize(
-                BLS_PUBLIC_KEY.x, BLS_PUBLIC_KEY.y, Constants.ADMIN, signatureSchemeAddressesProviderAddress
+                Constants.ADMIN, signatureSchemeAddressesProviderAddress
             );
 
             console.log("DecryptionSender proxy contract deployed at: ", contractAddress);

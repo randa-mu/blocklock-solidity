@@ -7,6 +7,7 @@ import {console} from "forge-std/console.sol";
 import {Factory} from "src/factory/Factory.sol";
 
 /// @title DeployFactory
+/// @author Randamu
 /// @dev Script for deploying CREATE2 Factory contract.
 contract DeployFactory is Script {
     function run() public virtual {

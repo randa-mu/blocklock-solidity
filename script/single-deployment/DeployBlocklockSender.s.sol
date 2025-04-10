@@ -13,6 +13,7 @@ import {UUPSProxy} from "src/proxy/UUPSProxy.sol";
 import {Factory} from "src/factory/Factory.sol";
 
 /// @title DeployBlocklockSender
+/// @author Randamu
 /// @dev Script for deploying or upgrading the BlocklockSender contract.
 /// Reads an environment variable to determine if it's an upgrade (new implementation only) or a full deployment.
 contract DeployBlocklockSender is JsonUtils {
