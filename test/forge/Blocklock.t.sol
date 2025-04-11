@@ -395,6 +395,11 @@ contract BlocklockTest is Deployment {
     // fixme test subscription with insufficient gas then call retry with higher gas and check user charged for both calls
     // fixme test request with zero gas limit adds gas overhead still (and only stores key and reverts if gas overhead for pairing check and callbacks cannot be charged for)
     // fixme test cancelled subscription with a pending unfulfilled request leads to a failing callback without any decryption key stored onchain??
+    // fixme test timelock request should revert if blocklock sender address is incorrect in blocklockReceiver
+    // fixme test enumerable set can track multiple requests in decryptionSender
+    // fixme test can request blocklock decryption from user contract for string and receive decryption key callback
+    // fixme test multicall
+    // fixme test reverting callback should add request id to the erroredRequestIds set
 
     function test_UnauthorisedCallerReverts() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);

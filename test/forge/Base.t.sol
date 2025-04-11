@@ -31,10 +31,10 @@ abstract contract Base is Test {
         vm.deal(alice, 10 ether);
         vm.deal(bob, 10 ether);
 
-        generateCiphertextData();
+        generateMockCiphertextData();
     }
 
-    function generateCiphertextData() internal {
+    function generateMockCiphertextData() internal {
         // generate and store ciphertexts and keys
 
         // 1. 3 ether
@@ -66,6 +66,8 @@ abstract contract Base is Test {
             signature: signature,
             decryptionKey: decryptionKey
         });
+
+        // 2. 4 ether
     }
 
     function signers() internal view returns (address[] memory) {
