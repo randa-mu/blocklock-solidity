@@ -17,7 +17,7 @@ import {DecryptionSender} from "../../src/decryption-requests/DecryptionSender.s
 import {MockBlocklockReceiver} from "../../src/mocks/MockBlocklockReceiver.sol";
 
 /// @title Deployment test contract
-/// @dev Deploys the core smart contracts needed by other tests. 
+/// @dev Deploys the core smart contracts needed by other tests.
 abstract contract Deployment is Base {
     string internal SCHEME_ID = "BN254-BLS-BLOCKLOCK";
 

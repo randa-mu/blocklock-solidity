@@ -209,7 +209,9 @@ contract BlocklockSender is
         require(_callbackGasLimit <= s_config.maxGasLimit, "Callback gasLimit too high");
 
         uint32 eip150Overhead = _getEIP150Overhead(_callbackGasLimit);
-        callbackGasLimitWithOverhead = _callbackGasLimit + eip150Overhead;
+        // fixme add to config with getter
+        uint32 decryptionAndSignatureVerificationOverhead = 400_000;
+        callbackGasLimitWithOverhead = _callbackGasLimit + eip150Overhead + decryptionAndSignatureVerificationOverhead;
     }
 
     /// @notice Handles the reception of decryption data (decryption key and signature) for a specific decryption request
