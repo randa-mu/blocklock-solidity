@@ -148,7 +148,7 @@ contract BlocklockTest is Deployment {
         vm.txGasPrice(100_000);
         uint256 gasBefore = gasleft();
 
-        vm.startPrank(admin);
+        vm.prank(admin);
         decryptionSender.fulfillDecryptionRequest(requestId, decryptionKey, signature);
 
         uint256 gasAfter = gasleft();
@@ -171,7 +171,13 @@ contract BlocklockTest is Deployment {
 
         console.log(blocklockRequest.directFundingFeePaid);
         assertTrue(blocklockSender.s_totalNativeBalance() == 0, "We don't expect any funded subscriptions at this point");
-        assertTrue(blocklockSender.s_withdrawableNative() == blocklockRequest.directFundingFeePaid, "Request price paid should be withdrawable by admin at this point");
+        assertTrue(blocklockSender.s_withdrawableDirectFundingFeeNative() == blocklockRequest.directFundingFeePaid, "Request price paid should be withdrawable by admin at this point");
+        assertTrue(blocklockSender.s_withdrawableSubscriptionFeeNative() == 0, "We don't expect any funded subscriptions at this point");
+
+        vm.prank(admin);
+        uint256 adminBalance = admin.balance;
+        blocklockSender.withdrawDirectFundingFeesNative(payable(admin));
+        assertTrue(admin.balance + blocklockRequest.directFundingFeePaid > adminBalance, "Admin balance should be higher after withdrawing fees");    
     }
 
     // function test_UnauthorisedCaller() public {

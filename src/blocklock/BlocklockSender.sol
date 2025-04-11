@@ -437,12 +437,21 @@ contract BlocklockSender is
 
     /// @notice Withdraw native tokens earned through fulfilling requests.
     /// @param recipient The address to send the funds to.
-    function withdrawNative(address payable recipient) external override nonReentrant onlyAdmin {
-        uint96 amount = s_withdrawableNative;
+    function withdrawSubscriptionFeesNative(address payable recipient) external override nonReentrant onlyAdmin {
+        uint96 amount = s_withdrawableSubscriptionFeeNative;
         _requireSufficientBalance(amount > 0);
         // Prevent re-entrancy by updating state before transfer.
-        s_withdrawableNative = 0;
+        s_withdrawableSubscriptionFeeNative = 0;
         s_totalNativeBalance -= amount;
+        _mustSendNative(recipient, amount);
+    }
+
+    function withdrawDirectFundingFeesNative(address payable recipient) external override nonReentrant onlyAdmin {
+        uint96 amount = s_withdrawableDirectFundingFeeNative;
+        _requireSufficientBalance(amount > 0);
+        // Prevent re-entrancy by updating state before transfer.
+        s_withdrawableDirectFundingFeeNative = 0;
+        
         _mustSendNative(recipient, amount);
     }
 

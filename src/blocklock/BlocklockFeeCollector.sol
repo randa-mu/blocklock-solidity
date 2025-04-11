@@ -63,7 +63,9 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
     /// @notice Withdraws native tokens from the contract to the specified recipient address
     /// @param recipient The address to send the withdrawn funds to
     /// @dev The recipient must be a valid address that can receive native tokens
-    function withdrawNative(address payable recipient) external virtual {}
+    function withdrawSubscriptionFeesNative(address payable recipient) external virtual {}
+
+    function withdrawDirectFundingFeesNative(address payable recipient) external virtual {}
 
     /// @notice Configures the contract's settings.
     /// @dev This function sets the global gas limit, post-fulfillment gas usage, and fee structure.
@@ -162,9 +164,11 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
             _requireSufficientBalance(prevBal >= payment);
 
             subcription.nativeBalance = prevBal - payment;
-        }
 
-        s_withdrawableNative += payment;
+            s_withdrawableSubscriptionFeeNative += payment;
+        } else {
+            s_withdrawableDirectFundingFeeNative += payment;
+        }
     }
 
     /// @notice Handles payment logic and charges gas fees for a given request
