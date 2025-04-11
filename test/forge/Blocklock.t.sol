@@ -67,7 +67,7 @@ contract BlocklockTest is Deployment {
         assert(address(decryptionSender.signatureSchemeAddressProvider()) != address(0));
     }
 
-    function test_FulfilledBlocklockDirectFundingRequest() public {
+    function test_FulfillBlocklockDirectFundingRequest() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
@@ -75,16 +75,12 @@ contract BlocklockTest is Deployment {
         assert(!blocklockSender.s_disabled());
 
         // set blocklockSender contract config
-        // fixme move setConfig to helper test function
         uint32 maxGasLimit = 500_000;
         uint32 gasAfterPaymentCalculation = 400_000;
         uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
         uint8 nativePremiumPercentage = 10;
 
-        vm.prank(admin);
-        blocklockSender.setConfig(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
+        setBlocklockSenderBillingConfiguration(maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage);
 
         // get request price
         uint32 callbackGasLimit = 100_000;
@@ -144,7 +140,7 @@ contract BlocklockTest is Deployment {
         );
 
         // fulfill blocklock request
-        // fixme review - when we use less gas price, the total tx price including gas
+        /// @notice When we use less gas price, the total tx price including gas
         // limit for callback and external call from oracle is less than user payment or
         // calculated request price at request time
         // we don't use user payment as the gas price for callback from oracle.
@@ -194,21 +190,17 @@ contract BlocklockTest is Deployment {
         );
     }
 
-    function test_UnauthorisedCaller() public {
+    function test_UnauthorisedCallerReverts() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
         // set blocklockSender contract config
-        // fixme move setConfig to helper test function
         uint32 maxGasLimit = 500_000;
         uint32 gasAfterPaymentCalculation = 400_000;
         uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
         uint8 nativePremiumPercentage = 10;
 
-        vm.prank(admin);
-        blocklockSender.setConfig(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
+        setBlocklockSenderBillingConfiguration(maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage);
 
         // get request price
         uint32 callbackGasLimit = 100_000;
@@ -244,21 +236,17 @@ contract BlocklockTest is Deployment {
         vm.stopPrank();
     }
 
-    function test_InvalidRequestIdWithDirectFunding() public {
+    function test_InvalidRequestIdForDirectFundingRequestReverts() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
         // set blocklockSender contract config
-        // fixme move setConfig to helper test function
         uint32 maxGasLimit = 500_000;
         uint32 gasAfterPaymentCalculation = 400_000;
         uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
         uint8 nativePremiumPercentage = 10;
 
-        vm.prank(admin);
-        blocklockSender.setConfig(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
+        setBlocklockSenderBillingConfiguration(maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage);
 
         // get request price
         uint32 callbackGasLimit = 100_000;
@@ -294,20 +282,57 @@ contract BlocklockTest is Deployment {
         vm.stopPrank();
     }
 
-    // function test_InvalidSignature() public {
-    //     assert(mockBlocklockReceiver.plainTextValue() == 0);
-    //     assert(mockBlocklockReceiver.requestId() == 0);
+    function test_InvalidSignatureForDirectFundingRequestReverts() public {
+        assert(mockBlocklockReceiver.plainTextValue() == 0);
+        assert(mockBlocklockReceiver.requestId() == 0);
 
-    //     uint256 requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
+        // set blocklockSender contract config
+        uint32 maxGasLimit = 500_000;
+        uint32 gasAfterPaymentCalculation = 400_000;
+        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
+        uint8 nativePremiumPercentage = 10;
+        setBlocklockSenderBillingConfiguration(maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage);
 
-    //     vm.startPrank(owner);
-    //     bytes memory invalidSignature =
-    //         hex"02a3b2fa2c402d59e22a2f141e32a092603862a06a695cbfb574c440372a72cd0636ba8092f304e7701ae9abe910cb474edf0408d9dd78ea7f6f97b7f2464711";
-    //     vm.expectRevert("Signature verification failed");
-    //     decryptionSender.fulfillDecryptionRequest(requestId, decryptionKey, invalidSignature);
+        // get request price
+        uint32 callbackGasLimit = 100_000;
+        uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
 
-    //     assert(mockBlocklockReceiver.plainTextValue() == 0);
-    //     assert(mockBlocklockReceiver.requestId() == 1);
-    //     vm.stopPrank();
-    // }
+        // fund blocklock receiver contract
+        uint256 aliceBalance = alice.balance;
+
+        vm.prank(alice);
+        uint256 contractFundBuffer = 1 ether;
+        mockBlocklockReceiver.fundContractNative{value: requestPrice + contractFundBuffer}();
+
+        assertTrue(
+            mockBlocklockReceiver.getBalance() == requestPrice + contractFundBuffer,
+            "Incorrect ether balance for blocklock receiver contract"
+        );
+        assertTrue(alice.balance == aliceBalance - (requestPrice + contractFundBuffer), "Alice balance not debited");
+        assertTrue(requestPrice > 0, "Invalid request price");
+
+        // make blocklock request
+        vm.prank(alice);
+        uint32 requestCallbackGasLimit = 100000;
+        (uint256 requestId,) =
+            mockBlocklockReceiver.createTimelockRequestWithDirectFunding(requestCallbackGasLimit, 13, ciphertext);
+
+        vm.startPrank(admin);
+        bytes memory invalidSignature =
+            hex"02a3b2fa2c402d59e22a2f141e32a092603862a06a695cbfb574c440372a72cd0636ba8092f304e7701ae9abe910cb474edf0408d9dd78ea7f6f97b7f2464711";
+        vm.expectRevert("Signature verification failed");
+        decryptionSender.fulfillDecryptionRequest(requestId, decryptionKey, invalidSignature);
+
+        assert(mockBlocklockReceiver.plainTextValue() == 0);
+        assert(mockBlocklockReceiver.requestId() == 1);
+        vm.stopPrank();
+    }
+
+    // helper functions
+    function setBlocklockSenderBillingConfiguration(uint32 maxGasLimit, uint32 gasAfterPaymentCalculation, uint32 fulfillmentFlatFeeNativePPM, uint8 nativePremiumPercentage) internal {
+        vm.prank(admin);
+        blocklockSender.setConfig(
+            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
+        );
+    }
 }
