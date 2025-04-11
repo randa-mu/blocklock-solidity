@@ -16,8 +16,8 @@ library TypesLib {
 
     /// @notice  Blocklock request stores details needed to generate blocklock decryption keys
     struct BlocklockRequest {
-        uint256 subId; // 0 for direct funding
-        uint256 directFundingPayment; // > 0 for direct funding or if subId == 0
+        uint256 subId; // must be 0 for direct funding
+        uint256 directFundingFeePaid; // must be > 0 for direct funding and if subId == 0
         uint64 decryptionRequestID;
         uint256 blockHeight;
         Ciphertext ciphertext;

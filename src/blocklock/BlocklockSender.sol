@@ -144,7 +144,7 @@ contract BlocklockSender is
 
         TypesLib.BlocklockRequest memory r = TypesLib.BlocklockRequest({
             subId: subId,
-            directFundingPayment: msg.value,
+            directFundingFeePaid: msg.value,
             decryptionRequestID: 0,
             blockHeight: blockHeight,
             ciphertext: ciphertext,
@@ -210,7 +210,9 @@ contract BlocklockSender is
 
         uint32 eip150Overhead = _getEIP150Overhead(_callbackGasLimit);
         // fixme add to config with getter
-        uint32 decryptionAndSignatureVerificationOverhead = 400_000;
+        // This prevents out of gas errors when doing signature pairing check 
+        // for decryption during callback
+        uint32 decryptionAndSignatureVerificationOverhead = 500_000;
         callbackGasLimitWithOverhead = _callbackGasLimit + eip150Overhead + decryptionAndSignatureVerificationOverhead;
     }
 
@@ -293,7 +295,7 @@ contract BlocklockSender is
             uint96 payment = _calculatePaymentAmountNative(startGas, tx.gasprice);
             _chargePayment(payment, request.subId);
         } else {
-            _chargePayment(uint96(request.directFundingPayment), request.subId);
+            _chargePayment(uint96(request.directFundingFeePaid), request.subId);
         }
     }
 

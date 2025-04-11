@@ -111,8 +111,13 @@ contract BlocklockTest is Deployment {
         // fetch request information including callbackGasLimit from decryption sender
         TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
 
+        /// @dev Overhead for EIP-150
         uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
-        uint32 decryptionAndSignatureVerificationOverhead = 400_000;
+
+        /// @dev This prevents out of gas errors when doing signature pairing check 
+        /// for decryption during callback
+        uint32 decryptionAndSignatureVerificationOverhead = 500_000;
+
         assertTrue(
             decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
             "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
@@ -127,7 +132,7 @@ contract BlocklockTest is Deployment {
 
         assertTrue(blocklockRequest.subId == 0, "Direct funding request id should be zero");
         assertTrue(
-            blocklockRequest.directFundingPayment > 0 && blocklockRequest.directFundingPayment == requestPrice,
+            blocklockRequest.directFundingFeePaid > 0 && blocklockRequest.directFundingFeePaid == requestPrice,
             "Invalid price paid by user contract for request"
         );
         assertTrue(
@@ -149,7 +154,7 @@ contract BlocklockTest is Deployment {
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
         console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
-        console.log("Request CallbackGasPrice:", blocklockRequest.directFundingPayment);
+        console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
         console.log("Tx Gas used:", gasUsed);
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
@@ -162,6 +167,11 @@ contract BlocklockTest is Deployment {
         assertTrue(mockBlocklockReceiver.requestId() == 1, "Request id in receiver contract is incorrect");
 
         // check deductions from user and withdrawable amount in blocklock sender for admin
+        blocklockRequest = blocklockSender.getRequest(requestId);
+
+        console.log(blocklockRequest.directFundingFeePaid);
+        assertTrue(blocklockSender.s_totalNativeBalance() == 0, "We don't expect any funded subscriptions at this point");
+        assertTrue(blocklockSender.s_withdrawableNative() == blocklockRequest.directFundingFeePaid, "Request price paid should be withdrawable by admin at this point");
     }
 
     // function test_UnauthorisedCaller() public {
