@@ -1,145 +1,498 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8;
 
-import {Test, console} from "forge-std/Test.sol";
+import {console} from "forge-std/Test.sol";
 
-import {SignatureSchemeAddressProvider} from "../../src/signature-schemes/SignatureSchemeAddressProvider.sol";
-import {SignatureSender} from "../../src/signature-requests/SignatureSender.sol";
-import {BlocklockSender} from "../../src/blocklock/BlocklockSender.sol";
-import {BlocklockSignatureScheme} from "../../src/blocklock/BlocklockSignatureScheme.sol";
-import {DecryptionSender} from "../../src/decryption-requests/DecryptionSender.sol";
-import {BLS} from "../../src/libraries/BLS.sol";
-import {TypesLib} from "../../src/libraries/TypesLib.sol";
-import {UUPSProxy} from "../../src/proxy/UUPSProxy.sol";
+import {
+    Deployment,
+    SignatureSchemeAddressProvider,
+    BlocklockSender,
+    BlocklockSignatureScheme,
+    DecryptionSender,
+    MockBlocklockReceiver
+} from "./Deployment.t.sol";
 
-import {MockBlocklockReceiver} from "../../src/mocks/MockBlocklockReceiver.sol";
+import {TypesLib, BLS} from "./Base.t.sol";
 
-contract SimpleAuctionTest is Test {
-    UUPSProxy decryptionSenderProxy;
-    UUPSProxy blocklockSenderProxy;
-
-    SignatureSender public sigSender;
-    DecryptionSender public decryptionSender;
-    BlocklockSender public blocklock;
-    MockBlocklockReceiver public mockBlocklockReceiver;
-
-    string SCHEME_ID = "BN254-BLS-BLOCKLOCK";
-
+/// @title BlocklockTest test contract
+/// @dev Onchain conditional encryption tests
+contract BlocklockTest is Deployment {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
-    address owner;
+    SignatureSchemeAddressProvider internal signatureSchemeAddressProvider;
+    BlocklockSignatureScheme internal blocklockScheme;
+    DecryptionSender internal decryptionSender;
+    BlocklockSender internal blocklockSender;
+    MockBlocklockReceiver internal mockBlocklockReceiver;
 
-    uint256 plaintext = 3 ether;
+    function setUp() public override {
+        // setup base test
+        super.setUp();
 
-    TypesLib.Ciphertext ciphertext = TypesLib.Ciphertext({
-        u: BLS.PointG2({
-            x: [
-                14142380308423906610328325205633754694002301558654408701934220147059967542660,
-                4795984740938726483924720262587026838890051381570343702421443260575124596446
-            ],
-            y: [
-                13301122453285478420056122708237526083484415709254283392885579853639158169617,
-                11125759247493978573666410429063118092803139083876927879642973106997490249635
-            ]
-        }),
-        v: hex"63f745f4240f4708db37b0fa0e40309a37ab1a65f9b1be4ac716a347d4fe57fe",
-        w: hex"e8aadd66a9a67c00f134b1127b7ef85046308c340f2bb7cee431bd7bfe950bd4"
-    });
-    bytes signature =
-        hex"02b3b2fa2c402d59e22a2f141e32a092603862a06a695cbfb574c440372a72cd0636ba8092f304e7701ae9abe910cb474edf0408d9dd78ea7f6f97b7f2464711";
-    bytes decryptionKey = hex"7ec49d8f06b34d8d6b2e060ea41652f25b1325fafb041bba9cf24f094fbca259";
-
-    function setUp() public {
-        owner = vm.addr(1);
-
-        vm.startPrank(owner);
-
-        SignatureSchemeAddressProvider sigAddrProvider = new SignatureSchemeAddressProvider(owner);
-        BlocklockSignatureScheme blocklockScheme = new BlocklockSignatureScheme();
-        sigAddrProvider.updateSignatureScheme(SCHEME_ID, address(blocklockScheme));
-
-        BLS.PointG2 memory pk = BLS.PointG2({
-            x: [
-                17445541620214498517833872661220947475697073327136585274784354247720096233162,
-                18268991875563357240413244408004758684187086817233527689475815128036446189503
-            ],
-            y: [
-                11401601170172090472795479479864222172123705188644469125048759621824127399516,
-                8044854403167346152897273335539146380878155193886184396711544300199836788154
-            ]
-        });
-        sigSender = new SignatureSender(pk.x, pk.y, owner, address(sigAddrProvider));
-
-        // deploy implementation contracts for decryption and blocklock senders
-        DecryptionSender decryptionSenderImplementationV1 = new DecryptionSender();
-        BlocklockSender blocklockSenderImplementationV1 = new BlocklockSender();
-
-        // deploy proxy contracts and point them to their implementation contracts
-        decryptionSenderProxy = new UUPSProxy(address(decryptionSenderImplementationV1), "");
-        console.log("Decryption Sender proxy contract deployed at: ", address(decryptionSenderProxy));
-
-        blocklockSenderProxy = new UUPSProxy(address(blocklockSenderImplementationV1), "");
-        console.log("Blocklock Sender proxy contract deployed at: ", address(blocklockSenderProxy));
-
-        // wrap proxy address in implementation ABI to support delegate calls
-        decryptionSender = DecryptionSender(address(decryptionSenderProxy));
-        blocklock = BlocklockSender(address(blocklockSenderProxy));
-
-        // initialize the contracts
-        decryptionSender.initialize(pk.x, pk.y, owner, address(sigAddrProvider));
-        blocklock.initialize(owner, address(decryptionSender));
-
-        mockBlocklockReceiver = new MockBlocklockReceiver(address(blocklockSenderProxy));
-        vm.stopPrank();
+        (signatureSchemeAddressProvider, blocklockScheme, decryptionSender, blocklockSender, mockBlocklockReceiver) =
+            deployContracts();
     }
 
     function test_DeploymentConfigurations() public view {
-        assertTrue(decryptionSender.hasRole(ADMIN_ROLE, owner));
-        assert(address(blocklock) != address(0));
+        assertTrue(decryptionSender.hasRole(ADMIN_ROLE, admin));
+
+        assert(address(signatureSchemeAddressProvider) != address(0));
+        assert(address(blocklockScheme) != address(0));
         assert(address(decryptionSender) != address(0));
-        assert(address(sigSender) != address(0));
+        assert(address(blocklockSender) != address(0));
+        assert(address(mockBlocklockReceiver) != address(0));
+        assert(address(decryptionSender.signatureSchemeAddressProvider()) != address(0));
     }
 
-    function test_FulfilledBlocklockRequest() public {
+    function test_FulfillBlocklockDirectFundingRequest() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
-        uint256 requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
+        assert(!blocklockSender.s_configured());
+        assert(!blocklockSender.s_disabled());
 
-        vm.startPrank(owner);
+        // set blocklockSender contract config
+        uint32 maxGasLimit = 500_000;
+        uint32 gasAfterPaymentCalculation = 400_000;
+        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
+        uint8 nativePremiumPercentage = 10;
 
-        decryptionSender.fulfilDecryptionRequest(requestId, decryptionKey, signature);
+        setBlocklockSenderBillingConfiguration(
+            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
+        );
 
-        assert(mockBlocklockReceiver.plainTextValue() == plaintext);
+        // get request price
+        uint32 callbackGasLimit = 100_000;
+        uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
+
+        // fund blocklock receiver contract
+        uint256 aliceBalance = alice.balance;
+
+        vm.prank(alice);
+        uint256 contractFundBuffer = 1 ether;
+        mockBlocklockReceiver.fundContractNative{value: requestPrice + contractFundBuffer}();
+
+        assertTrue(
+            mockBlocklockReceiver.getBalance() == requestPrice + contractFundBuffer,
+            "Incorrect ether balance for blocklock receiver contract"
+        );
+        assertTrue(alice.balance == aliceBalance - (requestPrice + contractFundBuffer), "Alice balance not debited");
+        assertTrue(requestPrice > 0, "Invalid request price");
+
+        // make blocklock request
+        vm.prank(alice);
+        uint32 requestCallbackGasLimit = 100_000;
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+        );
+
+        // fetch request information including callbackGasLimit from decryption sender
+        TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
+
+        /// @dev Overhead for EIP-150
+        uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
+
+        assertTrue(
+            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
+        );
+        assertTrue(
+            decryptionRequest.callbackGasLimit
+                == requestCallbackGasLimit + callbackGasOverhead + decryptionAndSignatureVerificationOverhead,
+            "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
+        );
+
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
+        assertTrue(blocklockRequest.subId == 0, "Direct funding request id should be zero");
+        assertTrue(
+            blocklockRequest.directFundingFeePaid > 0 && blocklockRequest.directFundingFeePaid == requestPrice,
+            "Invalid price paid by user contract for request"
+        );
+        assertTrue(
+            blocklockRequest.decryptionRequestID == requestId,
+            "Request id mismatch between blocklockSender and decryptionSender"
+        );
+
+        // fulfill blocklock request
+        /// @notice When we use less gas price, the total tx price including gas
+        // limit for callback and external call from oracle is less than user payment or
+        // calculated request price at request time
+        // we don't use user payment as the gas price for callback from oracle.
+        vm.txGasPrice(100_000);
+        uint256 gasBefore = gasleft();
+
+        vm.prank(admin);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
+        );
+
+        uint256 gasAfter = gasleft();
+        uint256 gasUsed = gasBefore - gasAfter;
+        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
+        console.log("Tx Gas used:", gasUsed);
+        console.log("Tx Gas price (wei):", tx.gasprice);
+        console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
+
+        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract failed");
+
+        decryptionRequest = decryptionSender.getRequest(requestId);
+        assertTrue(decryptionRequest.isFulfilled, "Decryption key not provided in decryption sender by offchain oracle");
+        assertTrue(
+            mockBlocklockReceiver.plainTextValue() == ciphertextDataUint[3 ether].plaintext,
+            "Plaintext values mismatch after decryption"
+        );
+        assertTrue(mockBlocklockReceiver.requestId() == 1, "Request id in receiver contract is incorrect");
+
+        // check deductions from user and withdrawable amount in blocklock sender for admin
+        blocklockRequest = blocklockSender.getRequest(requestId);
+
+        console.log(blocklockRequest.directFundingFeePaid);
+        assertTrue(
+            blocklockSender.s_totalNativeBalance() == 0, "We don't expect any funded subscriptions at this point"
+        );
+        assertTrue(
+            blocklockSender.s_withdrawableDirectFundingFeeNative() == blocklockRequest.directFundingFeePaid,
+            "Request price paid should be withdrawable by admin at this point"
+        );
+        assertTrue(
+            blocklockSender.s_withdrawableSubscriptionFeeNative() == 0,
+            "We don't expect any funded subscriptions at this point"
+        );
+
+        vm.prank(admin);
+        uint256 adminBalance = admin.balance;
+        blocklockSender.withdrawDirectFundingFeesNative(payable(admin));
+        assertTrue(
+            admin.balance + blocklockRequest.directFundingFeePaid > adminBalance,
+            "Admin balance should be higher after withdrawing fees"
+        );
+    }
+
+    function test_NoChargeAtRequestTimeForBlocklockSubscriptionRequest() public {
+        // set blocklockSender contract config
+        uint32 maxGasLimit = 500_000;
+        uint32 gasAfterPaymentCalculation = 400_000;
+        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
+        uint8 nativePremiumPercentage = 10;
+
+        setBlocklockSenderBillingConfiguration(
+            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
+        );
+
+        // create subscription and fund it
+        assert(mockBlocklockReceiver.subscriptionId() == 0);
+
+        vm.prank(alice);
+        mockBlocklockReceiver.createSubscriptionAndFundNative{value: 5 ether}();
+
+        uint256 subId = mockBlocklockReceiver.subscriptionId();
+        assert(subId != 0);
+        console.log("Subscription id = ", subId);
+
+        // top up subscription
+        /// @notice Anyone can top up a subscription account
+        vm.prank(admin);
+        mockBlocklockReceiver.topUpSubscriptionNative{value: 1 ether}();
+
+        uint256 expectedTotalSubBalance = 6 ether;
+
+        // get subscription data
+        (uint96 nativeBalance, uint64 reqCount, address subOwner, address[] memory consumers) =
+            blocklockSender.getSubscription(subId);
+
+        assert(nativeBalance == expectedTotalSubBalance);
+        assert(reqCount == 0);
+        assert(subOwner == address(mockBlocklockReceiver));
+        assert(consumers.length == 1);
+        assert(consumers[0] == address(mockBlocklockReceiver));
+
+        assert(address(mockBlocklockReceiver).balance == 0);
+
+        // get request price
+        uint32 callbackGasLimit = 100_000;
+        uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
+
+        assertTrue(requestPrice > 0, "Invalid request price");
+
+        // make blocklock request
+        vm.prank(alice);
+        uint32 requestCallbackGasLimit = 100_000;
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+        );
+
+        // fetch request information including callbackGasLimit from decryption sender
+        TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
+
+        /// @dev Overhead for EIP-150
+        uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
+
+        assertTrue(
+            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
+        );
+
+        assertTrue(
+            decryptionRequest.callbackGasLimit
+                == requestCallbackGasLimit + callbackGasOverhead + decryptionAndSignatureVerificationOverhead,
+            "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
+        );
+
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
+        assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
+        assertTrue(
+            blocklockRequest.directFundingFeePaid == 0,
+            "User contract should not be charged immediately for subscription request"
+        );
+        assertTrue(
+            blocklockRequest.decryptionRequestID == requestId,
+            "Request id mismatch between blocklockSender and decryptionSender"
+        );
+
+        // subId not charged at this point, and request count for subId should not be increased
+        (nativeBalance, reqCount,,) = blocklockSender.getSubscription(subId);
+
+        assertTrue(nativeBalance == expectedTotalSubBalance, "subId should not be charged at this point");
+        assertTrue(reqCount == 0, "Incorrect request count, it should be zero");
+    }
+
+    function test_FulfillBlocklockSubscriptionRequest() public {
+        // set blocklockSender contract config
+        uint32 maxGasLimit = 500_000;
+        uint32 gasAfterPaymentCalculation = 400_000;
+        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
+        uint8 nativePremiumPercentage = 10;
+
+        setBlocklockSenderBillingConfiguration(
+            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
+        );
+
+        // create subscription and fund it
+        assert(mockBlocklockReceiver.subscriptionId() == 0);
+
+        vm.prank(alice);
+        mockBlocklockReceiver.createSubscriptionAndFundNative{value: 5 ether}();
+
+        uint256 subId = mockBlocklockReceiver.subscriptionId();
+        assert(subId != 0);
+        console.log("Subscription id = ", subId);
+
+        // top up subscription
+        /// @notice Anyone can top up a subscription account
+        vm.prank(admin);
+        mockBlocklockReceiver.topUpSubscriptionNative{value: 1 ether}();
+
+        uint256 totalSubBalanceBeforeRequest = 6 ether;
+
+        // get request price
+        uint32 callbackGasLimit = 100_000;
+        uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
+        console.log("Request price for offchain oracle callbackGasLimit", requestPrice);
+
+        // make blocklock request
+        vm.prank(alice);
+        uint32 requestCallbackGasLimit = 100_000;
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+        );
+
+        // fetch request information including callbackGasLimit from decryption sender
+        TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
+
+        /// @dev Overhead for EIP-150
+        uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
+
+        assertTrue(
+            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
+        );
+
+        assertTrue(
+            decryptionRequest.callbackGasLimit
+                == requestCallbackGasLimit + callbackGasOverhead + decryptionAndSignatureVerificationOverhead,
+            "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
+        );
+
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
+        assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
+        assertTrue(
+            blocklockRequest.directFundingFeePaid == 0,
+            "User contract should not be charged immediately for subscription request"
+        );
+        assertTrue(
+            blocklockRequest.decryptionRequestID == requestId,
+            "Request id mismatch between blocklockSender and decryptionSender"
+        );
+
+        // fulfill blocklock request
+        /// @notice When we use less gas price, the total tx price including gas
+        // limit for callback and external call from oracle is less than user payment or
+        // calculated request price at request time
+        // we don't use user payment as the gas price for callback from oracle.
+        vm.txGasPrice(100_000);
+        uint256 gasBefore = gasleft();
+
+        vm.prank(admin);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
+        );
+
+        uint256 gasAfter = gasleft();
+        uint256 gasUsed = gasBefore - gasAfter;
+        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
+        console.log("Tx Gas used:", gasUsed);
+        console.log("Tx Gas price (wei):", tx.gasprice);
+        console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
+
+        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract failed");
+
+        // check for fee deductions from subscription account
+        // subId should be charged at this point, and request count for subId should be increased
+        (uint96 nativeBalance, uint256 reqCount,,) = blocklockSender.getSubscription(subId);
+
+        console.log("Subscription native balance after request = ", nativeBalance);
+        uint256 exactFeePaid = totalSubBalanceBeforeRequest - nativeBalance;
+        console.log("Subscription account charge for request = ", exactFeePaid);
+        assertTrue(totalSubBalanceBeforeRequest > nativeBalance, "subId be charged at this point");
+        // fixme compute exact cost for subscription type requests
+        assertTrue(gasUsed * tx.gasprice < exactFeePaid, "subId should be charged for overhead");
+        assertTrue(reqCount == 1, "Incorrect request count, it should be zero");
+
+        decryptionRequest = decryptionSender.getRequest(requestId);
+        assertTrue(decryptionRequest.isFulfilled, "Decryption key not provided in decryption sender by offchain oracle");
+        assertTrue(
+            mockBlocklockReceiver.plainTextValue() == ciphertextDataUint[3 ether].plaintext,
+            "Plaintext values mismatch after decryption"
+        );
+        assertTrue(mockBlocklockReceiver.requestId() == 1, "Request id in receiver contract is incorrect");
+
+        assertTrue(
+            blocklockSender.s_withdrawableDirectFundingFeeNative() == 0,
+            "We don't expect any direct funding payments from this subscription request"
+        );
+        assertTrue(
+            blocklockSender.s_withdrawableSubscriptionFeeNative() == exactFeePaid,
+            "Request price paid should be withdrawable by admin at this point"
+        );
+
+        vm.prank(admin);
+        uint256 adminBalance = admin.balance;
+        blocklockSender.withdrawSubscriptionFeesNative(payable(admin));
+        assertTrue(admin.balance + exactFeePaid > adminBalance, "Admin balance should be higher after withdrawing fees");
+
+        assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
+    }
+
+    // fixme check subscription owner can cancel subscription and they receive subscription balance
+    // fixme test subscription with insufficient gas then call retry with higher gas and check user charged for both calls
+    // fixme test request with zero gas limit adds gas overhead still (and only stores key and reverts if gas overhead for pairing check and callbacks cannot be charged for)
+    // fixme test cancelled subscription with a pending unfulfilled request leads to a failing callback without any decryption key stored onchain??
+    // fixme test timelock request should revert if blocklock sender address is incorrect in blocklockReceiver
+    // fixme test enumerable set can track multiple requests in decryptionSender
+    // fixme test can request blocklock decryption from user contract for string and receive decryption key callback
+    // fixme test multicall
+    // fixme test reverting callback should add request id to the erroredRequestIds set
+
+    function test_UnauthorisedCallerReverts() public {
+        assert(mockBlocklockReceiver.plainTextValue() == 0);
+        assert(mockBlocklockReceiver.requestId() == 0);
+
+        // set blocklockSender contract config
+        uint32 maxGasLimit = 500_000;
+        uint32 gasAfterPaymentCalculation = 400_000;
+        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
+        uint8 nativePremiumPercentage = 10;
+
+        setBlocklockSenderBillingConfiguration(
+            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
+        );
+
+        // get request price
+        uint32 callbackGasLimit = 100_000;
+        uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
+
+        // fund blocklock receiver contract
+        uint256 aliceBalance = alice.balance;
+
+        vm.prank(alice);
+        uint256 contractFundBuffer = 1 ether;
+        mockBlocklockReceiver.fundContractNative{value: requestPrice + contractFundBuffer}();
+
+        assertTrue(
+            mockBlocklockReceiver.getBalance() == requestPrice + contractFundBuffer,
+            "Incorrect ether balance for blocklock receiver contract"
+        );
+        assertTrue(alice.balance == aliceBalance - (requestPrice + contractFundBuffer), "Alice balance not debited");
+        assertTrue(requestPrice > 0, "Invalid request price");
+
+        // make blocklock request
+        vm.prank(alice);
+        uint32 requestCallbackGasLimit = 100_000;
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+        );
+
+        vm.startPrank(admin);
+        vm.expectRevert("Only blocklock contract can call");
+        mockBlocklockReceiver.receiveBlocklock(requestId, ciphertextDataUint[3 ether].decryptionKey);
+
+        assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 1);
         vm.stopPrank();
     }
 
-    function test_UnauthorisedCaller() public {
+    function test_InvalidRequestIdForDirectFundingRequestReverts() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
-        uint256 requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
+        // set blocklockSender contract config
+        uint32 maxGasLimit = 500_000;
+        uint32 gasAfterPaymentCalculation = 400_000;
+        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
+        uint8 nativePremiumPercentage = 10;
 
-        vm.startPrank(owner);
-        vm.expectRevert("Only timelock contract can call this.");
-        mockBlocklockReceiver.receiveBlocklock(requestId, decryptionKey);
+        setBlocklockSenderBillingConfiguration(
+            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
+        );
 
-        assert(mockBlocklockReceiver.plainTextValue() == 0);
-        assert(mockBlocklockReceiver.requestId() == 1);
-        vm.stopPrank();
-    }
+        // get request price
+        uint32 callbackGasLimit = 100_000;
+        uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
 
-    function test_InvalidRequestId() public {
-        assert(mockBlocklockReceiver.plainTextValue() == 0);
-        assert(mockBlocklockReceiver.requestId() == 0);
+        // fund blocklock receiver contract
+        uint256 aliceBalance = alice.balance;
 
-        uint256 requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
+        vm.prank(alice);
+        uint256 contractFundBuffer = 1 ether;
+        mockBlocklockReceiver.fundContractNative{value: requestPrice + contractFundBuffer}();
 
-        vm.startPrank(owner);
+        assertTrue(
+            mockBlocklockReceiver.getBalance() == requestPrice + contractFundBuffer,
+            "Incorrect ether balance for blocklock receiver contract"
+        );
+        assertTrue(alice.balance == aliceBalance - (requestPrice + contractFundBuffer), "Alice balance not debited");
+        assertTrue(requestPrice > 0, "Invalid request price");
+
+        // make blocklock request
+        vm.prank(alice);
+        uint32 requestCallbackGasLimit = 100_000;
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+        );
 
         vm.expectRevert("No request with specified requestID");
-        decryptionSender.fulfilDecryptionRequest(requestId + 1, decryptionKey, signature);
+        vm.prank(admin);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId + 1, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
+        );
 
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 1);
@@ -147,20 +500,67 @@ contract SimpleAuctionTest is Test {
         vm.stopPrank();
     }
 
-    function test_InvalidSignature() public {
+    function test_InvalidSignatureForDirectFundingRequestReverts() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
-        uint256 requestId = mockBlocklockReceiver.createTimelockRequest(13, ciphertext);
+        // set blocklockSender contract config
+        uint32 maxGasLimit = 500_000;
+        uint32 gasAfterPaymentCalculation = 400_000;
+        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
+        uint8 nativePremiumPercentage = 10;
+        setBlocklockSenderBillingConfiguration(
+            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
+        );
 
-        vm.startPrank(owner);
+        // get request price
+        uint32 callbackGasLimit = 100_000;
+        uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
+
+        // fund blocklock receiver contract
+        uint256 aliceBalance = alice.balance;
+
+        vm.prank(alice);
+        uint256 contractFundBuffer = 1 ether;
+        mockBlocklockReceiver.fundContractNative{value: requestPrice + contractFundBuffer}();
+
+        assertTrue(
+            mockBlocklockReceiver.getBalance() == requestPrice + contractFundBuffer,
+            "Incorrect ether balance for blocklock receiver contract"
+        );
+        assertTrue(alice.balance == aliceBalance - (requestPrice + contractFundBuffer), "Alice balance not debited");
+        assertTrue(requestPrice > 0, "Invalid request price");
+
+        // make blocklock request
+        vm.prank(alice);
+        uint32 requestCallbackGasLimit = 100_000;
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+        );
+
+        vm.startPrank(admin);
         bytes memory invalidSignature =
             hex"02a3b2fa2c402d59e22a2f141e32a092603862a06a695cbfb574c440372a72cd0636ba8092f304e7701ae9abe910cb474edf0408d9dd78ea7f6f97b7f2464711";
         vm.expectRevert("Signature verification failed");
-        decryptionSender.fulfilDecryptionRequest(requestId, decryptionKey, invalidSignature);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId, ciphertextDataUint[3 ether].decryptionKey, invalidSignature
+        );
 
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 1);
         vm.stopPrank();
+    }
+
+    // helper functions
+    function setBlocklockSenderBillingConfiguration(
+        uint32 maxGasLimit,
+        uint32 gasAfterPaymentCalculation,
+        uint32 fulfillmentFlatFeeNativePPM,
+        uint8 nativePremiumPercentage
+    ) internal {
+        vm.prank(admin);
+        blocklockSender.setConfig(
+            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
+        );
     }
 }

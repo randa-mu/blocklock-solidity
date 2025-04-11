@@ -7,12 +7,14 @@ import {
 } from "../../typechain-types";
 
 // Usage:
-// yarn ts-node scripts/mocks/fetch-contract-data.ts 
+// yarn ts-node scripts/mocks/fetch-contract-data.ts <REQUEST_ID>
 
+// Retrieve requestId from command line argument (default to 1 if not passed)
+const requestId = process.argv[2] || "1"; // Default to 1 if not provided
 const RPC_URL = process.env.CALIBRATIONNET_RPC_URL;
 
-const walletAddr = "0x5d84b82b750B996BFC1FA7985D90Ae8Fbe773364"
-const blocklockSenderAddr = "0xfF66908E1d7d23ff62791505b2eC120128918F44"
+const walletAddr = "0x5d84b82b750B996BFC1FA7985D90Ae8Fbe773364";
+const blocklockSenderAddr = "0xfF66908E1d7d23ff62791505b2eC120128918F44";
 const decryptionSenderAddr = "0x9297Bb1d423ef7386C8b2e6B7BdE377977FBedd3";
 const mockBlocklockReceiverAddr = "0x6f637EcB3Eaf8bEd0fc597Dc54F477a33BBCA72B";
 
@@ -65,19 +67,24 @@ async function main() {
         console.log("blocklockSender addr from mockBlocklockReceiver", await mockBlocklockReceiver.blocklock());
         console.log("Plaintext value from mockBlocklockReceiver", await mockBlocklockReceiver.plainTextValue());
         console.log("Current requestId value from mockBlocklockReceiver", await mockBlocklockReceiver.requestId());
-        console.log("is request id in flight?", await decryptionSender.isInFlight(await mockBlocklockReceiver.requestId()));
+        console.log("is request id in flight?", await decryptionSender.isInFlight(requestId));
 
-        // console.log(await blocklockSender.getRequest(65))
-        // console.log("\n", await decryptionSender.getRequest(65))
+        // You can now use the requestId variable
+        console.log(`Fetching data for request ID ${requestId}:`);
 
-        const erroredRequestIds = await decryptionSender.getAllErroredRequestIds()
-        console.log(erroredRequestIds)
+        // Fetch request data based on requestId
+        console.log("\nFetching request details for requestId:", requestId);
+        console.log(await blocklockSender.getRequest(requestId));
+        console.log("\n", await decryptionSender.getRequest(requestId));
 
-        const unfilfilledRequestIds = await decryptionSender.getAllUnfulfilledRequestIds()
-        console.log(unfilfilledRequestIds)
+        const erroredRequestIds = await decryptionSender.getAllErroredRequestIds();
+        console.log(erroredRequestIds);
 
-        const fulfilledRequestIds = await decryptionSender.getAllFulfilledRequestIds()
-        console.log(fulfilledRequestIds)
+        const unfilfilledRequestIds = await decryptionSender.getAllUnfulfilledRequestIds();
+        console.log(unfilfilledRequestIds);
+
+        const fulfilledRequestIds = await decryptionSender.getAllFulfilledRequestIds();
+        console.log(fulfilledRequestIds);
     } catch (error) {
         console.error("Error fetching latest block number:", error);
     }

@@ -71,12 +71,10 @@ library BLS {
     error InvalidDSTLength(bytes dst);
     error ModExpFailed(uint256 base, uint256 exponent, uint256 modulus);
 
-    /**
-     * @notice Aggregate valid partial signatures using Lagrange interpolation.
-     * @param partialSignatures The array of valid partial signatures on G1.
-     * @param ids The array of unique identifiers corresponding to each signature / signer.
-     * @return aggregatedSignature The aggregated signature obtained through Lagrange interpolation.
-     */
+    /// @notice Aggregate valid partial signatures using Lagrange interpolation.
+    /// @param partialSignatures The array of valid partial signatures on G1.
+    /// @param ids The array of unique identifiers corresponding to each signature / signer.
+    /// @return aggregatedSignature The aggregated signature obtained through Lagrange interpolation.
     function aggregateSignatures(PointG1[] memory partialSignatures, uint256[] memory ids)
         internal
         view
@@ -115,15 +113,13 @@ library BLS {
         aggregatedSignature = result;
     }
 
-    /**
-     * @notice Computes the negation of a point on the G1 curve.
-     * @dev Returns the negation of the input point p on the elliptic curve.
-     *      If the point is at infinity (x = 0, y = 0), it returns the point
-     *      itself. Otherwise, it returns a new point with the same x-coordinate
-     *      and the negated y-coordinate modulo the curve's prime N.
-     * @param p The point on the G1 curve to negate.
-     * @return The negated point on the G1 curve, such that p + negate(p) = 0.
-     */
+    /// @notice Computes the negation of a point on the G1 curve.
+    /// @dev Returns the negation of the input point p on the elliptic curve.
+    ///      If the point is at infinity (x = 0, y = 0), it returns the point
+    ///      itself. Otherwise, it returns a new point with the same x-coordinate
+    ///      and the negated y-coordinate modulo the curve's prime N.
+    /// @param p The point on the G1 curve to negate.
+    /// @return The negated point on the G1 curve, such that p + negate(p) = 0.
     function negate(PointG1 memory p) internal pure returns (PointG1 memory) {
         // The prime q in the base field F_q for G1
         if (p.x == 0 && p.y == 0) {
@@ -133,16 +129,14 @@ library BLS {
         }
     }
 
-    /**
-     * @notice Adds two points on the G1 curve.
-     * @dev Uses the precompiled contract at address 0x06 to perform
-     *      elliptic curve point addition in the G1 group. This function
-     *      returns the resulting point r = p1 + p2.
-     * @dev Reverts if the point addition operation fails.
-     * @param p1 The first point on the G1 curve.
-     * @param p2 The second point on the G1 curve.
-     * @return r The resulting point from adding p1 and p2 on the G1 curve.
-     */
+    /// @notice Adds two points on the G1 curve.
+    /// @dev Uses the precompiled contract at address 0x06 to perform
+    ///      elliptic curve point addition in the G1 group. This function
+    ///      returns the resulting point r = p1 + p2.
+    /// @dev Reverts if the point addition operation fails.
+    /// @param p1 The first point on the G1 curve.
+    /// @param p2 The second point on the G1 curve.
+    /// @return r The resulting point from adding p1 and p2 on the G1 curve.
     function addG1Points(PointG1 memory p1, PointG1 memory p2) internal view returns (PointG1 memory r) {
         uint256[4] memory input;
         input[0] = p1.x;
@@ -158,16 +152,14 @@ library BLS {
         require(success, "G1 addition failed");
     }
 
-    /**
-     * @notice Performs scalar multiplication of a point on the G1 curve.
-     * @dev Uses the precompiled contract at address 0x07 to perform
-     *      scalar multiplication of a point on the G1 curve, i.e.,
-     *      computes r = s * p, where s is the scalar and p is the point.
-     * @dev Reverts if the scalar multiplication operation fails.
-     * @param p The point on the G1 curve to be multiplied.
-     * @param s The scalar value to multiply the point by.
-     * @return r The resulting point from scalar multiplication, r = s * p.
-     */
+    /// @notice Performs scalar multiplication of a point on the G1 curve.
+    /// @dev Uses the precompiled contract at address 0x07 to perform
+    ///      scalar multiplication of a point on the G1 curve, i.e.,
+    ///      computes r = s/// p, where s is the scalar and p is the point.
+    /// @dev Reverts if the scalar multiplication operation fails.
+    /// @param p The point on the G1 curve to be multiplied.
+    /// @param s The scalar value to multiply the point by.
+    /// @return r The resulting point from scalar multiplication, r = s/// p.
     function scalarMulG1Point(PointG1 memory p, uint256 s) internal view returns (PointG1 memory r) {
         uint256[3] memory input;
         input[0] = p.x;
@@ -342,13 +334,13 @@ library BLS {
             let t2 := mulmod(t0, t0, N)
             // x1 ^ 2
             let t3 := mulmod(t1, t1, N)
-            // 3 * x0 ^ 2
+            // 3/// x0 ^ 2
             let t4 := add(add(t2, t2), t2)
-            // 3 * x1 ^ 2
+            // 3/// x1 ^ 2
             let t5 := addmod(add(t3, t3), t3, N)
-            // x0 * (x0 ^ 2 - 3 * x1 ^ 2)
+            // x0/// (x0 ^ 2 - 3/// x1 ^ 2)
             t2 := mulmod(add(t2, sub(N, t5)), t0, N)
-            // x1 * (3 * x0 ^ 2 - x1 ^ 2)
+            // x1/// (3/// x0 ^ 2 - x1 ^ 2)
             t3 := mulmod(add(t4, sub(N, t3)), t1, N)
 
             // x ^ 3 + b

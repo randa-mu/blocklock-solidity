@@ -5,10 +5,10 @@ import {TypesLib} from "../libraries/TypesLib.sol";
 import {AbstractBlocklockReceiver} from "../AbstractBlocklockReceiver.sol";
 
 /// @notice This contract is used for testing only and should not be used for production.
-contract MockBlocklockStringReceiver is AbstractBlocklockReceiver {
+contract MockBlocklockRevertingReceiver is AbstractBlocklockReceiver {
     uint256 public requestId;
     TypesLib.Ciphertext public encrytpedValue;
-    string public plainTextValue;
+    uint256 public plainTextValue;
 
     constructor(address blocklockContract) AbstractBlocklockReceiver(blocklockContract) {}
 
@@ -25,20 +25,7 @@ contract MockBlocklockStringReceiver is AbstractBlocklockReceiver {
         return (requestID, requestPrice);
     }
 
-    function createTimelockRequestWithSubscription(
-        uint32 callbackGasLimit,
-        uint256 blockHeight,
-        TypesLib.Ciphertext calldata encryptedData
-    ) external payable returns (uint256) {
-        // create timelock request
-        uint256 requestID = _requestBlocklockWithSubscription(callbackGasLimit, blockHeight, encryptedData);
-        // store Ciphertext
-        encrytpedValue = encryptedData;
-        return requestID;
-    }
-
-    function _onBlocklockReceived(uint256 requestID, bytes calldata decryptionKey) internal override {
-        require(requestID == requestId, "Invalid request id");
-        plainTextValue = abi.decode(_decrypt(encrytpedValue, decryptionKey), (string));
+    function _onBlocklockReceived(uint256, /*requestID*/ bytes calldata /*decryptionKey*/ ) internal pure override {
+        revert();
     }
 }
