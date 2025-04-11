@@ -13,6 +13,9 @@ import {ConfirmedOwner} from "./access/ConfirmedOwner.sol";
 abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwner {
     /// @notice BlocklockSender contract for conditional encryption requests, subscription management and handling decryption keys
     IBlocklockSender public blocklock;
+    
+    /// @notice Event to log direct transfer of native tokens to the contract
+    event Received(address, uint);
 
     /// @notice Event to log deposits of native tokens
     event Funded(address indexed sender, uint256 amount);
@@ -183,5 +186,11 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     function _cancelSubscription(address to) internal {
         require(subscriptionId == 0, "SubscriptionId is not zero");
         blocklock.cancelSubscription(subscriptionId, to);
+    }
+
+    /// @notice The receive function is executed on a call to the contract with empty calldata. 
+    /// This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()).
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
     }
 }
