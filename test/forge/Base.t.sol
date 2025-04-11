@@ -31,7 +31,6 @@ abstract contract Base is Test {
         vm.deal(alice, 10 ether);
         vm.deal(bob, 10 ether);
 
-
         generateCiphertextData();
     }
 

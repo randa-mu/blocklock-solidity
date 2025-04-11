@@ -82,8 +82,9 @@ contract BlocklockTest is Deployment {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
-        (uint256 requestId,) =
-            mockBlocklockReceiver.createTimelockRequestWithDirectFunding(requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext);
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+        );
 
         // fetch request information including callbackGasLimit from decryption sender
         TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
@@ -123,7 +124,9 @@ contract BlocklockTest is Deployment {
         uint256 gasBefore = gasleft();
 
         vm.prank(admin);
-        decryptionSender.fulfillDecryptionRequest(requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
+        );
 
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
@@ -137,7 +140,10 @@ contract BlocklockTest is Deployment {
 
         decryptionRequest = decryptionSender.getRequest(requestId);
         assertTrue(decryptionRequest.isFulfilled, "Decryption key not provided in decryption sender by offchain oracle");
-        assertTrue(mockBlocklockReceiver.plainTextValue() == ciphertextDataUint[3 ether].plaintext, "Plaintext values mismatch after decryption");
+        assertTrue(
+            mockBlocklockReceiver.plainTextValue() == ciphertextDataUint[3 ether].plaintext,
+            "Plaintext values mismatch after decryption"
+        );
         assertTrue(mockBlocklockReceiver.requestId() == 1, "Request id in receiver contract is incorrect");
 
         // check deductions from user and withdrawable amount in blocklock sender for admin
@@ -166,7 +172,7 @@ contract BlocklockTest is Deployment {
     }
 
     function test_NoChargeAtRequestTimeForBlocklockSubscriptionRequest() public {
-       // set blocklockSender contract config
+        // set blocklockSender contract config
         uint32 maxGasLimit = 500_000;
         uint32 gasAfterPaymentCalculation = 400_000;
         uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
@@ -178,7 +184,7 @@ contract BlocklockTest is Deployment {
 
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
-        
+
         vm.prank(alice);
         mockBlocklockReceiver.createSubscriptionAndFundNative{value: 5 ether}();
 
@@ -194,8 +200,9 @@ contract BlocklockTest is Deployment {
         uint256 expectedTotalSubBalance = 6 ether;
 
         // get subscription data
-        (uint96 nativeBalance, uint64 reqCount, address subOwner, address[] memory consumers) = blocklockSender.getSubscription(subId);
-        
+        (uint96 nativeBalance, uint64 reqCount, address subOwner, address[] memory consumers) =
+            blocklockSender.getSubscription(subId);
+
         assert(nativeBalance == expectedTotalSubBalance);
         assert(reqCount == 0);
         assert(subOwner == address(mockBlocklockReceiver));
@@ -213,8 +220,9 @@ contract BlocklockTest is Deployment {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
-        uint256 requestId =
-            mockBlocklockReceiver.createTimelockRequestWithSubscription(requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext);
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+        );
 
         // fetch request information including callbackGasLimit from decryption sender
         TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
@@ -238,7 +246,8 @@ contract BlocklockTest is Deployment {
 
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
-            blocklockRequest.directFundingFeePaid == 0, "User contract should not be charged immediately for subscription request"
+            blocklockRequest.directFundingFeePaid == 0,
+            "User contract should not be charged immediately for subscription request"
         );
         assertTrue(
             blocklockRequest.decryptionRequestID == requestId,
@@ -246,14 +255,14 @@ contract BlocklockTest is Deployment {
         );
 
         // subId not charged at this point, and request count for subId should not be increased
-        (nativeBalance, reqCount, ,) = blocklockSender.getSubscription(subId);
-        
+        (nativeBalance, reqCount,,) = blocklockSender.getSubscription(subId);
+
         assertTrue(nativeBalance == expectedTotalSubBalance, "subId should not be charged at this point");
         assertTrue(reqCount == 0, "Incorrect request count, it should be zero");
     }
 
     function test_FulfillBlocklockSubscriptionRequest() public {
-       // set blocklockSender contract config
+        // set blocklockSender contract config
         uint32 maxGasLimit = 500_000;
         uint32 gasAfterPaymentCalculation = 400_000;
         uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
@@ -265,7 +274,7 @@ contract BlocklockTest is Deployment {
 
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
-        
+
         vm.prank(alice);
         mockBlocklockReceiver.createSubscriptionAndFundNative{value: 5 ether}();
 
@@ -288,8 +297,9 @@ contract BlocklockTest is Deployment {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
-        uint256 requestId =
-            mockBlocklockReceiver.createTimelockRequestWithSubscription(requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext);
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+        );
 
         // fetch request information including callbackGasLimit from decryption sender
         TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
@@ -313,7 +323,8 @@ contract BlocklockTest is Deployment {
 
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
-            blocklockRequest.directFundingFeePaid == 0, "User contract should not be charged immediately for subscription request"
+            blocklockRequest.directFundingFeePaid == 0,
+            "User contract should not be charged immediately for subscription request"
         );
         assertTrue(
             blocklockRequest.decryptionRequestID == requestId,
@@ -329,7 +340,9 @@ contract BlocklockTest is Deployment {
         uint256 gasBefore = gasleft();
 
         vm.prank(admin);
-        decryptionSender.fulfillDecryptionRequest(requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
+        );
 
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
@@ -343,11 +356,11 @@ contract BlocklockTest is Deployment {
 
         // check for fee deductions from subscription account
         // subId should be charged at this point, and request count for subId should be increased
-        (uint96 nativeBalance, uint256 reqCount, ,) = blocklockSender.getSubscription(subId);
-        
+        (uint96 nativeBalance, uint256 reqCount,,) = blocklockSender.getSubscription(subId);
+
         console.log("Subscription native balance after request = ", nativeBalance);
         uint256 exactFeePaid = totalSubBalanceBeforeRequest - nativeBalance;
-        console.log("Subscription account charge for request = ",  exactFeePaid);
+        console.log("Subscription account charge for request = ", exactFeePaid);
         assertTrue(totalSubBalanceBeforeRequest > nativeBalance, "subId be charged at this point");
         // fixme compute exact cost for subscription type requests
         assertTrue(gasUsed * tx.gasprice < exactFeePaid, "subId should be charged for overhead");
@@ -355,7 +368,10 @@ contract BlocklockTest is Deployment {
 
         decryptionRequest = decryptionSender.getRequest(requestId);
         assertTrue(decryptionRequest.isFulfilled, "Decryption key not provided in decryption sender by offchain oracle");
-        assertTrue(mockBlocklockReceiver.plainTextValue() == ciphertextDataUint[3 ether].plaintext, "Plaintext values mismatch after decryption");
+        assertTrue(
+            mockBlocklockReceiver.plainTextValue() == ciphertextDataUint[3 ether].plaintext,
+            "Plaintext values mismatch after decryption"
+        );
         assertTrue(mockBlocklockReceiver.requestId() == 1, "Request id in receiver contract is incorrect");
 
         assertTrue(
@@ -366,25 +382,19 @@ contract BlocklockTest is Deployment {
             blocklockSender.s_withdrawableSubscriptionFeeNative() == exactFeePaid,
             "Request price paid should be withdrawable by admin at this point"
         );
-        
 
         vm.prank(admin);
         uint256 adminBalance = admin.balance;
         blocklockSender.withdrawSubscriptionFeesNative(payable(admin));
-        assertTrue(
-            admin.balance + exactFeePaid > adminBalance,
-            "Admin balance should be higher after withdrawing fees"
-        );
+        assertTrue(admin.balance + exactFeePaid > adminBalance, "Admin balance should be higher after withdrawing fees");
 
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
-
-        // fixme check subscription owner can withdraw from subscription balance 
-
-        // fixme check subscription owner can cancel subscription
     }
 
-    // fixme test subscription with small gas then call retry with higher gas and check user charged for both calls
-    // fixme test request with zero gas limit (only stores key and reverts if gas overhead for pairing check and callbacks cannot be charged for)
+    // fixme check subscription owner can cancel subscription and they receive subscription balance
+    // fixme test subscription with insufficient gas then call retry with higher gas and check user charged for both calls
+    // fixme test request with zero gas limit adds gas overhead still (and only stores key and reverts if gas overhead for pairing check and callbacks cannot be charged for)
+    // fixme test cancelled subscription with a pending unfulfilled request leads to a failing callback without any decryption key stored onchain??
 
     function test_UnauthorisedCallerReverts() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
@@ -421,8 +431,9 @@ contract BlocklockTest is Deployment {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
-        (uint256 requestId,) =
-            mockBlocklockReceiver.createTimelockRequestWithDirectFunding(requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext);
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+        );
 
         vm.startPrank(admin);
         vm.expectRevert("Only blocklock contract can call");
@@ -468,12 +479,15 @@ contract BlocklockTest is Deployment {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
-        (uint256 requestId,) =
-            mockBlocklockReceiver.createTimelockRequestWithDirectFunding(requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext);
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+        );
 
         vm.expectRevert("No request with specified requestID");
         vm.prank(admin);
-        decryptionSender.fulfillDecryptionRequest(requestId + 1, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId + 1, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
+        );
 
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 1);
@@ -515,14 +529,17 @@ contract BlocklockTest is Deployment {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
-        (uint256 requestId,) =
-            mockBlocklockReceiver.createTimelockRequestWithDirectFunding(requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext);
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+        );
 
         vm.startPrank(admin);
         bytes memory invalidSignature =
             hex"02a3b2fa2c402d59e22a2f141e32a092603862a06a695cbfb574c440372a72cd0636ba8092f304e7701ae9abe910cb474edf0408d9dd78ea7f6f97b7f2464711";
         vm.expectRevert("Signature verification failed");
-        decryptionSender.fulfillDecryptionRequest(requestId, ciphertextDataUint[3 ether].decryptionKey, invalidSignature);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId, ciphertextDataUint[3 ether].decryptionKey, invalidSignature
+        );
 
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 1);

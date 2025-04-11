@@ -164,19 +164,18 @@ describe("BlocklockSender", function () {
 
   const SCHEME_ID = "BN254-BLS-BLOCKLOCK";
 
-
   beforeEach(async () => {
     // setup signers
     [owner, alice, bob] = await ethers.getSigners();
-    
+
     // deploy signature scheme address provider
     schemeProvider = await ethers.deployContract("SignatureSchemeAddressProvider", [await owner.getAddress()]);
     await schemeProvider.waitForDeployment();
 
     // deploy blocklock signature scheme contract
     blocklockScheme = await ethers.deployContract("BlocklockSignatureScheme", [
-        [BLOCKLOCK_DEFAULT_PUBLIC_KEY.x.c0, BLOCKLOCK_DEFAULT_PUBLIC_KEY.x.c1],
-        [BLOCKLOCK_DEFAULT_PUBLIC_KEY.y.c0, BLOCKLOCK_DEFAULT_PUBLIC_KEY.y.c1]
+      [BLOCKLOCK_DEFAULT_PUBLIC_KEY.x.c0, BLOCKLOCK_DEFAULT_PUBLIC_KEY.x.c1],
+      [BLOCKLOCK_DEFAULT_PUBLIC_KEY.y.c0, BLOCKLOCK_DEFAULT_PUBLIC_KEY.y.c1],
     ]);
     await blocklockScheme.waitForDeployment();
 

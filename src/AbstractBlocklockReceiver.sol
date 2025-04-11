@@ -176,4 +176,12 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         subId = blocklock.createSubscription();
         blocklock.addConsumer(subId, address(this));
     }
+
+    /// @notice Cancels an existing Randamu subscription if one exists.
+    /// @dev Internal helper that cancels the subscription.
+    /// @param to The recipient addresss that will receive the subscription balance.
+    function _cancelSubscription(address to) internal {
+        require(subscriptionId == 0, "SubscriptionId is not zero");
+        blocklock.cancelSubscription(subscriptionId, to);
+    }
 }
