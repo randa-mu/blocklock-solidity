@@ -81,7 +81,7 @@ contract BlocklockTest is Deployment {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100000;
+        uint32 requestCallbackGasLimit = 100_000;
         (uint256 requestId,) =
             mockBlocklockReceiver.createTimelockRequestWithDirectFunding(requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext);
 
@@ -212,7 +212,7 @@ contract BlocklockTest is Deployment {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100000;
+        uint32 requestCallbackGasLimit = 100_000;
         uint256 requestId =
             mockBlocklockReceiver.createTimelockRequestWithSubscription(requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext);
 
@@ -287,7 +287,7 @@ contract BlocklockTest is Deployment {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100000;
+        uint32 requestCallbackGasLimit = 100_000;
         uint256 requestId =
             mockBlocklockReceiver.createTimelockRequestWithSubscription(requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext);
 
@@ -420,7 +420,7 @@ contract BlocklockTest is Deployment {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100000;
+        uint32 requestCallbackGasLimit = 100_000;
         (uint256 requestId,) =
             mockBlocklockReceiver.createTimelockRequestWithDirectFunding(requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext);
 
@@ -467,7 +467,7 @@ contract BlocklockTest is Deployment {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100000;
+        uint32 requestCallbackGasLimit = 100_000;
         (uint256 requestId,) =
             mockBlocklockReceiver.createTimelockRequestWithDirectFunding(requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext);
 
@@ -514,7 +514,7 @@ contract BlocklockTest is Deployment {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100000;
+        uint32 requestCallbackGasLimit = 100_000;
         (uint256 requestId,) =
             mockBlocklockReceiver.createTimelockRequestWithDirectFunding(requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext);
 
