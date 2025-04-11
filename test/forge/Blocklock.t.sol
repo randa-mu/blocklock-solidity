@@ -349,7 +349,7 @@ contract BlocklockTest is Deployment {
         uint256 exactFeePaid = totalSubBalanceBeforeRequest - nativeBalance;
         console.log("Subscription account charge for request = ",  exactFeePaid);
         assertTrue(totalSubBalanceBeforeRequest > nativeBalance, "subId be charged at this point");
-        // fixme compute exact cost
+        // fixme compute exact cost for subscription type requests
         assertTrue(gasUsed * tx.gasprice < exactFeePaid, "subId should be charged for overhead");
         assertTrue(reqCount == 1, "Incorrect request count, it should be zero");
 
