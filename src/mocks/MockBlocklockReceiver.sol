@@ -34,6 +34,8 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
     ) external payable returns (uint256) {
         // create timelock request
         uint256 requestID = _requestBlocklockWithSubscription(callbackGasLimit, blockHeight, encryptedData);
+        // store request id
+        requestId = requestID;
         // store Ciphertext
         encrytpedValue = encryptedData;
         return requestID;

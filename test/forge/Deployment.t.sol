@@ -21,6 +21,10 @@ import {MockBlocklockReceiver} from "../../src/mocks/MockBlocklockReceiver.sol";
 abstract contract Deployment is Base {
     string internal SCHEME_ID = "BN254-BLS-BLOCKLOCK";
 
+    /// @dev This prevents out of gas errors when doing signature pairing check
+    /// for decryption during callback
+    uint32 internal constant decryptionAndSignatureVerificationOverhead = 500_000;
+
     BLS.PointG2 internal pk = BLS.PointG2({
         x: [
             17445541620214498517833872661220947475697073327136585274784354247720096233162,

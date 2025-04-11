@@ -184,7 +184,6 @@ contract BlocklockSender is
         internal
         returns (uint32 callbackGasLimitWithOverhead)
     {
-        // fixme test subId always > 0 for createSubscription() in SubscriptionAPI
         if (_subId > 0) {
             _requireValidSubscription(s_subscriptionConfigs[_subId].owner);
             // Its important to ensure that the consumer is in fact who they say they
@@ -209,7 +208,7 @@ contract BlocklockSender is
         require(_callbackGasLimit <= s_config.maxGasLimit, "Callback gasLimit too high");
 
         uint32 eip150Overhead = _getEIP150Overhead(_callbackGasLimit);
-        // fixme add to config with getter
+        // fixme add to config with getter and update config setter
         // This prevents out of gas errors when doing signature pairing check
         // for decryption during callback
         uint32 decryptionAndSignatureVerificationOverhead = 500_000;
