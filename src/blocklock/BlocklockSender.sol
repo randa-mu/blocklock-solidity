@@ -154,7 +154,7 @@ contract BlocklockSender is
         });
 
         // subId can be zero for direct funding or non zero for active subscription
-        // fixme test that callbackGasLimit can be zero but user will not get anything in callback. Only signature verification in
+        // fixme test that when callbackGasLimit can be zero but user will not get anything in callback. Only signature verification in
         // decryption sender will be done and decryption key saved
         uint32 callbackGasLimitWithOverhead = _validateAndUpdateSubscription(callbackGasLimit, subId);
 

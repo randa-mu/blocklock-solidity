@@ -71,8 +71,11 @@ contract BlocklockTest is Deployment {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
+        assert(!blocklockSender.s_configured());
+        assert(!blocklockSender.s_disabled());
+
         // set blocklockSender contract config
-        // fixme move setConfig to helper
+        // fixme move setConfig to helper test function
         uint32 maxGasLimit = 500_000;
         uint32 gasAfterPaymentCalculation = 400_000;
         uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
