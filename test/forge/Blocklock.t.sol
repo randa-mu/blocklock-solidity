@@ -114,7 +114,7 @@ contract BlocklockTest is Deployment {
         /// @dev Overhead for EIP-150
         uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
 
-        /// @dev This prevents out of gas errors when doing signature pairing check 
+        /// @dev This prevents out of gas errors when doing signature pairing check
         /// for decryption during callback
         uint32 decryptionAndSignatureVerificationOverhead = 500_000;
 
@@ -123,7 +123,8 @@ contract BlocklockTest is Deployment {
             "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
         );
         assertTrue(
-            decryptionRequest.callbackGasLimit == requestCallbackGasLimit + callbackGasOverhead + decryptionAndSignatureVerificationOverhead,
+            decryptionRequest.callbackGasLimit
+                == requestCallbackGasLimit + callbackGasOverhead + decryptionAndSignatureVerificationOverhead,
             "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
         );
 
@@ -170,14 +171,25 @@ contract BlocklockTest is Deployment {
         blocklockRequest = blocklockSender.getRequest(requestId);
 
         console.log(blocklockRequest.directFundingFeePaid);
-        assertTrue(blocklockSender.s_totalNativeBalance() == 0, "We don't expect any funded subscriptions at this point");
-        assertTrue(blocklockSender.s_withdrawableDirectFundingFeeNative() == blocklockRequest.directFundingFeePaid, "Request price paid should be withdrawable by admin at this point");
-        assertTrue(blocklockSender.s_withdrawableSubscriptionFeeNative() == 0, "We don't expect any funded subscriptions at this point");
+        assertTrue(
+            blocklockSender.s_totalNativeBalance() == 0, "We don't expect any funded subscriptions at this point"
+        );
+        assertTrue(
+            blocklockSender.s_withdrawableDirectFundingFeeNative() == blocklockRequest.directFundingFeePaid,
+            "Request price paid should be withdrawable by admin at this point"
+        );
+        assertTrue(
+            blocklockSender.s_withdrawableSubscriptionFeeNative() == 0,
+            "We don't expect any funded subscriptions at this point"
+        );
 
         vm.prank(admin);
         uint256 adminBalance = admin.balance;
         blocklockSender.withdrawDirectFundingFeesNative(payable(admin));
-        assertTrue(admin.balance + blocklockRequest.directFundingFeePaid > adminBalance, "Admin balance should be higher after withdrawing fees");    
+        assertTrue(
+            admin.balance + blocklockRequest.directFundingFeePaid > adminBalance,
+            "Admin balance should be higher after withdrawing fees"
+        );
     }
 
     // function test_UnauthorisedCaller() public {

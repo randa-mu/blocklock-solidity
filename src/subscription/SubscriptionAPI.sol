@@ -78,7 +78,7 @@ abstract contract SubscriptionAPI is ReentrancyGuard, ISubscription {
     // A discrepancy with this contract's native balance indicates someone
     // sent native using transfer and so we may need to use recoverNativeFunds.
     uint96 public s_totalNativeBalance;
-    // The following variables track fees collected from direct funding requests or 
+    // The following variables track fees collected from direct funding requests or
     // subscription based requests that have become withdrawable for contract admin.
     uint96 public s_withdrawableDirectFundingFeeNative;
     uint96 public s_withdrawableSubscriptionFeeNative;

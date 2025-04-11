@@ -210,7 +210,7 @@ contract BlocklockSender is
 
         uint32 eip150Overhead = _getEIP150Overhead(_callbackGasLimit);
         // fixme add to config with getter
-        // This prevents out of gas errors when doing signature pairing check 
+        // This prevents out of gas errors when doing signature pairing check
         // for decryption during callback
         uint32 decryptionAndSignatureVerificationOverhead = 500_000;
         callbackGasLimitWithOverhead = _callbackGasLimit + eip150Overhead + decryptionAndSignatureVerificationOverhead;
@@ -443,6 +443,8 @@ contract BlocklockSender is
         // Prevent re-entrancy by updating state before transfer.
         s_withdrawableSubscriptionFeeNative = 0;
         // For subscription fees, we also deduct amount from s_totalNativeBalance
+        // s_totalNativeBalance tracks the total native sent to/from
+        // this contract through fundSubscription, cancelSubscription.
         s_totalNativeBalance -= amount;
         _mustSendNative(recipient, amount);
     }
@@ -452,7 +454,7 @@ contract BlocklockSender is
         _requireSufficientBalance(amount > 0);
         // Prevent re-entrancy by updating state before transfer.
         s_withdrawableDirectFundingFeeNative = 0;
-        
+
         _mustSendNative(recipient, amount);
     }
 
