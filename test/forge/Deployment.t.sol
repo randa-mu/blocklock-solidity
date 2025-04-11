@@ -63,7 +63,7 @@ abstract contract Deployment is Base {
 
         blocklockSender = BlocklockSender(address(blocklockSender_proxy));
 
-        vm.prank(admin);
+        vm.prank(alice);
         mockBlocklockReceiver = new MockBlocklockReceiver(address(blocklockSender_proxy));
 
         vm.prank(admin);

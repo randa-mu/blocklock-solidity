@@ -61,8 +61,8 @@ abstract contract Base is Test {
 
         bytes memory decryptionKey = hex"7ec49d8f06b34d8d6b2e060ea41652f25b1325fafb041bba9cf24f094fbca259";
 
-        ciphertextDataUint[3 ether] = CiphertextDataUint({
-            plaintext: 3 ether,
+        ciphertextDataUint[plaintext] = CiphertextDataUint({
+            plaintext: plaintext,
             ciphertext: ciphertext,
             signature: signature,
             decryptionKey: decryptionKey
