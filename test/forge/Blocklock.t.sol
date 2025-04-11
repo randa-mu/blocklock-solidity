@@ -67,7 +67,6 @@ contract BlocklockTest is Deployment {
         assert(address(decryptionSender.signatureSchemeAddressProvider()) != address(0));
     }
 
-    // without gas limit and gas price specified by offchain oracle
     function test_FulfilledBlocklockDirectFundingRequest() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
