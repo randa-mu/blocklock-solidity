@@ -159,23 +159,31 @@ describe("BlocklockSender", function () {
   let blocklockRevertingReceiver: MockBlocklockRevertingReceiver;
 
   let owner: Signer;
+  let alice: Signer;
+  let bob: Signer;
 
   const SCHEME_ID = "BN254-BLS-BLOCKLOCK";
 
+
   beforeEach(async () => {
-    [owner] = await ethers.getSigners();
+    // setup signers
+    [owner, alice, bob] = await ethers.getSigners();
     
     // deploy signature scheme address provider
     schemeProvider = await ethers.deployContract("SignatureSchemeAddressProvider", [await owner.getAddress()]);
     await schemeProvider.waitForDeployment();
+
     // deploy blocklock signature scheme contract
     blocklockScheme = await ethers.deployContract("BlocklockSignatureScheme", [
         [BLOCKLOCK_DEFAULT_PUBLIC_KEY.x.c0, BLOCKLOCK_DEFAULT_PUBLIC_KEY.x.c1],
         [BLOCKLOCK_DEFAULT_PUBLIC_KEY.y.c0, BLOCKLOCK_DEFAULT_PUBLIC_KEY.y.c1]
     ]);
     await blocklockScheme.waitForDeployment();
+
+    // add blocklock signature scheme address in signature scheme address provider
     await schemeProvider.updateSignatureScheme(SCHEME_ID, await blocklockScheme.getAddress());
 
+    // deploy decryption sender
     const DecryptionSenderImplementation = await ethers.getContractFactory("DecryptionSender");
     const decryptionSenderImplementation = await DecryptionSenderImplementation.deploy();
     await decryptionSenderImplementation.waitForDeployment();
@@ -191,6 +199,7 @@ describe("BlocklockSender", function () {
     await uupsProxy.waitForDeployment();
     decryptionSender = DecryptionSenderImplementation.attach(await uupsProxy.getAddress()); // DecryptionSender__factory.connect(await uupsProxy.getAddress(), owner);
 
+    // deploy blocklock sender
     const BlocklockSenderImplementation = await ethers.getContractFactory("BlocklockSender");
     const blocklockSenderImplementation = await BlocklockSenderImplementation.deploy();
     await blocklockSenderImplementation.waitForDeployment();
@@ -205,50 +214,53 @@ describe("BlocklockSender", function () {
     await uupsProxy2.waitForDeployment();
     blocklock = BlocklockSenderImplementation.attach(await uupsProxy2.getAddress());
 
+    // deploy blocklock uint256 receiver
     blocklockReceiver = await ethers.deployContract("MockBlocklockReceiver", [await blocklock.getAddress()]);
     await blocklockReceiver.waitForDeployment();
 
+    // deploy blocklock string receiver
     blocklockStringReceiver = await ethers.deployContract("MockBlocklockStringReceiver", [
       await blocklock.getAddress(),
     ]);
     await blocklockStringReceiver.waitForDeployment();
 
+    // deploy reverting blocklock receiver
     blocklockRevertingReceiver = await ethers.deployContract("MockBlocklockRevertingReceiver", [
       await blocklock.getAddress(),
     ]);
   });
 
-  async function encryptAndRegister(
-    message: Uint8Array,
-    blockHeight: bigint,
-    pk: G2 = BLOCKLOCK_DEFAULT_PUBLIC_KEY,
-  ): Promise<{
-    id: string;
-    receipt: any;
-    ct: Ciphertext;
-  }> {
-    const ct = encrypt(message, blockHeight, pk);
+  // async function encryptAndRegister(
+  //   message: Uint8Array,
+  //   blockHeight: bigint,
+  //   pk: G2 = BLOCKLOCK_DEFAULT_PUBLIC_KEY,
+  // ): Promise<{
+  //   id: string;
+  //   receipt: any;
+  //   ct: Ciphertext;
+  // }> {
+  //   const ct = encrypt(message, blockHeight, pk);
 
-    const tx = await blocklock.requestBlocklock(blockHeight, encodeCiphertextToSolidity(ct));
-    const receipt = await tx.wait(1);
-    if (!receipt) {
-      throw new Error("transaction has not been mined");
-    }
+  //   const tx = await blocklock.requestBlocklock(blockHeight, encodeCiphertextToSolidity(ct));
+  //   const receipt = await tx.wait(1);
+  //   if (!receipt) {
+  //     throw new Error("transaction has not been mined");
+  //   }
 
-    const iface = BlocklockSender__factory.createInterface();
-    const [requestID] = extractSingleLog(
-      iface,
-      receipt,
-      await blocklock.getAddress(),
-      iface.getEvent("BlocklockRequested"),
-    );
+  //   const iface = BlocklockSender__factory.createInterface();
+  //   const [requestID] = extractSingleLog(
+  //     iface,
+  //     receipt,
+  //     await blocklock.getAddress(),
+  //     iface.getEvent("BlocklockRequested"),
+  //   );
 
-    return {
-      id: requestID.toString(),
-      receipt: receipt,
-      ct,
-    };
-  }
+  //   return {
+  //     id: requestID.toString(),
+  //     receipt: receipt,
+  //     ct,
+  //   };
+  // }
 
   it("Should deploy the contracts with non zero addresses", async function () {
     expect(await owner.getAddress()).to.not.equal(ZeroAddress);
