@@ -158,10 +158,10 @@ contract BlocklockTest is Deployment {
 
         decryptionRequest = decryptionSender.getRequest(requestId);
         assertTrue(decryptionRequest.isFulfilled, "Decryption key not provided in decryption sender by offchain oracle");
-        // assert(mockBlocklockReceiver.plainTextValue() == plaintext);
+        assertTrue(mockBlocklockReceiver.plainTextValue() == plaintext, "Plaintext values mismatch after decryption");
         assertTrue(mockBlocklockReceiver.requestId() == 1, "Request id in receiver contract is incorrect");
 
-        // check deductions and withdrawable amount in blocklock sender
+        // check deductions from user and withdrawable amount in blocklock sender for admin
     }
 
     // function test_UnauthorisedCaller() public {
