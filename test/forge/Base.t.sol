@@ -3,22 +3,28 @@ pragma solidity ^0.8;
 
 import {Test} from "forge-std/Test.sol";
 
+/// @title Base test contract
+/// @dev Provides core functionalities needed by all other tests.
 abstract contract Base is Test {
-    address alice;
-    address bob;
+    address internal admin;
+    address internal alice;
+    address internal bob;
 
     function setUp() public virtual {
-        alice = vm.makeAddr("alice");
-        bob = vm.makeAddr("bob");
+        admin = makeAddr("admin");
+        alice = makeAddr("alice");
+        bob = makeAddr("bob");
 
+        vm.deal(admin, 10 ether);
         vm.deal(alice, 10 ether);
         vm.deal(bob, 10 ether);
     }
 
     function signers() internal view returns (address[] memory) {
         address[] memory _signers = new address[](2);
-        _signers[0] = alice;
-        _signers[1] = bob;
+        _signers[0] = admin;
+        _signers[1] = alice;
+        _signers[2] = bob;
         _signers = sortAccounts(_signers);
         return _signers;
     }
