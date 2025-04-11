@@ -442,6 +442,7 @@ contract BlocklockSender is
         _requireSufficientBalance(amount > 0);
         // Prevent re-entrancy by updating state before transfer.
         s_withdrawableSubscriptionFeeNative = 0;
+        // For subscription fees, we also deduct amount from s_totalNativeBalance
         s_totalNativeBalance -= amount;
         _mustSendNative(recipient, amount);
     }
