@@ -27,9 +27,16 @@ contract DeployBlocklockSignatureScheme is JsonUtils, SignatureUtils {
         );
 
         vm.broadcast();
-        address contractAddress = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
+        address contractAddress;
+        if (Constants.USE_RANDAMU_FACTORY) {
+            contractAddress = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
 
-        blocklockSignatureScheme = BlocklockSignatureScheme(contractAddress);
+            blocklockSignatureScheme = BlocklockSignatureScheme(contractAddress);
+        } else {
+            blocklockSignatureScheme =
+                new BlocklockSignatureScheme{salt: Constants.SALT}(BLS_PUBLIC_KEY.x, BLS_PUBLIC_KEY.y);
+            contractAddress = address(blocklockSignatureScheme);
+        }
 
         console.log("BlocklockSignatureScheme contract deployed to: ", contractAddress);
 

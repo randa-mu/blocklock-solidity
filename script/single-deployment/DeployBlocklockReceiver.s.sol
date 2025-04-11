@@ -30,9 +30,15 @@ contract DeployBlocklockReceiver is JsonUtils {
             abi.encodePacked(type(MockBlocklockReceiver).creationCode, abi.encode(blocklockSenderAddress));
 
         vm.broadcast();
-        address contractAddress = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
+        address contractAddress;
+        if (Constants.USE_RANDAMU_FACTORY) {
+            contractAddress = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
 
-        mockBlocklockReceiver = MockBlocklockReceiver(contractAddress);
+            mockBlocklockReceiver = MockBlocklockReceiver(contractAddress);
+        } else {
+            mockBlocklockReceiver = new MockBlocklockReceiver{salt: Constants.SALT}(blocklockSenderAddress);
+            contractAddress = address(mockBlocklockReceiver);
+        }
 
         console.log("MockBlocklockReceiver deployed at: ", contractAddress);
     }

@@ -7,6 +7,7 @@ import {console} from "forge-std/console.sol";
 import {Constants} from "../libraries/Constants.sol";
 
 import {JsonUtils} from "../utils/JsonUtils.sol";
+import {EnvReader} from "../utils/EnvReader.sol";
 
 import {DecryptionSender} from "src/decryption-requests/DecryptionSender.sol";
 import {UUPSProxy} from "src/proxy/UUPSProxy.sol";
@@ -16,7 +17,7 @@ import {Factory} from "src/factory/Factory.sol";
 /// @author Randamu
 /// @dev Script for deploying or upgrading the DecryptionSender contract.
 /// Reads an environment variable to determine if it's an upgrade (new implementation only) or a full deployment.
-contract DeployDecryptionSender is JsonUtils {
+contract DeployDecryptionSender is JsonUtils, EnvReader {
     /// @notice Runs the deployment script, checking the environment variable to determine whether to upgrade or deploy.
     function run() public virtual {
         bool isUpgrade = vm.envBool("IS_UPGRADE");
@@ -46,16 +47,24 @@ contract DeployDecryptionSender is JsonUtils {
             bytes memory code = abi.encodePacked(type(UUPSProxy).creationCode, abi.encode(implementation, ""));
 
             vm.broadcast();
-            address contractAddress = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
+            address contractAddress;
+            if (Constants.USE_RANDAMU_FACTORY) {
+                contractAddress = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
 
-            decryptionSenderInstance = DecryptionSender(contractAddress);
+                decryptionSenderInstance = DecryptionSender(contractAddress);
+            } else {
+                UUPSProxy proxy = new UUPSProxy{salt: Constants.SALT}(implementation, "");
+                decryptionSenderInstance = DecryptionSender(address(proxy));
+
+                contractAddress = address(proxy);
+            }
 
             _writeAddressToJsonInput(
                 Constants.DEPLOYMENT_INPUT_JSON_PATH, "decryptionSenderProxyAddress", contractAddress
             );
 
             vm.broadcast();
-            decryptionSenderInstance.initialize(Constants.ADMIN, signatureSchemeAddressesProviderAddress);
+            decryptionSenderInstance.initialize(getSignerAddress(), signatureSchemeAddressesProviderAddress);
 
             console.log("DecryptionSender proxy contract deployed at: ", contractAddress);
         }
@@ -67,7 +76,12 @@ contract DeployDecryptionSender is JsonUtils {
         bytes memory code = type(DecryptionSender).creationCode;
 
         vm.broadcast();
-        implementation = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
+        if (Constants.USE_RANDAMU_FACTORY) {
+            implementation = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
+        } else {
+            DecryptionSender decryptionSender = new DecryptionSender{salt: Constants.SALT}();
+            implementation = address(decryptionSender);
+        }
 
         console.log("DecryptionSender implementation contract deployed at: ", implementation);
     }
