@@ -6,8 +6,8 @@ import {
   get_identity_g1,
   preprocess_decryption_key_g1,
   serializeCiphertext,
-} from "../../../scripts/crypto";
-import { bn254 } from "../../../scripts/crypto/bn254";
+} from "../../../utils/crypto";
+import { bn254 } from "../../../utils/crypto/bn254";
 
 const { expect } = require("chai");
 

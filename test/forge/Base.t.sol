@@ -15,6 +15,7 @@ abstract contract Base is Test {
 
     struct CiphertextDataUint {
         uint256 plaintext;
+        uint256 chainHeight;
         TypesLib.Ciphertext ciphertext;
         bytes signature;
         bytes decryptionKey;
@@ -62,12 +63,42 @@ abstract contract Base is Test {
 
         ciphertextDataUint[plaintext] = CiphertextDataUint({
             plaintext: plaintext,
+            chainHeight: 13,
             ciphertext: ciphertext,
             signature: signature,
             decryptionKey: decryptionKey
         });
 
         // 2. 4 ether
+        plaintext = 4 ether;
+
+        ciphertext = TypesLib.Ciphertext({
+            u: BLS.PointG2({
+                x: [
+                    20922513581500259523647840510362906950917853700728572031885101432319352261719,
+                    18490873592805335263955970171182159506429015017227279735141837984412162904233
+                ],
+                y: [
+                    15948888103830658501365002272356693917886707478546613246729438188878644946843,
+                    15242412787259379544136775875421736833360414229226748924780511010699806315605
+                ]
+            }),
+            v: hex"7e357c60e3c647eee424bc93e879c8ac30b4a1a73fd0c101f34faf35e05e9802",
+            w: hex"2f16cd1359d03fd54a34bf661442b9ab44b691de96d39b2f7183a81d0c6419cb"
+        });
+
+        signature =
+            hex"02b3b2fa2c402d59e22a2f141e32a092603862a06a695cbfb574c440372a72cd0636ba8092f304e7701ae9abe910cb474edf0408d9dd78ea7f6f97b7f2464711";
+
+        decryptionKey = hex"7e7aba482f71e198475293c170d4fa6251f97f1d7b43066422f837441d91caef";
+
+        ciphertextDataUint[plaintext] = CiphertextDataUint({
+            plaintext: plaintext,
+            chainHeight: 13,
+            ciphertext: ciphertext,
+            signature: signature,
+            decryptionKey: decryptionKey
+        });
     }
 
     function signers() internal view returns (address[] memory) {

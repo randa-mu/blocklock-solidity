@@ -34,7 +34,7 @@ contract DeployBlocklockReceiver is JsonUtils {
         if (Constants.USE_RANDAMU_FACTORY) {
             contractAddress = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
 
-            mockBlocklockReceiver = MockBlocklockReceiver(contractAddress);
+            mockBlocklockReceiver = MockBlocklockReceiver(payable(contractAddress));
         } else {
             mockBlocklockReceiver = new MockBlocklockReceiver{salt: Constants.SALT}(blocklockSenderAddress);
             contractAddress = address(mockBlocklockReceiver);

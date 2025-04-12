@@ -5,13 +5,12 @@ import {
   IbeOpts,
   BlsBn254,
   preprocess_decryption_key_g1,
-} from "../../scripts/crypto";
+} from "../../utils/crypto";
 import {
   MockBlocklockReceiver,
   MockBlocklockStringReceiver,
   MockBlocklockRevertingReceiver,
   SignatureSchemeAddressProvider,
-  SignatureSender,
   BlocklockSender,
   BlocklockSignatureScheme,
   DecryptionSender,

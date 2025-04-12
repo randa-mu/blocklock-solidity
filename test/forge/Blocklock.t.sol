@@ -83,7 +83,7 @@ contract BlocklockTest is Deployment {
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
         (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
-            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+            requestCallbackGasLimit, ciphertextDataUint[3 ether].chainHeight, ciphertextDataUint[3 ether].ciphertext
         );
 
         // fetch request information including callbackGasLimit from decryption sender
@@ -221,7 +221,7 @@ contract BlocklockTest is Deployment {
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
         uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
-            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+            requestCallbackGasLimit, ciphertextDataUint[3 ether].chainHeight, ciphertextDataUint[3 ether].ciphertext
         );
 
         // fetch request information including callbackGasLimit from decryption sender
@@ -298,7 +298,7 @@ contract BlocklockTest is Deployment {
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
         uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
-            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+            requestCallbackGasLimit, ciphertextDataUint[4 ether].chainHeight, ciphertextDataUint[4 ether].ciphertext
         );
 
         // fetch request information including callbackGasLimit from decryption sender
@@ -341,7 +341,7 @@ contract BlocklockTest is Deployment {
 
         vm.prank(admin);
         decryptionSender.fulfillDecryptionRequest(
-            requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
+            requestId, ciphertextDataUint[4 ether].decryptionKey, ciphertextDataUint[4 ether].signature
         );
 
         uint256 gasAfter = gasleft();
@@ -369,7 +369,7 @@ contract BlocklockTest is Deployment {
         decryptionRequest = decryptionSender.getRequest(requestId);
         assertTrue(decryptionRequest.isFulfilled, "Decryption key not provided in decryption sender by offchain oracle");
         assertTrue(
-            mockBlocklockReceiver.plainTextValue() == ciphertextDataUint[3 ether].plaintext,
+            mockBlocklockReceiver.plainTextValue() == ciphertextDataUint[4 ether].plaintext,
             "Plaintext values mismatch after decryption"
         );
         assertTrue(mockBlocklockReceiver.requestId() == 1, "Request id in receiver contract is incorrect");
@@ -437,7 +437,7 @@ contract BlocklockTest is Deployment {
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
         (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
-            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+            requestCallbackGasLimit, ciphertextDataUint[3 ether].chainHeight, ciphertextDataUint[3 ether].ciphertext
         );
 
         vm.startPrank(admin);
@@ -485,7 +485,7 @@ contract BlocklockTest is Deployment {
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
         (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
-            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+            requestCallbackGasLimit, ciphertextDataUint[3 ether].chainHeight, ciphertextDataUint[3 ether].ciphertext
         );
 
         vm.expectRevert("No request with specified requestID");
@@ -535,7 +535,7 @@ contract BlocklockTest is Deployment {
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
         (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
-            requestCallbackGasLimit, 13, ciphertextDataUint[3 ether].ciphertext
+            requestCallbackGasLimit, ciphertextDataUint[3 ether].chainHeight, ciphertextDataUint[3 ether].ciphertext
         );
 
         vm.startPrank(admin);
