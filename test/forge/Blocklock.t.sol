@@ -408,7 +408,7 @@ contract BlocklockTest is Deployment {
         );
     }
 
-    /// @notice enough gas overhead still added for requests with zero gas limit specified 
+    /// @notice enough gas overhead still added for requests with zero gas limit specified
     /// to cover for sending of keys and decryption
     function test_FulfillBlocklockSubscriptionRequestWithZeroCallbackGasLimit() public {
         // set blocklockSender contract config
@@ -600,7 +600,7 @@ contract BlocklockTest is Deployment {
 
         assertTrue(blocklockSender.s_totalNativeBalance() == totalSubBalanceBeforeRequest, "User not charged");
     }
-    
+
     function test_CallsToBlocklockSenderShouldRevertIfBlocklockSenderAddressIsIncorrect() public {
         // set blocklockSender contract config
         uint32 maxGasLimit = 500_000;
@@ -694,7 +694,9 @@ contract BlocklockTest is Deployment {
         uint256 gasBefore = gasleft();
 
         vm.prank(admin);
-        decryptionSender.fulfillDecryptionRequest(requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
+        );
 
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
