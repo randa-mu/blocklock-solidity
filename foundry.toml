@@ -6,5 +6,24 @@ optimizer = true
 optimizer_runs = 200
 solc_version = '0.8.28'
 fs_permissions = [{ access = "read-write", path = "./"}]
+gas_reports = ["*"]
+
+[profile.default.fmt]
+sort_import = true
+line_length = 120
+tab_width = 4
+bracket_spacing = false
+int_types = "long"
+quote_style = "double"
+number_underscore = "preserve"
+override_spacing = true
+ignore = []
+
+[profile.test]
+gas_reports = ["*"]
+
+[profile.coverage]
+via_ir = true
+no_match_coverage = "(script|test)"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
