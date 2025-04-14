@@ -29,8 +29,13 @@ lcov \
 
 # Open more granular breakdown in browser
 genhtml \
-    --ignore-errors category \
     --rc branch_coverage=1 \
     --output-directory coverage \
+    --ignore-errors category \
+    --ignore-errors inconsistent \
+    --ignore-errors corrupt \
+    --ignore-errors empty \
+    --ignore-errors missing \
     lcov.info
+
 open coverage/index.html
