@@ -85,4 +85,19 @@ abstract contract Deployment is Base {
         vm.prank(admin);
         blocklockSender.initialize(admin, address(decryptionSender));
     }
+
+    function deployAndFundReceiverWithSubscription(address blocklockSenderProxy, uint256 subBalance) internal returns (MockBlocklockReceiver mockBlocklockReceiver) {
+        vm.prank(alice);
+        mockBlocklockReceiver = new MockBlocklockReceiver(blocklockSenderProxy);
+
+        vm.prank(alice);
+        mockBlocklockReceiver.createSubscriptionAndFundNative{value: subBalance}();
+    }
+
+    function deployAndFundReceiverWithDirectFunding(address blocklockSenderProxy, uint256 subBalance) internal returns (MockBlocklockReceiver mockBlocklockReceiver) {
+        vm.prank(alice);
+        mockBlocklockReceiver = new MockBlocklockReceiver(blocklockSenderProxy);
+
+        mockBlocklockReceiver.fundContractNative{value: subBalance}();
+    }
 }
