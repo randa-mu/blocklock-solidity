@@ -86,7 +86,10 @@ abstract contract Deployment is Base {
         blocklockSender.initialize(admin, address(decryptionSender));
     }
 
-    function deployAndFundReceiverWithSubscription(address owner, address blocklockSenderProxy, uint256 subBalance) internal returns (MockBlocklockReceiver mockBlocklockReceiver) {
+    function deployAndFundReceiverWithSubscription(address owner, address blocklockSenderProxy, uint256 subBalance)
+        internal
+        returns (MockBlocklockReceiver mockBlocklockReceiver)
+    {
         vm.prank(owner);
         mockBlocklockReceiver = new MockBlocklockReceiver(blocklockSenderProxy);
 
@@ -94,7 +97,10 @@ abstract contract Deployment is Base {
         mockBlocklockReceiver.createSubscriptionAndFundNative{value: subBalance}();
     }
 
-    function deployAndFundReceiverWithDirectFunding(address owner, address blocklockSenderProxy, uint256 subBalance) internal returns (MockBlocklockReceiver mockBlocklockReceiver) {
+    function deployAndFundReceiverWithDirectFunding(address owner, address blocklockSenderProxy, uint256 subBalance)
+        internal
+        returns (MockBlocklockReceiver mockBlocklockReceiver)
+    {
         vm.prank(owner);
         mockBlocklockReceiver = new MockBlocklockReceiver(blocklockSenderProxy);
 

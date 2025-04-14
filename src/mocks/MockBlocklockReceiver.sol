@@ -41,7 +41,7 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
         return requestID;
     }
 
-    function cancelSubscription(address to) external onlyOwner() {
+    function cancelSubscription(address to) external onlyOwner {
         _cancelSubscription(to);
     }
 
