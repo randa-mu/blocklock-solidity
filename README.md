@@ -41,6 +41,28 @@ npm run test
 npm run lint:fix
 ```
 
+#### Code Coverage
+
+To run foundry coverage:
+
+```sh
+FOUNDRY_PROFILE=coverage forge coverage --report summary
+```
+
+This project also includes a [coverage.sh](utils/coverage.sh) script to generate and view test coverage reports using lcov. After the script runs, it generates and opens a html page showing lines of code covered by tests and those that have not been covered. If lcov is not installed, the script will attempt to install it automatically using Homebrew (macOS) or apt (Linux).
+
+To make the script executable:
+
+```sh
+chmod +x dev/coverage.sh
+```
+
+To run the script:
+
+```sh
+./dev/coverage.sh
+```
+
 
 ### Deployment 
 
