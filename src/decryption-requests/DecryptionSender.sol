@@ -119,17 +119,17 @@ contract DecryptionSender is
     function _authorizeUpgrade(address newImplementation) internal override onlyAdmin {}
 
     /// @dev Overridden msg.sender function to return the correct sender address.
-    function _msgSender() internal view override(Context, ContextUpgradeable) returns (address) {
+    function _msgSender() internal view override (Context, ContextUpgradeable) returns (address) {
         return msg.sender;
     }
 
     /// @dev Overridden msg.data function to return the correct data.
-    function _msgData() internal pure override(Context, ContextUpgradeable) returns (bytes calldata) {
+    function _msgData() internal pure override (Context, ContextUpgradeable) returns (bytes calldata) {
         return msg.data;
     }
 
     /// @dev Overridden context suffix length function.
-    function _contextSuffixLength() internal pure override(Context, ContextUpgradeable) returns (uint256) {
+    function _contextSuffixLength() internal pure override (Context, ContextUpgradeable) returns (uint256) {
         return 0;
     }
 

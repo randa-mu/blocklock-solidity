@@ -30,7 +30,7 @@ contract DeployAllContracts is
 {
     function run()
         public
-        override(
+        override (
             DeployBlocklockSender,
             DeploySignatureSchemeAddressProvider,
             DeployBlocklockSignatureScheme,

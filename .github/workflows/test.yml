@@ -1,4 +1,4 @@
-name: CI
+name: Foundry
 
 on:
   push:
@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 env:
-  FOUNDRY_PROFILE: ci
   BLS_KEY: ${{ secrets.BLS_KEY }}
 
 jobs:
@@ -41,13 +40,16 @@ jobs:
 
       - name: Run Forge build
         run: |
-          forge build --sizes
+          forge build --force --skip test --sizes
         id: build
 
       - name: Run Forge tests
         run: |
-          forge test -vvv
+          FOUNDRY_PROFILE=test forge test --gas-report
         id: forge-test
+      
+      - name: Run foundry coverage
+        run: FOUNDRY_PROFILE=coverage forge coverage --report summary
 
       - name: Run Hardhat tests
         run: |

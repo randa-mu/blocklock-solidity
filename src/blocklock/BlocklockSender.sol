@@ -256,7 +256,7 @@ contract BlocklockSender is
     function estimateRequestPriceNative(uint32 _callbackGasLimit, uint256 _requestGasPriceWei)
         external
         view
-        override(BlocklockFeeCollector, IBlocklockSender)
+        override (BlocklockFeeCollector, IBlocklockSender)
         returns (uint256)
     {
         return _calculateRequestPriceNative(_callbackGasLimit, _requestGasPriceWei);
@@ -271,7 +271,7 @@ contract BlocklockSender is
     function calculateRequestPriceNative(uint32 _callbackGasLimit)
         public
         view
-        override(BlocklockFeeCollector, IBlocklockSender)
+        override (BlocklockFeeCollector, IBlocklockSender)
         returns (uint256)
     {
         return _calculateRequestPriceNative(_callbackGasLimit, tx.gasprice);
