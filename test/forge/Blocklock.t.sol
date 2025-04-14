@@ -391,7 +391,18 @@ contract BlocklockTest is Deployment {
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
     }
 
-    // fixme check subscription owner can cancel subscription and they receive subscription balance
+    function test_CancelSubscription() public {
+        mockBlocklockReceiver = deployAndFundReceiverWithSubscription(alice, address(blocklockSender), 5 ether);
+
+        uint256 aliceBalancePreCancellation = alice.balance;
+
+        vm.prank(alice);
+        mockBlocklockReceiver.cancelSubscription(alice);
+
+        uint256 aliceBalancePostCancellation = alice.balance;
+
+        assertTrue(aliceBalancePostCancellation > aliceBalancePreCancellation, "Balance did not increase after subscription cancellation");
+    }
     // fixme test subscription with insufficient gas then call retry with higher gas and check user charged for both calls
     // fixme test request with zero gas limit adds gas overhead still (and only stores key and reverts if gas overhead for pairing check and callbacks cannot be charged for)
     // fixme test cancelled subscription with a pending unfulfilled request leads to a failing callback without any decryption key stored onchain??

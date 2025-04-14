@@ -184,7 +184,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @dev Internal helper that cancels the subscription.
     /// @param to The recipient addresss that will receive the subscription balance.
     function _cancelSubscription(address to) internal {
-        require(subscriptionId == 0, "SubscriptionId is not zero");
+        require(subscriptionId != 0, "SubscriptionId is zero");
         blocklock.cancelSubscription(subscriptionId, to);
     }
 
