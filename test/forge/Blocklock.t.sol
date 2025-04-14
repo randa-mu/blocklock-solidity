@@ -362,7 +362,7 @@ contract BlocklockTest is Deployment {
         uint256 exactFeePaid = totalSubBalanceBeforeRequest - nativeBalance;
         console.log("Subscription account charge for request = ", exactFeePaid);
         assertTrue(totalSubBalanceBeforeRequest > nativeBalance, "subId should be charged at this point");
-        // fixme compute exact cost for subscription type requests
+        // fixme compute exact cost for subscription type requests with formula
         assertTrue(gasUsed * tx.gasprice < exactFeePaid, "subId should be charged for overhead");
         assertTrue(reqCount == 1, "Incorrect request count, it should be one");
 
@@ -502,7 +502,7 @@ contract BlocklockTest is Deployment {
         uint256 exactFeePaid = totalSubBalanceBeforeRequest - nativeBalance;
         console.log("Subscription account charge for request = ", exactFeePaid);
         assertTrue(totalSubBalanceBeforeRequest > nativeBalance, "subId should be charged at this point");
-        // fixme compute exact cost for subscription type requests
+        // fixme compute exact cost for subscription type requests with formula
         assertTrue(gasUsed * tx.gasprice < exactFeePaid, "subId should be charged for overhead");
         assertTrue(reqCount == 1, "Incorrect request count, it should be one");
 
@@ -533,9 +533,93 @@ contract BlocklockTest is Deployment {
     }
 
     // fixme test cancelled subscription with a pending unfulfilled request leads to a failing callback without any decryption key stored onchain??
-    // fixme test timelock request should revert if blocklock sender address is incorrect in blocklockReceiver
-    // fixme test can use multicall for fulfil and enumerable set can track multiple requests in decryptionSender
+    function test_CancellingSubscriptionWithPendingRequestNotAllowed() public {
+        // set blocklockSender contract config
+        uint32 maxGasLimit = 500_000;
+        uint32 gasAfterPaymentCalculation = 400_000;
+        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
+        uint8 nativePremiumPercentage = 10;
+
+        setBlocklockSenderBillingConfiguration(
+            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
+        );
+
+        // create subscription and fund it
+        assert(mockBlocklockReceiver.subscriptionId() == 0);
+
+        vm.prank(alice);
+        mockBlocklockReceiver.createSubscriptionAndFundNative{value: 5 ether}();
+
+        uint256 totalSubBalanceBeforeRequest = 5 ether;
+
+        // get request price
+        uint32 callbackGasLimit = 0;
+        uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
+        console.log("Request price for offchain oracle callbackGasLimit", requestPrice);
+
+        // make blocklock request
+        vm.prank(alice);
+        uint32 requestCallbackGasLimit = callbackGasLimit;
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+            requestCallbackGasLimit, ciphertextDataUint[3 ether].chainHeight, ciphertextDataUint[3 ether].ciphertext
+        );
+
+        // fetch request information including callbackGasLimit from decryption sender
+        TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
+
+        /// @dev Overhead for EIP-150
+        uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
+
+        assertTrue(
+            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
+        );
+
+        assertTrue(
+            decryptionRequest.callbackGasLimit
+                == requestCallbackGasLimit + callbackGasOverhead + decryptionAndSignatureVerificationOverhead,
+            "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
+        );
+
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
+        assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
+        assertTrue(
+            blocklockRequest.directFundingFeePaid == 0,
+            "User contract should not be charged immediately for subscription request"
+        );
+        assertTrue(
+            blocklockRequest.decryptionRequestID == requestId,
+            "Request id mismatch between blocklockSender and decryptionSender"
+        );
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSignature("PendingRequestExists()"));
+        mockBlocklockReceiver.cancelSubscription(alice);
+
+        assertTrue(blocklockSender.s_totalNativeBalance() == totalSubBalanceBeforeRequest, "User not charged");
+    }
     
+    function test_CallsToBlocklockSenderShouldRevertIfBlocklockSenderAddressIsIncorrect() public {
+        // set blocklockSender contract config
+        uint32 maxGasLimit = 500_000;
+        uint32 gasAfterPaymentCalculation = 400_000;
+        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
+        uint8 nativePremiumPercentage = 10;
+
+        setBlocklockSenderBillingConfiguration(
+            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
+        );
+
+        vm.prank(alice);
+        mockBlocklockReceiver = new MockBlocklockReceiver(admin);
+
+        vm.prank(alice);
+        vm.expectRevert();
+        mockBlocklockReceiver.createSubscriptionAndFundNative{value: 0}();
+    }
+
     function test_RevertingCallbackForSubscriptionWithInsufficientBalanceAndRetry() public {
         // set blocklockSender contract config
         uint32 maxGasLimit = 500_000;
