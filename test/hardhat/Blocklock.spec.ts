@@ -62,7 +62,7 @@ const BLOCKLOCK_DEFAULT_PUBLIC_KEY = {
   },
 };
 
-const blsKey = process.env.BLS_KEY;
+const blsKey = process.env.BLS_PRIVATE_KEY;
 
 function blockHeightToBEBytes(blockHeight: bigint) {
   // Assume a block height < 2**64

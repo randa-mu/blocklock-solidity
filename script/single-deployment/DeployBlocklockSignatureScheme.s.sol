@@ -7,7 +7,7 @@ import {console} from "forge-std/console.sol";
 import {Constants} from "../libraries/Constants.sol";
 
 import {JsonUtils} from "../utils/JsonUtils.sol";
-import {SignatureUtils} from "../utils/SignatureUtils.sol";
+import {EnvReader} from "../utils/EnvReader.sol";
 
 import {BlocklockSignatureScheme} from "src/signature-schemes/BlocklockSignatureScheme.sol";
 import {SignatureSchemeAddressProvider} from "src/signature-schemes/SignatureSchemeAddressProvider.sol";
@@ -16,14 +16,14 @@ import {Factory} from "src/factory/Factory.sol";
 /// @title DeploySignatureSchemeAddressProvider
 /// @author Randamu
 /// @dev Script for deploying BlocklockSignatureScheme contract.
-contract DeployBlocklockSignatureScheme is JsonUtils, SignatureUtils {
+contract DeployBlocklockSignatureScheme is JsonUtils, EnvReader {
     function run() public virtual {
         deployBlocklockSignatureScheme();
     }
 
     function deployBlocklockSignatureScheme() internal returns (BlocklockSignatureScheme blocklockSignatureScheme) {
         bytes memory code = abi.encodePacked(
-            type(BlocklockSignatureScheme).creationCode, abi.encode(BLS_PUBLIC_KEY.x, BLS_PUBLIC_KEY.y)
+            type(BlocklockSignatureScheme).creationCode, abi.encode(getBLSPublicKey().x, getBLSPublicKey().y)
         );
 
         vm.broadcast();
@@ -34,7 +34,7 @@ contract DeployBlocklockSignatureScheme is JsonUtils, SignatureUtils {
             blocklockSignatureScheme = BlocklockSignatureScheme(contractAddress);
         } else {
             blocklockSignatureScheme =
-                new BlocklockSignatureScheme{salt: Constants.SALT}(BLS_PUBLIC_KEY.x, BLS_PUBLIC_KEY.y);
+                new BlocklockSignatureScheme{salt: Constants.SALT}(getBLSPublicKey().x, getBLSPublicKey().y);
             contractAddress = address(blocklockSignatureScheme);
         }
 

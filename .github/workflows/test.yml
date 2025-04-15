@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  BLS_KEY: ${{ secrets.BLS_KEY }}
+  BLS_PRIVATE_KEY: ${{ secrets.BLS_KEY }}
 
 jobs:
   check:
