@@ -72,15 +72,14 @@ For deployment steps, please see [deployment documentation](script/README.md).
 
 #### Filecoin Calibration Testnet
 
-| Contract        | Address | 
-|-----------------|---------|
-| BlocklockSender Proxy | [0xfF66908E1d7d23ff62791505b2eC120128918F44](https://calibration.filfox.info/en/address/0xfF66908E1d7d23ff62791505b2eC120128918F44) | 
-| BlocklockSender Implementation | [0x02097463c21f21214499FAa538240029d2e4A220](https://calibration.filfox.info/en/address/0x02097463c21f21214499FAa538240029d2e4A220)   | 
-| DecryptionSender Proxy | [0x9297Bb1d423ef7386C8b2e6B7BdE377977FBedd3](https://calibration.filfox.info/en/address/0x9297Bb1d423ef7386C8b2e6B7BdE377977FBedd3)   | 
-| DecryptionSender Implementation | [0xea9111e44D23029945f2E46b2bFf26b04D15bd6F](https://calibration.filfox.info/en/address/0xea9111e44D23029945f2E46b2bFf26b04D15bd6F)   | 
-| SignatureSchemeAddressProvider | [0xD2b5084E68230D609AEaAe5E4cF7df9ebDd6375A](https://calibration.filfox.info/en/address/0xD2b5084E68230D609AEaAe5E4cF7df9ebDd6375A)   | 
-| BlocklockSignatureScheme | [0x62C9CF8Ff30177d8479eDaB017f38017bEbf10C2](https://calibration.filfox.info/en/address/0x62C9CF8Ff30177d8479eDaB017f38017bEbf10C2)   | 
-| MockBlocklockReceiver | [0x6f637EcB3Eaf8bEd0fc597Dc54F477a33BBCA72B](https://calibration.filfox.info/en/address/0x6f637EcB3Eaf8bEd0fc597Dc54F477a33BBCA72B)   | 
+| Contract        |  Description | Address | 
+|-----------------|---------|---------|
+| **BlocklockSender Proxy** | A lightweight and efficient proxy contract used in managing upgradeablility of the BlocklockSender implementation contract and delegates calls to the implementation contract. This is the contract users will interact with. | [0xfF66908E1d7d23ff62791505b2eC120128918F44](https://calibration.filfox.info/en/address/0xfF66908E1d7d23ff62791505b2eC120128918F44) | 
+| BlocklockSender Implementation | Implementation contract which handles conditional encryption requests, delivers the decryption keys via callbacks to the requesting contract, and handles fee collection. | [0x02097463c21f21214499FAa538240029d2e4A220](https://calibration.filfox.info/en/address/0x02097463c21f21214499FAa538240029d2e4A220)   | 
+| DecryptionSender Proxy | Proxy contract used to manage the upgradeability of the DecryptionSender implementation contract. | [0x9297Bb1d423ef7386C8b2e6B7BdE377977FBedd3](https://calibration.filfox.info/en/address/0x9297Bb1d423ef7386C8b2e6B7BdE377977FBedd3)   | 
+| DecryptionSender Implementation | Contract used by offchain oracle to fulfill conditional encryption requests. | [0xea9111e44D23029945f2E46b2bFf26b04D15bd6F](https://calibration.filfox.info/en/address/0xea9111e44D23029945f2E46b2bFf26b04D15bd6F)   | 
+| SignatureSchemeAddressProvider | Manages the contract addresses for different signature schemes. | [0xD2b5084E68230D609AEaAe5E4cF7df9ebDd6375A](https://calibration.filfox.info/en/address/0xD2b5084E68230D609AEaAe5E4cF7df9ebDd6375A)   | 
+| BlocklockSignatureScheme | The BN254 signature scheme contract. Contains signature verification logic using pairing checks. | [0x62C9CF8Ff30177d8479eDaB017f38017bEbf10C2](https://calibration.filfox.info/en/address/0x62C9CF8Ff30177d8479eDaB017f38017bEbf10C2)   | 
 
 
 ### Using the Solidity Interface
