@@ -54,7 +54,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         _onBlocklockReceived(requestID, decryptionKey);
     }
 
-    /// @notice Sets the Randamu subscription ID used for conitional encryption oracle services.
+    /// @notice Sets the Randamu subscription ID used for conditional encryption oracle services.
     /// @dev Only callable by the contract owner.
     /// @param subId The new subscription ID to be set.
     function setSubId(uint256 subId) external onlyOwner {
