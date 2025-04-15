@@ -71,48 +71,6 @@ library BLS {
     error InvalidDSTLength(bytes dst);
     error ModExpFailed(uint256 base, uint256 exponent, uint256 modulus);
 
-    /// @notice Aggregate valid partial signatures using Lagrange interpolation.
-    /// @param partialSignatures The array of valid partial signatures on G1.
-    /// @param ids The array of unique identifiers corresponding to each signature / signer.
-    /// @return aggregatedSignature The aggregated signature obtained through Lagrange interpolation.
-    function aggregateSignatures(PointG1[] memory partialSignatures, uint256[] memory ids)
-        internal
-        view
-        returns (PointG1 memory aggregatedSignature)
-    {
-        require(partialSignatures.length == ids.length, "Mismatch in number of signatures and IDs");
-        require(partialSignatures.length > 0, "No signatures provided");
-
-        PointG1 memory result = PointG1(0, 0);
-
-        for (uint256 i = 0; i < partialSignatures.length; i++) {
-            // Calculate the Lagrange coefficient for the i-th partial signature
-            uint256 li = 1;
-            uint256 numerator = 1;
-            uint256 denominator = 1;
-
-            for (uint256 j = 0; j < partialSignatures.length; j++) {
-                if (i != j) {
-                    // Lagrange basis polynomial computation: li = li * (x_j / (x_j - x_i)) mod N
-                    numerator = numerator * ids[j];
-                    denominator = denominator * (ids[j] + N - ids[i]) % N;
-                }
-            }
-
-            // Perform modular inverse for the denominator
-            uint256 denominatorInv = inverse(denominator);
-
-            // Multiply by the term in the Lagrange basis polynomial
-            li = (li * numerator % N) * denominatorInv % N;
-
-            // Add the weighted partial signature to the result
-            PointG1 memory weightedSignature = scalarMulG1Point(partialSignatures[i], li);
-            result = addG1Points(result, weightedSignature);
-        }
-
-        aggregatedSignature = result;
-    }
-
     /// @notice Computes the negation of a point on the G1 curve.
     /// @dev Returns the negation of the input point p on the elliptic curve.
     ///      If the point is at infinity (x = 0, y = 0), it returns the point
@@ -155,11 +113,11 @@ library BLS {
     /// @notice Performs scalar multiplication of a point on the G1 curve.
     /// @dev Uses the precompiled contract at address 0x07 to perform
     ///      scalar multiplication of a point on the G1 curve, i.e.,
-    ///      computes r = s/// p, where s is the scalar and p is the point.
+    ///      computes r = s * p, where s is the scalar and p is the point.
     /// @dev Reverts if the scalar multiplication operation fails.
     /// @param p The point on the G1 curve to be multiplied.
     /// @param s The scalar value to multiply the point by.
-    /// @return r The resulting point from scalar multiplication, r = s/// p.
+    /// @return r The resulting point from scalar multiplication, r = s * p.
     function scalarMulG1Point(PointG1 memory p, uint256 s) internal view returns (PointG1 memory r) {
         uint256[3] memory input;
         input[0] = p.x;
@@ -334,13 +292,13 @@ library BLS {
             let t2 := mulmod(t0, t0, N)
             // x1 ^ 2
             let t3 := mulmod(t1, t1, N)
-            // 3/// x0 ^ 2
+            // 3 * x0 ^ 2
             let t4 := add(add(t2, t2), t2)
-            // 3/// x1 ^ 2
+            // 3 * x1 ^ 2
             let t5 := addmod(add(t3, t3), t3, N)
-            // x0/// (x0 ^ 2 - 3/// x1 ^ 2)
+            // x0 * (x0 ^ 2 - 3 * x1 ^ 2)
             t2 := mulmod(add(t2, sub(N, t5)), t0, N)
-            // x1/// (3/// x0 ^ 2 - x1 ^ 2)
+            // x1 * (3 * x0 ^ 2 - x1 ^ 2)
             t3 := mulmod(add(t4, sub(N, t3)), t1, N)
 
             // x ^ 3 + b
