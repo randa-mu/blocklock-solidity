@@ -15,7 +15,6 @@ import {
     DeployBlocklockSignatureScheme
 } from "./single-deployment/DeployBlocklockSignatureScheme.s.sol";
 import {DecryptionSender, DeployDecryptionSender} from "./single-deployment/DeployDecryptionSender.s.sol";
-import {MockBlocklockReceiver, DeployBlocklockReceiver} from "./single-deployment/DeployBlocklockReceiver.s.sol";
 
 /// @title DeployAllContracts
 /// @author Randamu
@@ -25,8 +24,7 @@ contract DeployAllContracts is
     DeployBlocklockSender,
     DeploySignatureSchemeAddressProvider,
     DeployBlocklockSignatureScheme,
-    DeployDecryptionSender,
-    DeployBlocklockReceiver
+    DeployDecryptionSender
 {
     function run()
         public
@@ -34,8 +32,7 @@ contract DeployAllContracts is
             DeployBlocklockSender,
             DeploySignatureSchemeAddressProvider,
             DeployBlocklockSignatureScheme,
-            DeployDecryptionSender,
-            DeployBlocklockReceiver
+            DeployDecryptionSender
         )
     {
         deployAll();
@@ -43,7 +40,6 @@ contract DeployAllContracts is
 
     /// @notice Deploys all required contracts or upgrades them based on the `isUpgrade` flag.
     /// @dev This function initializes multiple contracts and links them together as needed.
-    /// @return mockBlocklockReceiver The deployed instance of MockBlocklockReceiver.
     /// @return blocklockSenderInstance The deployed instance of BlocklockSender.
     /// @return blocklockSignatureScheme The deployed instance of BlocklockSignatureScheme.
     /// @return decryptionSenderInstance The deployed instance of DecryptionSender.
@@ -51,7 +47,6 @@ contract DeployAllContracts is
     function deployAll()
         public
         returns (
-            MockBlocklockReceiver mockBlocklockReceiver,
             BlocklockSender blocklockSenderInstance,
             BlocklockSignatureScheme blocklockSignatureScheme,
             DecryptionSender decryptionSenderInstance,
@@ -68,7 +63,5 @@ contract DeployAllContracts is
         decryptionSenderInstance = deployDecryptionSenderProxy(address(signatureSchemeAddressProvider), isUpgrade);
         // blocklock sender
         blocklockSenderInstance = deployBlocklockSenderProxy(address(decryptionSenderInstance), isUpgrade);
-        // mocks
-        mockBlocklockReceiver = deployBlocklockReceiver(address(blocklockSenderInstance));
     }
 }
