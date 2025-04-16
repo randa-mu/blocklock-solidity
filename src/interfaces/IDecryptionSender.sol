@@ -31,15 +31,6 @@ interface IDecryptionSender {
     function fulfillDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
         external;
 
-    /// @notice Retry a request from a subscription account that has previously failed during callback
-    /// @dev This function is intended to be called after a decryption key has been generated off-chain but failed to
-    /// call back into the originating contract.
-    ///
-    /// @param requestID The unique identifier for the encryption request. This should match the ID used
-    ///                  when the encryption was initially requested.
-    /// @param newCallbackGasLimit The callback gas limit for fulfilling the request.
-    function retryCallbackWithSubscription(uint256 requestID, uint32 newCallbackGasLimit) external;
-
     /// @notice Updates the signature scheme address provider contract address
     /// @param newSignatureSchemeAddressProvider The signature address provider address to set
     ////

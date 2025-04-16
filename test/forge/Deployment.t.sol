@@ -23,7 +23,7 @@ abstract contract Deployment is Base {
 
     /// @dev This prevents out of gas errors when doing signature pairing check
     /// for decryption during callback
-    uint32 internal constant decryptionAndSignatureVerificationOverhead = 500_000;
+    uint32 internal constant callbackWithDecryptionAndSignatureVerificationOverhead = 800_000;
 
     BLS.PointG2 internal pk = BLS.PointG2({
         x: [

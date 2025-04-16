@@ -209,8 +209,9 @@ contract DecryptionSender is
 
         bool success = _callWithExactGas(request.callbackGasLimit, request.callback, response);
 
-        requests[requestID].decryptionKey = decryptionKey;
-        requests[requestID].signature = signature;
+        // fixme remove for failing callbacks
+        // requests[requestID].decryptionKey = decryptionKey;
+        // requests[requestID].signature = signature;
         requests[requestID].isFulfilled = true;
         unfulfilledRequestIds.remove(requestID);
         if (!success) {

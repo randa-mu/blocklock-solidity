@@ -88,15 +88,15 @@ contract BlocklockSender is
         uint256 indexed requestID, uint256 blockHeight, TypesLib.Ciphertext ciphertext, bytes decryptionKey
     );
 
+    /// @notice Error thrown when a blocklock callback fails
+    /// @param requestID The request ID of the failed blocklock callback
+    /// @dev This error is used to indicate that the blocklock callback process has failed, providing the request ID for troubleshooting
+    event BlocklockCallbackFailed(uint256 requestID);
+
     /// @notice Event emitted when the decryption sender address is updated
     /// @param decryptionSender The new decryption sender address
     /// @dev This event is triggered when the address of the decryption sender is updated, allowing for tracking of the changes
     event DecryptionSenderUpdated(address indexed decryptionSender);
-
-    /// @notice Error thrown when a blocklock callback fails
-    /// @param requestID The request ID of the failed blocklock callback
-    /// @dev This error is used to indicate that the blocklock callback process has failed, providing the request ID for troubleshooting
-    error BlocklockCallbackFailed(uint256 requestID);
 
     /// @notice Modifier that restricts access to only accounts with the admin role
     /// @dev This modifier checks that the caller has the `ADMIN_ROLE` before allowing the function to be executed.
@@ -211,7 +211,7 @@ contract BlocklockSender is
         // fixme add to config with getter and update config setter
         // This prevents out of gas errors when doing signature pairing check
         // for decryption during callback
-        uint32 decryptionAndSignatureVerificationOverhead = 500_000;
+        uint32 decryptionAndSignatureVerificationOverhead = 800_000;
         callbackGasLimitWithOverhead = _callbackGasLimit + eip150Overhead + decryptionAndSignatureVerificationOverhead;
     }
 
@@ -238,7 +238,7 @@ contract BlocklockSender is
         );
 
         if (!success) {
-            revert BlocklockCallbackFailed(decryptionRequestID);
+            emit BlocklockCallbackFailed(decryptionRequestID);
         } else {
             emit BlocklockCallbackSuccess(decryptionRequestID, r.blockHeight, r.ciphertext, decryptionKey);
             blocklockRequestsWithDecryptionKey[decryptionRequestID].decryptionKey = decryptionKey;

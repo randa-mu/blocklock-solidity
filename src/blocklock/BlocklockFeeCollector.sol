@@ -115,7 +115,7 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
         // Calculate the base fee in wei: (gas required) * (gas price)
         // fixme add to config with getter
         uint256 blocklockSenderCostWei = _requestGasPrice * _gas + _getL1CostWei();
-        uint256 decryptionSenderCostWei = _requestGasPrice * 302287; // fixme review - decryption sender buffer
+        uint256 decryptionSenderCostWei = _requestGasPrice * 500_000; // fixme review - decryption sender buffer
 
         // Apply premium and flat fee: cost * (1 + premium) + flat fee
         uint256 totalCostWithPremiumAndFlatFeeWei = (
