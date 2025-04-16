@@ -170,6 +170,13 @@ contract BlocklockSender is
         return decryptionRequestID;
     }
 
+    /// @notice Requests a blocklock for a specified block height with the provided ciphertext without a subscription ID.
+    /// Requires payment to be made for the request without a subscription.
+    /// @param callbackGasLimit The gas limit allocated for the callback execution after the blocklock request
+    /// @param blockHeight The block height at which the blocklock is requested
+    /// @param ciphertext The ciphertext that will be used in the blocklock request
+    /// @dev This function allows users to request a blocklock for a specific block height. The blocklock is not associated with any subscription ID
+    ///      and requires a ciphertext to be provided. The function checks that the contract is configured and not disabled before processing the request.
     function requestBlocklockWithoutSubscription(
         uint32 callbackGasLimit,
         uint256 blockHeight,
