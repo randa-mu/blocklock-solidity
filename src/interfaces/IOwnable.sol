@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 /// @title IOwnable interface
-/// @notice Adopted from Chainlink. Source code available at: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/shared/interfaces/IOwnable.sol
+/// @notice Adapted from Chainlink. Source code available at: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/shared/interfaces/IOwnable.sol
 /// @notice License: MIT
 interface IOwnable {
     function owner() external returns (address);
