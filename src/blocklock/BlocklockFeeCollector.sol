@@ -108,25 +108,36 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
         return _calculateRequestPriceNative(_callbackGasLimit, _requestGasPriceWei);
     }
 
-    /// @notice Calculates the total request price including gas costs and additional fees
-    /// @dev blocklockSenderCostWei is the base fee denominated in wei (native) = (wei/gas) * gas
-    ///     It also takes into account the L1 posting costs of the fulfillment transaction,
+    /// @notice Calculates the total price for a request in native currency (ETH).
+    /// @dev This function accounts for the base gas fee, the L1 cost,
+    ///      flat fees, and other overhead costs like BLS pairing check.
+    /// @dev It takes into account the L1 posting costs of the fulfillment transaction,
     ///     if we are on an L2 = (wei/gas) * gas + l1wei
     /// @param _gas The amount of gas required for the request
     /// @param _requestGasPrice The gas price in wei per gas unit
-    /// @return The total cost in native tokens (wei)
+    /// @return The total price in wei for processing the request, including fees and overhead.
     function _calculateRequestPriceNative(uint256 _gas, uint256 _requestGasPrice) internal view returns (uint256) {
-        // Calculate the base fee in wei: (gas required) * (gas price)
+        // Fee in wei: gas price * gas required
+        // Determine the gas price per unit based on the input or the default configuration
         uint256 weiPerUnitGas = _requestGasPrice > 0 ? _requestGasPrice : s_config.weiPerUnitGas;
+
+        // Calculate the base fee in wei: (gas required) * (gas price per unit)
         uint256 baseFeeWei = weiPerUnitGas * (s_config.gasAfterPaymentCalculation + _gas);
+
+        // Fetch L1 cost in wei (Layer 1 related costs)
         uint256 l1CostWei = _getL1CostWei();
-        // calculate flat fee in native
+
+        // Calculate flat fee in native currency
         uint256 flatFeeWei = 1e12 * uint256(s_config.fulfillmentFlatFeeNativePPM);
+
+        // Calculate overhead cost for BLS pairing check
         uint256 blsPairingCheckOverheadWei = weiPerUnitGas * s_config.blsPairingCheckOverhead;
 
+        // Calculate the total cost with flat fee and overhead, applying the native premium percentage
         uint256 totalCostWithFlatFeeWei = (
             ((l1CostWei + baseFeeWei + blsPairingCheckOverheadWei) * (100 + s_config.nativePremiumPercentage)) / 100
         ) + flatFeeWei;
+
         return totalCostWithFlatFeeWei;
     }
 

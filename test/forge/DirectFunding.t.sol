@@ -115,8 +115,9 @@ contract DirectFundingTest is BlocklockTest {
         blocklockRequest = blocklockSender.getRequest(requestId);
 
         console.log("Direct funding fee paid", blocklockRequest.directFundingFeePaid);
-        console.log("Overhead after actual callback tx cost", blocklockRequest.directFundingFeePaid - (gasUsed * tx.gasprice));
-
+        console.log(
+            "Overhead after actual callback tx cost", blocklockRequest.directFundingFeePaid - (gasUsed * tx.gasprice)
+        );
 
         assertTrue(
             blocklockSender.s_totalNativeBalance() == 0, "We don't expect any funded subscriptions at this point"
