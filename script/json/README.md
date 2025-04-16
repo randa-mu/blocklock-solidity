@@ -1,6 +1,6 @@
 ## Contract Deployment Input JSON
 
-To resolve dependencies between the contract deployments, a `.json` file named [Deployment_input.json](script/json/Deployment_input.json) in the [script/json](script/json) folder is filled with contract addresses for the following contracts after they are deployed (either as single deployments or part of the single run deployment for all contracts):
+To resolve dependencies between the contract deployments, a `.json` file named [Deployment_input.json](script/json/Deployment_input.json) is created in this [script/json](script/json) folder and populated with contract addresses for the following contracts after they are deployed (either as single deployments or part of the single run deployment for all contracts):
 * BlocklockSender (proxy address)
 * DecryptionSender (proxy address)
 * SignatureSchemeAddressProvider
