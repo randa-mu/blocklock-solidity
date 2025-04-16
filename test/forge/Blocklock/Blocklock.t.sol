@@ -31,6 +31,23 @@ contract BlocklockTest is Deployment {
 
         (signatureSchemeAddressProvider, blocklockScheme, decryptionSender, blocklockSender, mockBlocklockReceiver) =
             deployContracts();
+
+        // set blocklockSender contract config
+        uint32 maxGasLimit = 500_000;
+        uint32 gasAfterPaymentCalculation = 400_000;
+        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
+        uint32 weiPerUnitGas = 0.003 gwei;
+        uint32 blsPairingCheckOverhead = 800_000;
+        uint8 nativePremiumPercentage = 10;
+
+        setBlocklockSenderBillingConfiguration(
+            maxGasLimit,
+            gasAfterPaymentCalculation,
+            fulfillmentFlatFeeNativePPM,
+            weiPerUnitGas,
+            blsPairingCheckOverhead,
+            nativePremiumPercentage
+        );
     }
 
     function test_deployment_configurations() public view {
@@ -45,16 +62,6 @@ contract BlocklockTest is Deployment {
     }
 
     function test_callsToBlocklockSender_shouldRevert_ifBlocklockSenderAddressIsIncorrect() public {
-        // set blocklockSender contract config
-        uint32 maxGasLimit = 500_000;
-        uint32 gasAfterPaymentCalculation = 400_000;
-        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
-        uint8 nativePremiumPercentage = 10;
-
-        setBlocklockSenderBillingConfiguration(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
-
         vm.prank(alice);
         mockBlocklockReceiver = new MockBlocklockReceiver(admin);
 
@@ -62,17 +69,24 @@ contract BlocklockTest is Deployment {
         vm.expectRevert();
         mockBlocklockReceiver.createSubscriptionAndFundNative{value: 0}();
     }
-    
+
     // helper functions
     function setBlocklockSenderBillingConfiguration(
         uint32 maxGasLimit,
         uint32 gasAfterPaymentCalculation,
         uint32 fulfillmentFlatFeeNativePPM,
+        uint32 weiPerUnitGas,
+        uint32 blsPairingCheckOverhead,
         uint8 nativePremiumPercentage
     ) internal {
         vm.prank(admin);
         blocklockSender.setConfig(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
+            maxGasLimit,
+            gasAfterPaymentCalculation,
+            fulfillmentFlatFeeNativePPM,
+            weiPerUnitGas,
+            blsPairingCheckOverhead,
+            nativePremiumPercentage
         );
     }
 }

@@ -226,11 +226,9 @@ contract BlocklockSender is
         require(_callbackGasLimit <= s_config.maxGasLimit, "Callback gasLimit too high");
 
         uint32 eip150Overhead = _getEIP150Overhead(_callbackGasLimit);
-        // fixme add to config with getter and update config setter
-        // This prevents out of gas errors when doing signature pairing check
-        // for decryption during callback
-        uint32 decryptionAndSignatureVerificationOverhead = 800_000;
-        callbackGasLimitWithOverhead = _callbackGasLimit + eip150Overhead + decryptionAndSignatureVerificationOverhead;
+        // s_config.blsPairingCheckOverhead prevents out of gas errors when doing pairing checks
+        // for signature and decryption key during callback
+        callbackGasLimitWithOverhead = _callbackGasLimit + eip150Overhead + s_config.blsPairingCheckOverhead;
     }
 
     /// @notice Handles the reception of decryption data (decryption key and signature) for a specific decryption request
@@ -393,6 +391,8 @@ contract BlocklockSender is
     /// @param maxGasLimit The maximum gas limit allowed for requests
     /// @param gasAfterPaymentCalculation The gas used after the payment calculation
     /// @param fulfillmentFlatFeeNativePPM The flat fee for fulfillment in native tokens, in parts per million (PPM)
+    /// @param weiPerUnitGas Wei per unit of gas for callback gas measurements
+    /// @param blsPairingCheckOverhead Gas overhead for bls pairing checks for signature and decryption key verification
     /// 1 PPM = 0.0001%, so: 1,000,000 PPM = 100%, 10,000 PPM = 1%, 500 PPM = 0.05%
     /// @param nativePremiumPercentage The percentage premium applied to the native token cost
     /// @dev Only the contract admin can call this function. It validates that the `nativePremiumPercentage` is not greater than a predefined maximum value
@@ -402,6 +402,8 @@ contract BlocklockSender is
         uint32 maxGasLimit,
         uint32 gasAfterPaymentCalculation,
         uint32 fulfillmentFlatFeeNativePPM,
+        uint32 weiPerUnitGas,
+        uint32 blsPairingCheckOverhead,
         uint8 nativePremiumPercentage
     ) external override onlyAdmin {
         require(PREMIUM_PERCENTAGE_MAX > nativePremiumPercentage, "Invalid Premium Percentage");
@@ -410,12 +412,21 @@ contract BlocklockSender is
             maxGasLimit: maxGasLimit,
             gasAfterPaymentCalculation: gasAfterPaymentCalculation,
             fulfillmentFlatFeeNativePPM: fulfillmentFlatFeeNativePPM,
+            weiPerUnitGas: weiPerUnitGas,
+            blsPairingCheckOverhead: blsPairingCheckOverhead,
             nativePremiumPercentage: nativePremiumPercentage
         });
 
         s_configured = true;
 
-        emit ConfigSet(maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage);
+        emit ConfigSet(
+            maxGasLimit,
+            gasAfterPaymentCalculation,
+            fulfillmentFlatFeeNativePPM,
+            weiPerUnitGas,
+            blsPairingCheckOverhead,
+            nativePremiumPercentage
+        );
     }
 
     /// @notice Retrieves the current configuration parameters for the contract

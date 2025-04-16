@@ -18,23 +18,12 @@ import {TypesLib, BLS} from "./blocklock/Base.t.sol";
 /// @title DirectFunding test contract
 /// @notice Tests for requests paid for via the direct funding route
 contract DirectFundingTest is BlocklockTest {
-
     function test_fulfillBlocklock_directFunding_request() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
-        assert(!blocklockSender.s_configured());
-        assert(!blocklockSender.s_disabled());
-
-        // set blocklockSender contract config
-        uint32 maxGasLimit = 500_000;
-        uint32 gasAfterPaymentCalculation = 400_000;
-        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
-        uint8 nativePremiumPercentage = 10;
-
-        setBlocklockSenderBillingConfiguration(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
+        assertTrue(blocklockSender.s_configured(), "BlocklockSender not configured");
+        assertFalse(blocklockSender.s_disabled(), "BlocklockSender is paused");
 
         // get request price
         uint32 callbackGasLimit = 100_000;
@@ -53,6 +42,7 @@ contract DirectFundingTest is BlocklockTest {
         );
         assertTrue(alice.balance == aliceBalance - (requestPrice + contractFundBuffer), "Alice balance not debited");
         assertTrue(requestPrice > 0, "Invalid request price");
+        console.log("Estimated request price", requestPrice);
 
         // make blocklock request
         vm.prank(alice);
@@ -124,7 +114,10 @@ contract DirectFundingTest is BlocklockTest {
         // check deductions from user and withdrawable amount in blocklock sender for admin
         blocklockRequest = blocklockSender.getRequest(requestId);
 
-        console.log(blocklockRequest.directFundingFeePaid);
+        console.log("Direct funding fee paid", blocklockRequest.directFundingFeePaid);
+        console.log("Overhead after actual callback tx cost", blocklockRequest.directFundingFeePaid - (gasUsed * tx.gasprice));
+
+
         assertTrue(
             blocklockSender.s_totalNativeBalance() == 0, "We don't expect any funded subscriptions at this point"
         );
@@ -149,16 +142,6 @@ contract DirectFundingTest is BlocklockTest {
     function test_invalidRequestId_forDirectFundingRequest_reverts() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
-
-        // set blocklockSender contract config
-        uint32 maxGasLimit = 500_000;
-        uint32 gasAfterPaymentCalculation = 400_000;
-        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
-        uint8 nativePremiumPercentage = 10;
-
-        setBlocklockSenderBillingConfiguration(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
 
         // get request price
         uint32 callbackGasLimit = 100_000;
@@ -199,15 +182,6 @@ contract DirectFundingTest is BlocklockTest {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
-        // set blocklockSender contract config
-        uint32 maxGasLimit = 500_000;
-        uint32 gasAfterPaymentCalculation = 400_000;
-        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
-        uint8 nativePremiumPercentage = 10;
-        setBlocklockSenderBillingConfiguration(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
-
         // get request price
         uint32 callbackGasLimit = 100_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
@@ -229,7 +203,7 @@ contract DirectFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
-        (uint256 requestId, ) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].chainHeight, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -297,16 +271,6 @@ contract DirectFundingTest is BlocklockTest {
     function test_fulfillWithUnauthorisedCaller_reverts() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
-
-        // set blocklockSender contract config
-        uint32 maxGasLimit = 500_000;
-        uint32 gasAfterPaymentCalculation = 400_000;
-        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
-        uint8 nativePremiumPercentage = 10;
-
-        setBlocklockSenderBillingConfiguration(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
 
         // get request price
         uint32 callbackGasLimit = 100_000;

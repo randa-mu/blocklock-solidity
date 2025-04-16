@@ -18,18 +18,7 @@ import {TypesLib, BLS} from "./blocklock/Base.t.sol";
 /// @title SubscriptionFundingTest test contract
 /// @notice Tests for requests paid for via the subscription funding route
 contract SubscriptionFundingTest is BlocklockTest {
-
     function test_noChargeAtRequestTime_forBlocklockSubscriptionRequest() public {
-        // set blocklockSender contract config
-        uint32 maxGasLimit = 500_000;
-        uint32 gasAfterPaymentCalculation = 400_000;
-        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
-        uint8 nativePremiumPercentage = 10;
-
-        setBlocklockSenderBillingConfiguration(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
-
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -110,16 +99,6 @@ contract SubscriptionFundingTest is BlocklockTest {
     }
 
     function test_fulfillBlocklock_SubscriptionRequest() public {
-        // set blocklockSender contract config
-        uint32 maxGasLimit = 500_000;
-        uint32 gasAfterPaymentCalculation = 400_000;
-        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
-        uint8 nativePremiumPercentage = 10;
-
-        setBlocklockSenderBillingConfiguration(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
-
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -248,16 +227,6 @@ contract SubscriptionFundingTest is BlocklockTest {
     }
 
     function test_fulfillBlocklock_SubscriptionRequest_withOnlyRequestPriceBalance() public {
-        // set blocklockSender contract config
-        uint32 maxGasLimit = 500_000;
-        uint32 gasAfterPaymentCalculation = 400_000;
-        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
-        uint8 nativePremiumPercentage = 10;
-
-        setBlocklockSenderBillingConfiguration(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
-
         // get request price
         uint32 callbackGasLimit = 100_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
@@ -400,16 +369,6 @@ contract SubscriptionFundingTest is BlocklockTest {
     /// @notice enough gas overhead still added for requests with zero gas limit specified
     /// to cover for sending of keys and decryption
     function test_fulfillBlocklock_SubscriptionRequest_withZeroCallbackGasLimit() public {
-        // set blocklockSender contract config
-        uint32 maxGasLimit = 500_000;
-        uint32 gasAfterPaymentCalculation = 400_000;
-        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
-        uint8 nativePremiumPercentage = 10;
-
-        setBlocklockSenderBillingConfiguration(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
-
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -522,16 +481,6 @@ contract SubscriptionFundingTest is BlocklockTest {
     }
 
     function test_cancellingSubscription_withPendingRequest_notAllowed() public {
-        // set blocklockSender contract config
-        uint32 maxGasLimit = 500_000;
-        uint32 gasAfterPaymentCalculation = 400_000;
-        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
-        uint8 nativePremiumPercentage = 10;
-
-        setBlocklockSenderBillingConfiguration(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
-
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -590,16 +539,6 @@ contract SubscriptionFundingTest is BlocklockTest {
     }
 
     function test_callback_forSubscriptionWithZeroBalance_reverts() public {
-        // set blocklockSender contract config
-        uint32 maxGasLimit = 500_000;
-        uint32 gasAfterPaymentCalculation = 400_000;
-        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
-        uint8 nativePremiumPercentage = 10;
-
-        setBlocklockSenderBillingConfiguration(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
-
         // create subscription but don't fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -723,16 +662,6 @@ contract SubscriptionFundingTest is BlocklockTest {
     }
 
     function test_callback_forSubscriptionWithIncorrectDecryptionKey_reverts() public {
-        // set blocklockSender contract config
-        uint32 maxGasLimit = 600_000;
-        uint32 gasAfterPaymentCalculation = 50_000;
-        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
-        uint8 nativePremiumPercentage = 20;
-
-        setBlocklockSenderBillingConfiguration(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
-
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -896,15 +825,6 @@ contract SubscriptionFundingTest is BlocklockTest {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
-        // set blocklockSender contract config
-        uint32 maxGasLimit = 500_000;
-        uint32 gasAfterPaymentCalculation = 400_000;
-        uint32 fulfillmentFlatFeeNativePPM = 1_000_000;
-        uint8 nativePremiumPercentage = 10;
-        setBlocklockSenderBillingConfiguration(
-            maxGasLimit, gasAfterPaymentCalculation, fulfillmentFlatFeeNativePPM, nativePremiumPercentage
-        );
-
         // get request price
         uint32 callbackGasLimit = 100_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
@@ -915,7 +835,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         // create and fund subscription
         vm.prank(alice);
         mockBlocklockReceiver.createSubscriptionAndFundNative{value: requestPrice}();
-        
+
         assertTrue(alice.balance == aliceBalance - (requestPrice), "Alice balance not debited");
         assertTrue(requestPrice > 0, "Invalid request price");
 
@@ -968,9 +888,10 @@ contract SubscriptionFundingTest is BlocklockTest {
         // check no deductions from user and withdrawable amount in blocklock sender for admin
         console.log(blocklockRequest.directFundingFeePaid);
         assertTrue(
-            blocklockSender.s_totalNativeBalance() == requestPrice, "We don't expect any funded subscriptions at this point"
+            blocklockSender.s_totalNativeBalance() == requestPrice,
+            "We don't expect any funded subscriptions at this point"
         );
-        
+
         assertTrue(
             blocklockSender.s_withdrawableSubscriptionFeeNative() == 0,
             "We don't expect any funded subscriptions at this point"

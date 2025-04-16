@@ -107,6 +107,9 @@ abstract contract SubscriptionAPI is ReentrancyGuard, ISubscription {
         // Flat fee charged per fulfillment in millionths of native.
         // So fee range is [0, 2^32/10^6].
         uint32 fulfillmentFlatFeeNativePPM;
+        // Wei charged per unit of gas for callback operations
+        uint32 weiPerUnitGas;
+        uint32 blsPairingCheckOverhead;
         // nativePremiumPercentage is the percentage of the total gas costs that is added to the final premium for native payment
         // nativePremiumPercentage = 10 means 10% of the total gas costs is added. only integral percentage is allowed
         uint8 nativePremiumPercentage;
