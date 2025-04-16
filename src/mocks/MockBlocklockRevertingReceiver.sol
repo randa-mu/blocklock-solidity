@@ -7,7 +7,7 @@ import {AbstractBlocklockReceiver} from "../AbstractBlocklockReceiver.sol";
 /// @notice This contract is used for testing only and should not be used for production.
 contract MockBlocklockRevertingReceiver is AbstractBlocklockReceiver {
     uint256 public requestId;
-    TypesLib.Ciphertext public encrytpedValue;
+    TypesLib.Ciphertext public encryptedValue;
     uint256 public plainTextValue;
 
     constructor(address blocklockContract) AbstractBlocklockReceiver(blocklockContract) {}
@@ -21,11 +21,11 @@ contract MockBlocklockRevertingReceiver is AbstractBlocklockReceiver {
         (uint256 requestID, uint256 requestPrice) =
             _requestBlocklockPayInNative(callbackGasLimit, blockHeight, encryptedData);
         // store Ciphertext
-        encrytpedValue = encryptedData;
+        encryptedValue = encryptedData;
         return (requestID, requestPrice);
     }
 
-    function _onBlocklockReceived(uint256, /*requestID*/ bytes calldata /*decryptionKey*/ ) internal pure override {
+    function _onBlocklockReceived(uint256, /*_requestId*/ bytes calldata /*decryptionKey*/ ) internal pure override {
         revert();
     }
 }

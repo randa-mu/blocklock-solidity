@@ -135,7 +135,7 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
         // create timelock request
         requestId = blocklock.requestBlocklock(decryptionBlockNumber, encryptedData);
         // store Ciphertext
-        encrytpedValue = encryptedData;
+        encryptedValue = encryptedData;
         return requestId;
     }
 
@@ -144,20 +144,20 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
     /// @dev This function is called when a conditional encryption condition is met
     /// e.g., chain height. 
     /// The function ensures the request ID matches and then decrypts the stored ciphertext using the provided decryption key.
-    /// @param requestID The ID of the request that needs to be verified.
+    /// @param _requestId The ID of the request that needs to be verified.
     /// @param decryptionKey The decryption key used to decrypt the stored ciphertext.
     /// @return None This function does not return a value but updates the state variable `plainTextValue` with the decrypted result.
-    function _onBlocklockReceived(uint256 requestID, bytes calldata decryptionKey) internal override {
-        require(requestID == requestId, "Invalid request id.");
+    function _onBlocklockReceived(uint256 _requestId, bytes calldata decryptionKey) internal override {
+        require(requestId == _requestId, "Invalid request id.");
         // decrypt stored Ciphertext with decryption key
-        plainTextValue = abi.decode(blocklock.decrypt(encrytpedValue, decryptionKey), (uint256));
+        plainTextValue = abi.decode(blocklock.decrypt(encryptedValue, decryptionKey), (uint256));
     }
 }
 ```
 
 #### How It Works
 
-* Encryption: Use the off-chain TypeScript library ([blocklock-js](https://github.com/randa-mu/blocklock-js)) to generate the encrypted data (`TypesLib.Ciphertext`) with a threshold network public key. The following solidity types are supported by the TypeScript library - uint256, int256, address, string, bool, bytes32, bytes, uint256 array, address array, and struct.
+* Encryption: Use the off-chain TypeScript library ([blocklock-js](https://github.com/randa-mu/blocklock-js)) to generate the encrypted data (`TypesLib.Ciphertext`) with a threshold network public key. The following solidity types are supported by the TypeScript library - uint256, int256, address, string, bool, bytes32, bytes, uint256[], address[], and struct.
 * Timelock Request: Call `requestBlocklock` with the chain height after which decryption is allowed and the encrypted data or Ciphertext.
 * Decryption: Once the specified chain height is reached, a callback to your `receiveBlocklock` logic is triggered with the decryption key to unlock the data.
 

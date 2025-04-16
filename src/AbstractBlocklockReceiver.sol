@@ -167,12 +167,12 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice Handles the reception of a blocklock with the provided decryption key.
     /// @dev This function is meant to be overridden in derived contracts to define the specific logic
     ///      for processing a blocklock upon receipt of a decryption key.
-    /// @param requestID The unique identifier of the blocklock request.
+    /// @param _requestId The unique identifier of the blocklock request.
     /// @param decryptionKey The decryption key that corresponds to the ciphertext in the blocklock request.
     /// @notice This function does not implement any functionality itself but serves as a placeholder for derived contracts
     ///         to implement their specific logic when a blocklock is received.
     /// @dev This function is marked as `internal` and `virtual`, meaning it can be overridden in a derived contract.
-    function _onBlocklockReceived(uint256 requestID, bytes calldata decryptionKey) internal virtual;
+    function _onBlocklockReceived(uint256 _requestId, bytes calldata decryptionKey) internal virtual;
 
     /// @notice Creates a new Randamu subscription if none exists and registers this contract as a consumer.
     /// @dev Internal helper that initializes the subscription only once.

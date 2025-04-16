@@ -7,7 +7,7 @@ import {AbstractBlocklockReceiver} from "../AbstractBlocklockReceiver.sol";
 /// @notice This contract is used for testing only and should not be used for production.
 contract MockBlocklockReceiver is AbstractBlocklockReceiver {
     uint256 public requestId;
-    TypesLib.Ciphertext public encrytpedValue;
+    TypesLib.Ciphertext public encryptedValue;
     uint256 public plainTextValue;
 
     constructor(address blocklockContract) AbstractBlocklockReceiver(blocklockContract) {}
@@ -23,7 +23,7 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
         // store request id
         requestId = requestID;
         // store Ciphertext
-        encrytpedValue = encryptedData;
+        encryptedValue = encryptedData;
         return (requestID, requestPrice);
     }
 
@@ -37,7 +37,7 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
         // store request id
         requestId = requestID;
         // store Ciphertext
-        encrytpedValue = encryptedData;
+        encryptedValue = encryptedData;
         return requestID;
     }
 
@@ -45,9 +45,9 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
         _cancelSubscription(to);
     }
 
-    function _onBlocklockReceived(uint256 requestID, bytes calldata decryptionKey) internal override {
-        require(requestID == requestId, "Invalid request id.");
+    function _onBlocklockReceived(uint256 _requestId, bytes calldata decryptionKey) internal override {
+        require(requestId == _requestId, "Invalid request id.");
         // decrypt stored Ciphertext with decryption key
-        plainTextValue = abi.decode(blocklock.decrypt(encrytpedValue, decryptionKey), (uint256));
+        plainTextValue = abi.decode(blocklock.decrypt(encryptedValue, decryptionKey), (uint256));
     }
 }
