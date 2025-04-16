@@ -44,8 +44,7 @@ contract SignatureSchemeAddressProvider is ISignatureSchemeAddressProvider, Acce
     /// @param schemeAddress The new address of the signature scheme contract.
     function updateSignatureScheme(string calldata schemeID, address schemeAddress) external onlyAdmin {
         require(
-            schemeAddress != address(0) && schemeAddress.code.length > 0,
-            "Invalid contract address for schemeAddress"
+            schemeAddress != address(0) && schemeAddress.code.length > 0, "Invalid contract address for schemeAddress"
         );
         schemes[schemeID] = schemeAddress;
         emit NewSignatureSchemeAddressAdded(schemeID, schemes[schemeID], block.timestamp);

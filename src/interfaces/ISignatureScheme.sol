@@ -6,8 +6,8 @@ pragma solidity ^0.8;
 /// @notice Interface for signature schemes, e.g., BN254, BLS, etc.
 interface ISignatureScheme {
     /// @notice Returns the scheme identifier as a string, e.g., "Barreto-Naehrig Curve" or "BN254"
-    /// BN254 is an elliptic curve that belongs to the pairing-friendly curves family, 
-    /// designed for efficient computation of pairing-based cryptographic 
+    /// BN254 is an elliptic curve that belongs to the pairing-friendly curves family,
+    /// designed for efficient computation of pairing-based cryptographic
     /// protocols (such as zk-SNARKs, zero-knowledge proofs, and other cryptographic constructions)
     function SCHEME_ID() external returns (string memory);
 
