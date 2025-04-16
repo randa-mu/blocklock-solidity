@@ -114,7 +114,7 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
     function _calculateRequestPriceNative(uint256 _gas, uint256 _requestGasPrice) internal view returns (uint256) {
         // Calculate the base fee in wei: (gas required) * (gas price)
         // fixme add to config
-        uint256 s_weiPerUnitGas = _requestGasPrice > 0? _requestGasPrice : 0.003 gwei;
+        uint256 s_weiPerUnitGas = _requestGasPrice > 0 ? _requestGasPrice : 0.003 gwei;
         uint256 baseFeeWei = s_weiPerUnitGas * (s_config.gasAfterPaymentCalculation + _gas);
         uint256 l1CostWei = _getL1CostWei();
         // calculate flat fee in native
@@ -122,7 +122,9 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
         // fixme add to config
         uint256 signatureValidationOverheadWei = s_weiPerUnitGas * 500_000;
 
-        uint256 totalCostWithFlatFeeWei = (((l1CostWei + baseFeeWei + signatureValidationOverheadWei) * (100 + s_config.nativePremiumPercentage)) / 100) + flatFeeWei;
+        uint256 totalCostWithFlatFeeWei = (
+            ((l1CostWei + baseFeeWei + signatureValidationOverheadWei) * (100 + s_config.nativePremiumPercentage)) / 100
+        ) + flatFeeWei;
         return totalCostWithFlatFeeWei;
     }
 

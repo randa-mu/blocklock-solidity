@@ -202,15 +202,16 @@ contract DecryptionSender is
             sigScheme.verifySignature(messageHash, signature, sigScheme.getPublicKeyBytes()),
             "Signature verification failed"
         );
-        
+
         (bool canDecryptSuccessfully,) = request.callback.call(
-            abi.encodeWithSelector(IBlocklockSender.decrypt.selector, IBlocklockSender(request.callback).getRequest(requestID).ciphertext, decryptionKey)
+            abi.encodeWithSelector(
+                IBlocklockSender.decrypt.selector,
+                IBlocklockSender(request.callback).getRequest(requestID).ciphertext,
+                decryptionKey
+            )
         );
-        
-        require(
-            canDecryptSuccessfully,
-            "Decryption verification failed"
-        );
+
+        require(canDecryptSuccessfully, "Decryption verification failed");
 
         bytes memory response = abi.encodeWithSelector(
             IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature
