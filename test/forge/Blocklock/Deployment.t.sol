@@ -3,18 +3,18 @@ pragma solidity ^0.8;
 
 // helpers
 import {Base} from "./Base.t.sol";
-import {BLS} from "../../src/libraries/BLS.sol";
-import {TypesLib} from "../../src/libraries/TypesLib.sol";
-import {UUPSProxy} from "../../src/proxy/UUPSProxy.sol";
+import {BLS} from "../../../src/libraries/BLS.sol";
+import {TypesLib} from "../../../src/libraries/TypesLib.sol";
+import {UUPSProxy} from "../../../src/proxy/UUPSProxy.sol";
 
 // core contracts
-import {SignatureSchemeAddressProvider} from "../../src/signature-schemes/SignatureSchemeAddressProvider.sol";
-import {BlocklockSender} from "../../src/blocklock/BlocklockSender.sol";
-import {BlocklockSignatureScheme} from "../../src/signature-schemes/BlocklockSignatureScheme.sol";
-import {DecryptionSender} from "../../src/decryption-requests/DecryptionSender.sol";
+import {SignatureSchemeAddressProvider} from "../../../src/signature-schemes/SignatureSchemeAddressProvider.sol";
+import {BlocklockSender} from "../../../src/blocklock/BlocklockSender.sol";
+import {BlocklockSignatureScheme} from "../../../src/signature-schemes/BlocklockSignatureScheme.sol";
+import {DecryptionSender} from "../../../src/decryption-requests/DecryptionSender.sol";
 
 // mock contracts
-import {MockBlocklockReceiver} from "../../src/mocks/MockBlocklockReceiver.sol";
+import {MockBlocklockReceiver} from "../../../src/mocks/MockBlocklockReceiver.sol";
 
 /// @title Deployment test contract
 /// @dev Deploys the core smart contracts needed by other tests.

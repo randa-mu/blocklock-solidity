@@ -3,8 +3,8 @@ pragma solidity ^0.8;
 
 import {Test} from "forge-std/Test.sol";
 
-import {TypesLib} from "../../src/libraries/TypesLib.sol";
-import {BLS} from "../../src/libraries/BLS.sol";
+import {TypesLib} from "../../../src/libraries/TypesLib.sol";
+import {BLS} from "../../../src/libraries/BLS.sol";
 
 /// @title Base test contract
 /// @dev Provides core functionalities needed by all other tests.
