@@ -202,6 +202,15 @@ contract DecryptionSender is
             sigScheme.verifySignature(messageHash, signature, sigScheme.getPublicKeyBytes()),
             "Signature verification failed"
         );
+        
+        (bool canDecryptSuccessfully,) = request.callback.call(
+            abi.encodeWithSelector(IBlocklockSender.decrypt.selector, IBlocklockSender(request.callback).getRequest(requestID).ciphertext, decryptionKey)
+        );
+        
+        require(
+            canDecryptSuccessfully,
+            "Decryption verification failed"
+        );
 
         bytes memory response = abi.encodeWithSelector(
             IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature
@@ -209,9 +218,6 @@ contract DecryptionSender is
 
         bool success = _callWithExactGas(request.callbackGasLimit, request.callback, response);
 
-        // fixme remove for failing callbacks
-        // requests[requestID].decryptionKey = decryptionKey;
-        // requests[requestID].signature = signature;
         requests[requestID].isFulfilled = true;
         unfulfilledRequestIds.remove(requestID);
         if (!success) {
@@ -220,39 +226,6 @@ contract DecryptionSender is
         } else {
             fulfilledRequestIds.add(requestID);
             emit DecryptionReceiverCallbackSuccess(requestID, decryptionKey, signature);
-        }
-    }
-
-    /// @notice Retries the callback to the decryption key receiver with the specified gas limit for a given request ID.
-    /// @dev This function allows the owner to retry sending the decryption key to the consumer's
-    ///     contract if the original callback failed.
-    ///     The function checks if the request has errored, retrieves the necessary request
-    ///     and subscription data, and then tries to resend the decryption key.
-    /// @param requestID The ID of the request that failed and needs to be retried.
-    /// @param newCallbackGasLimit The new gas limit to be used for the retry callback. This should be estimated based on the consumer's contract requirements.
-    function retryCallbackWithSubscription(uint256 requestID, uint32 newCallbackGasLimit)
-        external
-        nonReentrant
-        onlyAdmin
-    {
-        require(hasErrored(requestID), "No request with specified requestID");
-        TypesLib.DecryptionRequest memory request = requests[requestID];
-
-        TypesLib.BlocklockRequest memory blocklockRequest = IBlocklockSender(request.callback).getRequest(requestID);
-        require(blocklockRequest.subId > 0, "Invalid subscription id");
-
-        bytes memory response = abi.encodeWithSelector(
-            IDecryptionReceiver.receiveDecryptionData.selector, requestID, request.decryptionKey, request.signature
-        );
-
-        bool success = _callWithExactGas(newCallbackGasLimit, request.callback, response);
-
-        if (!success) {
-            emit DecryptionReceiverCallbackFailed(requestID);
-        } else {
-            erroredRequestIds.remove(requestID);
-            fulfilledRequestIds.add(requestID);
-            emit DecryptionReceiverCallbackSuccess(requestID, request.decryptionKey, request.signature);
         }
     }
 

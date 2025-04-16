@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8;
 
+import {TypesLib} from "../libraries/TypesLib.sol";
+
 /// @title IDecryptionReceiver interface
 /// @author Randamu
 /// @notice Interface for smart contract that recieives decryption key and associated

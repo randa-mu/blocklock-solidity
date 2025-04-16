@@ -113,16 +113,17 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
     /// @return The total cost in native tokens (wei)
     function _calculateRequestPriceNative(uint256 _gas, uint256 _requestGasPrice) internal view returns (uint256) {
         // Calculate the base fee in wei: (gas required) * (gas price)
-        // fixme add to config with getter
-        uint256 blocklockSenderCostWei = _requestGasPrice * _gas + _getL1CostWei();
-        uint256 decryptionSenderCostWei = _requestGasPrice * 500_000; // fixme review - decryption sender buffer
+        // fixme add to config
+        uint256 s_weiPerUnitGas = _requestGasPrice > 0? _requestGasPrice : 0.003 gwei;
+        uint256 baseFeeWei = s_weiPerUnitGas * (s_config.gasAfterPaymentCalculation + _gas);
+        uint256 l1CostWei = _getL1CostWei();
+        // calculate flat fee in native
+        uint256 flatFeeWei = 1e12 * uint256(s_config.fulfillmentFlatFeeNativePPM);
+        // fixme add to config
+        uint256 signatureValidationOverheadWei = s_weiPerUnitGas * 500_000;
 
-        // Apply premium and flat fee: cost * (1 + premium) + flat fee
-        uint256 totalCostWithPremiumAndFlatFeeWei = (
-            ((blocklockSenderCostWei + decryptionSenderCostWei) * (s_config.nativePremiumPercentage + 100)) / 100
-        ) + (1e12 * uint256(s_config.fulfillmentFlatFeeNativePPM));
-
-        return totalCostWithPremiumAndFlatFeeWei;
+        uint256 totalCostWithFlatFeeWei = (((l1CostWei + baseFeeWei + signatureValidationOverheadWei) * (100 + s_config.nativePremiumPercentage)) / 100) + flatFeeWei;
+        return totalCostWithFlatFeeWei;
     }
 
     /// @notice Calculates the payment amount in native tokens, considering L1 gas fees if applicable

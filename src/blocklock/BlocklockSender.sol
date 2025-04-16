@@ -153,12 +153,9 @@ contract BlocklockSender is
             callback: msg.sender
         });
 
-        // subId can be zero for direct funding or non zero for active subscription
-        // fixme test that when callbackGasLimit can be zero but user will not get anything in callback. Only signature verification in
-        // decryption sender will be done and decryption key saved
+        /// @dev subId must be zero for direct funding or non zero for active subscription
         uint32 callbackGasLimitWithOverhead = _validateAndUpdateSubscription(callbackGasLimit, subId);
 
-        // New decryption request
         bytes memory condition = abi.encode(blockHeight);
 
         uint256 decryptionRequestID = decryptionSender.registerCiphertext(
