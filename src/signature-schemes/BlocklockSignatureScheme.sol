@@ -36,8 +36,8 @@ contract BlocklockSignatureScheme is SignatureSchemeBase {
         // convert public key bytes to g2
         BLS.PointG2 memory _publicKey = BLS.g2Unmarshal(publicKey);
         // call evm precompile for pairing check
-        (bool pairingSuccess, bool callSuccess) = BLS.verifySingle(_signature, _publicKey, _message);
-        return (pairingSuccess && callSuccess);
+        (bool pairingSuccess, ) = BLS.verifySingle(_signature, _publicKey, _message);
+        return pairingSuccess;
     }
 
     /// @notice Hashes a message to a G1 point on the elliptic curve.
