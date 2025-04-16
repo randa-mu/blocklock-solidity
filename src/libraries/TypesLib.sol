@@ -14,7 +14,7 @@ library TypesLib {
         bytes w;
     }
 
-    /// @notice  Blocklock request stores details needed to generate blocklock decryption keys
+    /// @notice  BlocklockRequest stores details needed to generate blocklock decryption keys
     struct BlocklockRequest {
         uint256 subId; // must be 0 for direct funding
         uint256 directFundingFeePaid; // must be > 0 for direct funding and if subId == 0
