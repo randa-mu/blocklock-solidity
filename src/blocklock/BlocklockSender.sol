@@ -191,7 +191,7 @@ contract BlocklockSender is
         return decryptionRequestID;
     }
 
-    /// @notice Validates the subscription if subId > 0 and _callbackGasLimit
+    /// @notice Validates the subscription (if subId > 0) and the _callbackGasLimit
     /// @notice and updates the subscription for a given consumer.
     /// @dev This function checks the validity of the subscription and updates the subscription's state.
     /// @dev If the subscription ID is greater than zero, it ensures that the consumer has an active subscription.
@@ -220,9 +220,9 @@ contract BlocklockSender is
             require(msg.value >= price, "Fee too low");
         }
 
-        // No lower bound on the requested gas limit. A user could request 0
-        // and they would simply be billed for the signature verification and wouldn't be
-        // able to do anything with the decryption key.
+        // No lower bound on the requested gas limit. A user could request 0 callback gas limit
+        // but the overhead added covers bls pairing check operations and decryption as part of the callback
+        // and any other added logic in consumer contract might lead to out of gas revert.
         require(_callbackGasLimit <= s_config.maxGasLimit, "Callback gasLimit too high");
 
         uint32 eip150Overhead = _getEIP150Overhead(_callbackGasLimit);

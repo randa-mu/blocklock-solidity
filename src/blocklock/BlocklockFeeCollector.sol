@@ -122,10 +122,10 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
         uint256 l1CostWei = _getL1CostWei();
         // calculate flat fee in native
         uint256 flatFeeWei = 1e12 * uint256(s_config.fulfillmentFlatFeeNativePPM);
-        uint256 signatureValidationOverheadWei = weiPerUnitGas * s_config.blsPairingCheckOverhead;
+        uint256 blsPairingCheckOverheadWei = weiPerUnitGas * s_config.blsPairingCheckOverhead;
 
         uint256 totalCostWithFlatFeeWei = (
-            ((l1CostWei + baseFeeWei + signatureValidationOverheadWei) * (100 + s_config.nativePremiumPercentage)) / 100
+            ((l1CostWei + baseFeeWei + blsPairingCheckOverheadWei) * (100 + s_config.nativePremiumPercentage)) / 100
         ) + flatFeeWei;
         return totalCostWithFlatFeeWei;
     }
