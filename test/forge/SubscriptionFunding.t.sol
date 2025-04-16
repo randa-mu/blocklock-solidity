@@ -312,7 +312,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         console.log("Subscription native balance after request = ", nativeBalance);
         console.log("Subscription fee charged for request = ", exactFeePaid);
-        /// @notice check that the exactFeePaid is covered by estimated price to ensure that
+        /// @notice check that the estimated price covers the exactFeePaid to ensure that
         /// exactFeePaid is not higher than estimated price derived from
         /// calling blocklockSender.calculateRequestPriceNative(callbackGasLimit);
         console.log(totalSubBalanceBeforeRequest, nativeBalance, exactFeePaid);
