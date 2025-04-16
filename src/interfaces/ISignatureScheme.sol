@@ -5,7 +5,7 @@ pragma solidity ^0.8;
 /// @author Randamu
 /// @notice Interface for signature schemes, e.g., BN254, BLS, etc.
 interface ISignatureScheme {
-    /// @notice Returns the scheme identifier as a string, e.g., "BN254", "BLS12-381", "TESS"
+    /// @notice Returns the scheme identifier as a string, e.g., "Barreto-Naehrig Curve" or "BN254"
     function SCHEME_ID() external returns (string memory);
 
     /// @notice Verifies a signature using the given signature scheme.

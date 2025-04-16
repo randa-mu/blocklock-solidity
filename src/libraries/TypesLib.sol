@@ -28,7 +28,7 @@ library TypesLib {
 
     /// @notice  Decryption request stores details for each decryption request
     struct DecryptionRequest {
-        string schemeID; // signature scheme id, e.g., "BN254", "BLS12-381", "TESS"
+        string schemeID;
         bytes ciphertext;
         bytes condition;
         bytes decryptionKey;
