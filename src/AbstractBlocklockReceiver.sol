@@ -126,7 +126,10 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     ) internal returns (uint256 requestId, uint256 requestPrice) {
         requestPrice = blocklock.calculateRequestPriceNative(callbackGasLimit);
         return (
-            blocklock.requestBlocklock{value: requestPrice}(callbackGasLimit, 0, blockHeight, ciphertext), requestPrice
+            blocklock.requestBlocklockWithoutSubscription{value: requestPrice}(
+                callbackGasLimit, blockHeight, ciphertext
+            ),
+            requestPrice
         );
     }
 
@@ -143,7 +146,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         uint256 blockHeight,
         TypesLib.Ciphertext calldata ciphertext
     ) internal returns (uint256 requestId) {
-        return blocklock.requestBlocklock(callbackGasLimit, subscriptionId, blockHeight, ciphertext);
+        return blocklock.requestBlocklockWithSubscription(callbackGasLimit, subscriptionId, blockHeight, ciphertext);
     }
 
     /// @notice Decrypts the provided ciphertext using the specified decryption key.

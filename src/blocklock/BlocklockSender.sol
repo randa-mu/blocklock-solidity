@@ -130,12 +130,12 @@ contract BlocklockSender is
     /// @return requestID The unique identifier for the blocklock request
     /// @dev This function allows users to request a blocklock for a specific block height. The blocklock is associated with a given subscription ID
     ///      and requires a ciphertext to be provided. The function checks that the contract is configured and not disabled before processing the request.
-    function requestBlocklock(
+    function requestBlocklockWithSubscription(
         uint32 callbackGasLimit,
         uint256 subId,
         uint256 blockHeight,
         TypesLib.Ciphertext calldata ciphertext
-    ) external payable onlyConfiguredNotDisabled returns (uint256) {
+    ) public payable onlyConfiguredNotDisabled returns (uint256) {
         require(blockHeight > block.number, "blockHeight must be strictly greater than current");
 
         if (subId == 0) {
@@ -167,6 +167,20 @@ contract BlocklockSender is
         blocklockRequestsWithDecryptionKey[decryptionRequestID] = r;
 
         emit BlocklockRequested(decryptionRequestID, blockHeight, ciphertext, msg.sender, block.timestamp);
+        return decryptionRequestID;
+    }
+
+    function requestBlocklockWithoutSubscription(
+        uint32 callbackGasLimit,
+        uint256 blockHeight,
+        TypesLib.Ciphertext calldata ciphertext
+    ) external payable onlyConfiguredNotDisabled returns (uint256) {
+        uint256 decryptionRequestID = requestBlocklockWithSubscription(
+            callbackGasLimit,
+            0, // no subId
+            blockHeight,
+            ciphertext
+        );
         return decryptionRequestID;
     }
 
