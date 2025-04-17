@@ -164,3 +164,6 @@ cache_hardhat
 artifacts
 typechain-types
 broadcast
+
+# Deployments
+script/json/Deployment_input.json
