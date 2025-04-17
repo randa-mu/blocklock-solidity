@@ -29,4 +29,13 @@ abstract contract SignatureSchemeBase is ISignatureScheme {
     function getPublicKeyBytes() public view returns (bytes memory) {
         return BLS.g2Marshal(publicKey);
     }
+
+    /// @notice Returns the current blockchain chain ID.
+    /// @dev Uses inline assembly to retrieve the `chainid` opcode.
+    /// @return chainId The current chain ID of the network.
+    function getChainId() public view returns (uint256 chainId) {
+        assembly {
+            chainId := chainid()
+        }
+    }
 }

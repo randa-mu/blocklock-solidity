@@ -30,8 +30,13 @@ contract BlocklockTest is Deployment {
         // setup base test
         super.setUp();
 
-        (signatureSchemeAddressProvider, blocklockSignatureScheme, decryptionSender, blocklockSender, mockBlocklockReceiver) =
-            deployContracts();
+        (
+            signatureSchemeAddressProvider,
+            blocklockSignatureScheme,
+            decryptionSender,
+            blocklockSender,
+            mockBlocklockReceiver
+        ) = deployContracts();
 
         // set blocklockSender contract config
         uint32 maxGasLimit = 500_000;
@@ -60,6 +65,13 @@ contract BlocklockTest is Deployment {
         assert(address(blocklockSender) != address(0));
         assert(address(mockBlocklockReceiver) != address(0));
         assert(address(decryptionSender.signatureSchemeAddressProvider()) != address(0));
+
+        console.logBytes(blocklockSignatureScheme.DST());
+        console.logString(string(blocklockSignatureScheme.DST()));
+        console.logString(string(blocklockSender.DST_H1_G1()));
+        console.logString(string(blocklockSender.DST_H2()));
+        console.logString(string(blocklockSender.DST_H3()));
+        console.logString(string(blocklockSender.DST_H4()));
     }
 
     function test_callsToBlocklockSender_shouldRevert_ifBlocklockSenderAddressIsIncorrect() public {
@@ -94,7 +106,10 @@ contract BlocklockTest is Deployment {
         vm.prank(admin);
         vm.expectRevert("Scheme already added for schemeID");
         signatureSchemeAddressProvider.updateSignatureScheme(bn254_schemeID, schemeAddr);
-        assertTrue(signatureSchemeAddressProvider.getSignatureSchemeAddress(bn254_schemeID) != schemeAddr, "Scheme contract address should not have been replaced");
+        assertTrue(
+            signatureSchemeAddressProvider.getSignatureSchemeAddress(bn254_schemeID) != schemeAddr,
+            "Scheme contract address should not have been replaced"
+        );
 
         // zero address with zero code
         vm.prank(admin);

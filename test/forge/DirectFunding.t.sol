@@ -106,6 +106,8 @@ contract DirectFundingTest is BlocklockTest {
 
         decryptionRequest = decryptionSender.getRequest(requestId);
         assertTrue(decryptionRequest.isFulfilled, "Decryption key not provided in decryption sender by offchain oracle");
+
+        console.log("plaintext after decryption", mockBlocklockReceiver.plainTextValue());
         assertTrue(
             mockBlocklockReceiver.plainTextValue() == ciphertextDataUint[3 ether].plaintext,
             "Plaintext values mismatch after decryption"

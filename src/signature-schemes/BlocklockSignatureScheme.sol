@@ -2,6 +2,7 @@
 pragma solidity ^0.8;
 
 import {BLS} from "../libraries/BLS.sol";
+import {BytesLib} from "../libraries/BytesLib.sol";
 
 import {SignatureSchemeBase} from "./SignatureSchemeBase.sol";
 
@@ -13,11 +14,14 @@ import {SignatureSchemeBase} from "./SignatureSchemeBase.sol";
 /// and marshal/unmarshal points for signature verification.
 contract BlocklockSignatureScheme is SignatureSchemeBase {
     using BLS for bytes;
+    using BytesLib for bytes32;
 
     string public constant SCHEME_ID = "BN254-BLS-BLOCKLOCK";
-    bytes public constant DST = bytes("BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_");
+    bytes public DST;
 
-    constructor(uint256[2] memory x, uint256[2] memory y) SignatureSchemeBase(x, y) {}
+    constructor(uint256[2] memory x, uint256[2] memory y) SignatureSchemeBase(x, y) {
+        DST = abi.encodePacked("BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_", bytes32(getChainId()).toHexString(), "_");
+    }
 
     /// @notice Verifies a signature using the given signature scheme.
     /// @param message The message that was signed. Message is a G1 point represented as bytes.
