@@ -54,7 +54,7 @@ contract DeployAllContracts is
         )
     {
         // for upgrades, run deployment script for individual contract in single-deployments
-        bool isUpgrade = false;
+        bool isUpgrade = vm.envBool("IS_UPGRADE");
         // signature scheme address provider
         signatureSchemeAddressProvider = deploySignatureSchemeAddressProvider();
         // signature schemes
