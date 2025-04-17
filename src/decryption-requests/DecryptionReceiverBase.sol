@@ -26,8 +26,8 @@ abstract contract DecryptionReceiverBase is IDecryptionReceiver {
     /// @param ciphertext The encrypted data to be decrypted
     /// @param conditions Optional conditions for decryption (e.g., access control)
     /// @return requestID A unique identifier for the submitted decryption request
-    function registerCiphertext(
-        string calldata schemeID,
+    function _registerCiphertext(
+        string memory schemeID,
         uint32 callbackGasLimit,
         bytes memory ciphertext,
         bytes memory conditions
