@@ -143,8 +143,9 @@ contract DirectFundingTest is BlocklockTest {
 
     function test_fulfillBlocklock_DirectFundingRequest_withRevertingReceiver() public {
         vm.prank(alice);
-        MockBlocklockRevertingReceiver mockBlocklockReceiver = new MockBlocklockRevertingReceiver(address(blocklockSender));
-        
+        MockBlocklockRevertingReceiver mockBlocklockReceiver =
+            new MockBlocklockRevertingReceiver(address(blocklockSender));
+
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 

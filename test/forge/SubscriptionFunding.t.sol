@@ -230,15 +230,16 @@ contract SubscriptionFundingTest is BlocklockTest {
     }
 
     function test_fulfillBlocklock_SubscriptionRequest_withRevertingReceiver() public {
-        /// @dev test we can still collect payment for reverting callback receiver and 
+        /// @dev test we can still collect payment for reverting callback receiver and
         /// payment is not blocked for subscription funding (and direct funding in direct funding test)
 
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
         vm.prank(alice);
-        MockBlocklockRevertingReceiver mockBlocklockReceiver = new MockBlocklockRevertingReceiver(address(blocklockSender));
-        
+        MockBlocklockRevertingReceiver mockBlocklockReceiver =
+            new MockBlocklockRevertingReceiver(address(blocklockSender));
+
         vm.prank(alice);
         mockBlocklockReceiver.createSubscriptionAndFundNative{value: 5 ether}();
 
@@ -313,7 +314,10 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail due to lack of funds");
+        assertTrue(
+            !decryptionSender.hasErrored(requestId),
+            "Callback to receiver contract should not fail due to lack of funds"
+        );
 
         // check for fee deductions from subscription account
         // subId should be charged at this point, and request count for subId should be increased
@@ -333,7 +337,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         assertTrue(gasUsed * tx.gasprice < exactFeePaid, "subId should be charged for overhead");
         assertTrue(reqCount == 1, "Incorrect request count, it should be one");
-        
+
         /// @notice exactFeePaid is zero
         assertTrue(
             blocklockSender.s_withdrawableSubscriptionFeeNative() == exactFeePaid,
@@ -416,7 +420,12 @@ contract SubscriptionFundingTest is BlocklockTest {
         vm.txGasPrice(100_000);
         vm.prank(admin);
         vm.expectEmit(true, true, false, true);
-        emit BlocklockSender.BlocklockCallbackSuccess(second_requestId, ciphertextDataUint[3 ether].chainHeight, ciphertextDataUint[3 ether].ciphertext, ciphertextDataUint[3 ether].decryptionKey);
+        emit BlocklockSender.BlocklockCallbackSuccess(
+            second_requestId,
+            ciphertextDataUint[3 ether].chainHeight,
+            ciphertextDataUint[3 ether].ciphertext,
+            ciphertextDataUint[3 ether].decryptionKey
+        );
         gasBefore = gasleft();
         decryptionSender.fulfillDecryptionRequest(
             second_requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
@@ -436,7 +445,9 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         /// @notice check that the exactFeePaid is covered by estimated price and not higher than estimated price derived from
         /// calling blocklockSender.calculateRequestPriceNative(callbackGasLimit);
-        assertTrue(requestPrice * 2 >= exactFeePaid, "Request price estimation should cover exact fee charged for request");
+        assertTrue(
+            requestPrice * 2 >= exactFeePaid, "Request price estimation should cover exact fee charged for request"
+        );
         assertTrue(
             totalSubBalanceBeforeRequest == exactFeePaid + nativeBalance, "subId should be charged at this point"
         );
@@ -449,7 +460,10 @@ contract SubscriptionFundingTest is BlocklockTest {
             secondBlocklockReceiver.plainTextValue() == ciphertextDataUint[3 ether].plaintext,
             "Plaintext values mismatch after decryption"
         );
-        assertTrue(mockBlocklockReceiver.requestId() == 1 && secondBlocklockReceiver.requestId() == 2, "Request id in receiver contract is incorrect");
+        assertTrue(
+            mockBlocklockReceiver.requestId() == 1 && secondBlocklockReceiver.requestId() == 2,
+            "Request id in receiver contract is incorrect"
+        );
 
         assertTrue(
             blocklockSender.s_withdrawableDirectFundingFeeNative() == 0,
@@ -545,7 +559,10 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail due to lack of funds");
+        assertTrue(
+            !decryptionSender.hasErrored(requestId),
+            "Callback to receiver contract should not fail due to lack of funds"
+        );
 
         // check for fee deductions from subscription account
         // subId should be charged at this point, and request count for subId should be increased
@@ -683,7 +700,10 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail due to lack of funds");
+        assertTrue(
+            !decryptionSender.hasErrored(requestId),
+            "Callback to receiver contract should not fail due to lack of funds"
+        );
 
         // check for fee deductions from subscription account
         // subId should be charged at this point, and request count for subId should be increased
@@ -1119,7 +1139,10 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail due to lack of funds");
+        assertTrue(
+            !decryptionSender.hasErrored(requestId),
+            "Callback to receiver contract should not fail due to lack of funds"
+        );
 
         assertTrue(!decryptionRequest.isFulfilled, "Decryption logic should not have been reached");
         assertTrue(
