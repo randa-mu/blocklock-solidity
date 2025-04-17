@@ -65,6 +65,13 @@ contract BlocklockTest is Deployment {
         assert(address(blocklockSender) != address(0));
         assert(address(mockBlocklockReceiver) != address(0));
         assert(address(decryptionSender.signatureSchemeAddressProvider()) != address(0));
+
+        console.logBytes(blocklockSignatureScheme.DST());
+        console.logString(string(blocklockSignatureScheme.DST()));
+        console.logString(string(blocklockSender.DST_H1_G1()));
+        console.logString(string(blocklockSender.DST_H2()));
+        console.logString(string(blocklockSender.DST_H3()));
+        console.logString(string(blocklockSender.DST_H4()));
     }
 
     function test_callsToBlocklockSender_shouldRevert_ifBlocklockSenderAddressIsIncorrect() public {

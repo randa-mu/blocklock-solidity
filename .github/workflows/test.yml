@@ -5,6 +5,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  BLS_PRIVATE_KEY: ${{ secrets.BLS_KEY }}
+    
 jobs:
   check:
     strategy:

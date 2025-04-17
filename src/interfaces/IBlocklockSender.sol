@@ -67,4 +67,9 @@ interface IBlocklockSender is ISubscription {
 
     /// @dev Returns the version number of the upgradeable contract.
     function version() external pure returns (string memory);
+
+    /// @notice Returns the current blockchain chain ID.
+    /// @dev Uses inline assembly to retrieve the `chainid` opcode.
+    /// @return chainId The current chain ID of the network.
+    function getChainId() external view returns (uint256 chainId);
 }

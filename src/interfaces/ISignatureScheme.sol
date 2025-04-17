@@ -40,4 +40,9 @@ interface ISignatureScheme {
     /// @dev Returns the public key as bytes.
     /// @return Bytes string representing the public key points on the elliptic curve.
     function getPublicKeyBytes() external view returns (bytes memory);
+
+    /// @notice Returns the current blockchain chain ID.
+    /// @dev Uses inline assembly to retrieve the `chainid` opcode.
+    /// @return chainId The current chain ID of the network.
+    function getChainId() external view returns (uint256 chainId);
 }

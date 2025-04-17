@@ -8,6 +8,8 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 
 import {TypesLib} from "../libraries/TypesLib.sol";
 import {BLS} from "../libraries/BLS.sol";
+import {BytesLib} from "../libraries/BytesLib.sol";
+
 import {IBlocklockSender} from "../interfaces/IBlocklockSender.sol";
 import {IBlocklockReceiver} from "../interfaces/IBlocklockReceiver.sol";
 import {IDecryptionSender} from "../interfaces/IDecryptionSender.sol";
@@ -31,6 +33,8 @@ contract BlocklockSender is
     UUPSUpgradeable,
     AccessControlEnumerableUpgradeable
 {
+    using BytesLib for bytes32;
+
     /// @notice This contract manages blocklock requests, decryption keys, and administrative roles.
     /// @dev The contract includes constants related to blocklock schemes, decryption key processing, and events for blocklock requests and callbacks.
     ///      It also defines an `ADMIN_ROLE` for managing access control and updates to decryption sender.
@@ -44,20 +48,20 @@ contract BlocklockSender is
     string public constant SCHEME_ID = "BN254-BLS-BLOCKLOCK";
 
     /// @notice The domain separation constant used for H1 in the blocklock scheme
-    /// @dev This constant is used for hashing and cryptographic operations in the blocklock protocol
-    bytes public constant DST_H1_G1 = "BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_";
+    /// @dev This variable is used for hashing and cryptographic operations in the blocklock protocol
+    bytes public DST_H1_G1;
 
     /// @notice The domain separation constant used for H2 in the blocklock scheme
-    /// @dev This constant is used for hashing and cryptographic operations in the blocklock protocol
-    bytes public constant DST_H2 = "BLOCKLOCK_BN254_XMD:KECCAK-256_H2_";
+    /// @dev This variable is used for hashing and cryptographic operations in the blocklock protocol
+    bytes public DST_H2;
 
     /// @notice The domain separation constant used for H3 in the blocklock scheme
-    /// @dev This constant is used for hashing and cryptographic operations in the blocklock protocol
-    bytes public constant DST_H3 = "BLOCKLOCK_BN254_XMD:KECCAK-256_H3_";
+    /// @dev This variable is used for hashing and cryptographic operations in the blocklock protocol
+    bytes public DST_H3;
 
     /// @notice The domain separation constant used for H4 in the blocklock scheme
-    /// @dev This constant is used for hashing and cryptographic operations in the blocklock protocol
-    bytes public constant DST_H4 = "BLOCKLOCK_BN254_XMD:KECCAK-256_H4_";
+    /// @dev This variable is used for hashing and cryptographic operations in the blocklock protocol
+    bytes public DST_H4;
 
     /// @notice Mapping from a decryption request ID to its corresponding blocklock request containing the decryption key
     /// @dev The mapping is used to store blocklock requests with their decryption keys by their unique request IDs
@@ -117,6 +121,15 @@ contract BlocklockSender is
         require(_grantRole(ADMIN_ROLE, owner), "Grant role failed");
         require(_grantRole(DEFAULT_ADMIN_ROLE, owner), "Grant role failed");
         decryptionSender = IDecryptionSender(_decryptionSender);
+
+        DST_H1_G1 =
+            abi.encodePacked("BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_", bytes32(getChainId()).toHexString(), "_");
+
+        DST_H2 = abi.encodePacked("BLOCKLOCK_BN254_XMD:KECCAK-256_H2_", bytes32(getChainId()).toHexString(), "_");
+
+        DST_H3 = abi.encodePacked("BLOCKLOCK_BN254_XMD:KECCAK-256_H3_", bytes32(getChainId()).toHexString(), "_");
+
+        DST_H4 = abi.encodePacked("BLOCKLOCK_BN254_XMD:KECCAK-256_H4_", bytes32(getChainId()).toHexString(), "_");
     }
 
     /// @dev Overridden upgrade authorization function to ensure only an authorized caller can authorize upgrades.
@@ -518,5 +531,14 @@ contract BlocklockSender is
     /// @dev This function is used to identify the current version of the contract for upgrade management and version tracking.
     function version() external pure returns (string memory) {
         return "0.0.1";
+    }
+
+    /// @notice Returns the current blockchain chain ID.
+    /// @dev Uses inline assembly to retrieve the `chainid` opcode.
+    /// @return chainId The current chain ID of the network.
+    function getChainId() public view returns (uint256 chainId) {
+        assembly {
+            chainId := chainid()
+        }
     }
 }
