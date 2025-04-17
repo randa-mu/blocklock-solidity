@@ -182,7 +182,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail");
+        assertTrue(!decryptionSender.hasPaymentErrored(requestId), "Payment collection in callback to receiver contract should not fail");
 
         // check for fee deductions from subscription account
         // subId should be charged at this point, and request count for subId should be increased
@@ -315,8 +315,8 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasErrored(requestId),
-            "Callback to receiver contract should not fail due to lack of funds"
+            !decryptionSender.hasPaymentErrored(requestId),
+            "Payment collection in callback to receiver contract should not fail due to lack of funds"
         );
 
         // check for fee deductions from subscription account
@@ -560,8 +560,8 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasErrored(requestId),
-            "Callback to receiver contract should not fail due to lack of funds"
+            !decryptionSender.hasPaymentErrored(requestId),
+            "Payment collection in callback to receiver contract should not fail due to lack of funds"
         );
 
         // check for fee deductions from subscription account
@@ -701,8 +701,8 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasErrored(requestId),
-            "Callback to receiver contract should not fail due to lack of funds"
+            !decryptionSender.hasPaymentErrored(requestId),
+            "Payment collection in callback to receiver contract should not fail due to lack of funds"
         );
 
         // check for fee deductions from subscription account
@@ -877,11 +877,11 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        /// @notice reverting callback should add request id to the erroredRequestIds set in decryptionSender
+        /// @notice reverting callback should add request id to the paymentErroredRequestIds set in decryptionSender
         /// @dev reverts due to fee collection failing, not callback / receiver contract logic
         /// @dev even though we only emit event for failing calls to receiver contracts,
         /// we can still catch failing fee collections
-        assertTrue(decryptionSender.hasErrored(requestId), "Callback to receiver contract should have failed");
+        assertTrue(decryptionSender.hasPaymentErrored(requestId), "Payment collection in callback to receiver contract should have failed");
 
         // check for fee deductions from subscription account
         // subId should not be charged at this point, and request count for subId should be increased
@@ -922,6 +922,30 @@ contract SubscriptionFundingTest is BlocklockTest {
         );
 
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
+
+        vm.prank(admin);
+        mockBlocklockReceiver.topUpSubscriptionNative{value: 2 ether}();
+
+        /// @notice we can retry fulfilling the request after subscription is topped up
+        /// For this to work, the request id should be in the list of request ids in flight
+        vm.txGasPrice(100_000);
+        gasBefore = gasleft();
+
+        vm.prank(admin);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
+        );
+
+        gasAfter = gasleft();
+        gasUsed = gasBefore - gasAfter;
+        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
+        console.log("Tx Gas used:", gasUsed);
+        console.log("Tx Gas price (wei):", tx.gasprice);
+        console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
+        console.log(
+            "Total withdrawable subscription balance (wei):", blocklockSender.s_withdrawableSubscriptionFeeNative()
+        );
     }
 
     function test_callback_forSubscriptionWithIncorrectDecryptionKey_reverts() public {
@@ -1010,11 +1034,11 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        /// @notice reverting callback should add request id to the erroredRequestIds set in decryptionSender
+        /// @notice reverting callback should add request id to the paymentErroredRequestIds set in decryptionSender
         /// @dev for failing callbacks, the request id is not added to list of errored callbacks
         assertTrue(
-            !decryptionSender.hasErrored(requestId),
-            "Callback to receiver contract will be executed but decryption will fail if user decrypts within callback"
+            !decryptionSender.hasPaymentErrored(requestId),
+            "Payment collection in callback to receiver contract will be executed but decryption will fail if user decrypts within callback"
         );
 
         // check for fee deductions from subscription account
@@ -1063,7 +1087,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
 
         /// @notice we cannot retry fulfilling the request with the correct decryption key
-        /// if we call fulfillDecryptionRequest, we get an error with No pending request with specified requestID
+        /// if we call fulfillDecryptionRequest, we get an error with no pending request with specified requestID
         /// In some cases user might register incorrect ciphertext leading to this scenario.
         vm.txGasPrice(100_000);
         gasBefore = gasleft();
@@ -1142,8 +1166,8 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasErrored(requestId),
-            "Callback to receiver contract should not fail due to lack of funds"
+            !decryptionSender.hasPaymentErrored(requestId),
+            "Payment collection in callback to receiver contract should not fail due to lack of funds"
         );
 
         assertTrue(!decryptionRequest.isFulfilled, "Decryption logic should not have been reached");

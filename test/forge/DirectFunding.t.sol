@@ -102,7 +102,7 @@ contract DirectFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail");
+        assertTrue(!decryptionSender.hasPaymentErrored(requestId), "Payment collection in callback to receiver contract should not fail");
 
         decryptionRequest = decryptionSender.getRequest(requestId);
         assertTrue(decryptionRequest.isFulfilled, "Decryption key not provided in decryption sender by offchain oracle");
@@ -230,7 +230,7 @@ contract DirectFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail");
+        assertTrue(!decryptionSender.hasPaymentErrored(requestId), "Payment collection in callback to receiver contract should not fail");
 
         decryptionRequest = decryptionSender.getRequest(requestId);
         assertTrue(decryptionRequest.isFulfilled, "Decryption key not provided in decryption sender by offchain oracle");
@@ -367,7 +367,7 @@ contract DirectFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail");
+        assertTrue(!decryptionSender.hasPaymentErrored(requestId), "Payment collection in callback to receiver contract should not be called");
 
         assertTrue(!decryptionRequest.isFulfilled, "Decryption logic should not have been reached");
         assertTrue(

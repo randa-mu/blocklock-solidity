@@ -50,7 +50,7 @@ interface IDecryptionSender {
     /// @notice returns whether a specific request errored during callback or not.
     /// @param requestID The ID of the request to check.
     /// @return boolean indicating whether the request has errored or not.
-    function hasErrored(uint256 requestID) external view returns (bool);
+    function hasPaymentErrored(uint256 requestID) external view returns (bool);
 
     /// @notice Returns all the fulfilled request ids.
     /// @return The uint array representing a set containing all fulfilled request ids.
@@ -62,7 +62,7 @@ interface IDecryptionSender {
 
     /// @notice Returns all the request ids where the callback reverted but a decryption key was provided, i.e., "fulfilled" but still in flight.
     /// @return The uint array representing a set containing all request ids with reverting callbacks.
-    function getAllErroredRequestIds() external view returns (uint256[] memory);
+    function getAllpaymentErroredRequestIds() external view returns (uint256[] memory);
 
     /// @notice Returns count of all the request ids that are yet to be fulfilled.
     /// @return A uint representing a count of all request ids that are yet to be fulfilled.

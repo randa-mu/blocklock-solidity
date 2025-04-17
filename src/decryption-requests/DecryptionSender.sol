@@ -59,7 +59,7 @@ contract DecryptionSender is
     EnumerableSet.UintSet private unfulfilledRequestIds;
 
     /// @dev Set for storing unique request Ids with failing callbacks
-    EnumerableSet.UintSet private erroredRequestIds;
+    EnumerableSet.UintSet private paymentErroredRequestIds;
 
     /// @dev Emitted when the signature scheme address provider is updated.
     event SignatureSchemeAddressProviderUpdated(address indexed newSignatureSchemeAddressProvider);
@@ -211,7 +211,7 @@ contract DecryptionSender is
         requests[requestID].isFulfilled = true;
         unfulfilledRequestIds.remove(requestID);
         if (!success) {
-            erroredRequestIds.add(requestID);
+            paymentErroredRequestIds.add(requestID);
             emit DecryptionReceiverCallbackFailed(requestID);
         } else {
             fulfilledRequestIds.add(requestID);
@@ -232,15 +232,15 @@ contract DecryptionSender is
     /// @param requestID The unique request ID of the decryption request.
     /// @return True if the request is in flight (unfulfilled or errored), false otherwise.
     function isInFlight(uint256 requestID) public view returns (bool) {
-        return unfulfilledRequestIds.contains(requestID) || erroredRequestIds.contains(requestID);
+        return unfulfilledRequestIds.contains(requestID) || paymentErroredRequestIds.contains(requestID);
     }
 
     /// @notice Checks if a decryption request has errored out.
     /// @dev Used to check if the request has failed and is in the errored state.
     /// @param requestID The unique request ID of the decryption request.
     /// @return True if the request has errored, false otherwise.
-    function hasErrored(uint256 requestID) public view returns (bool) {
-        return erroredRequestIds.contains(requestID);
+    function hasPaymentErrored(uint256 requestID) public view returns (bool) {
+        return paymentErroredRequestIds.contains(requestID);
     }
 
     /// @notice Retrieves the details of a decryption request.
@@ -268,8 +268,8 @@ contract DecryptionSender is
     /// @notice Retrieves all errored request IDs.
     /// @dev Returns an array of all errored request IDs.
     /// @return An array of errored request IDs.
-    function getAllErroredRequestIds() external view returns (uint256[] memory) {
-        return erroredRequestIds.values();
+    function getAllpaymentErroredRequestIds() external view returns (uint256[] memory) {
+        return paymentErroredRequestIds.values();
     }
 
     /// @notice Retrieves the count of unfulfilled request IDs.
