@@ -956,11 +956,12 @@ contract SubscriptionFundingTest is BlocklockTest {
         vm.prank(admin);
         adminBalance = admin.balance;
         blocklockSender.withdrawSubscriptionFeesNative(payable(admin));
-        assertTrue(
-            admin.balance > adminBalance, "Admin balance should increase after payment withdrawal"
-        );
+        assertTrue(admin.balance > adminBalance, "Admin balance should increase after payment withdrawal");
 
-        assertTrue(blocklockSender.s_totalNativeBalance() > nativeBalance, "Native balance to withdraw should be greater than old subscription balance");
+        assertTrue(
+            blocklockSender.s_totalNativeBalance() > nativeBalance,
+            "Native balance to withdraw should be greater than old subscription balance"
+        );
 
         assertTrue(
             !decryptionSender.hasPaymentErrored(requestId),
