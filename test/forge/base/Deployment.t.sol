@@ -15,6 +15,7 @@ import {DecryptionSender} from "../../../src/decryption-requests/DecryptionSende
 
 // mock contracts
 import {MockBlocklockReceiver} from "../../../src/mocks/MockBlocklockReceiver.sol";
+import {MockBlocklockRevertingReceiver} from "../../../src/mocks/MockBlocklockRevertingReceiver.sol";
 
 /// @title Deployment test contract
 /// @dev Deploys the core smart contracts needed by other tests.

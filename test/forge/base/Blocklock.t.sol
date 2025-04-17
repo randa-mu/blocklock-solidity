@@ -9,7 +9,8 @@ import {
     BlocklockSender,
     BlocklockSignatureScheme,
     DecryptionSender,
-    MockBlocklockReceiver
+    MockBlocklockReceiver,
+    MockBlocklockRevertingReceiver
 } from "./Deployment.t.sol";
 
 import {TypesLib, BLS} from "./Base.t.sol";

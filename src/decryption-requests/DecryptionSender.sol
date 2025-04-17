@@ -188,7 +188,7 @@ contract DecryptionSender is
         nonReentrant
         onlyAdmin
     {
-        require(isInFlight(requestID), "No request with specified requestID");
+        require(isInFlight(requestID), "No pending request with specified requestID");
         TypesLib.DecryptionRequest memory request = requests[requestID];
 
         string memory schemeID = request.schemeID;

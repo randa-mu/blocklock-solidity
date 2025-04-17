@@ -10,6 +10,7 @@ import {
     BlocklockSignatureScheme,
     DecryptionSender,
     MockBlocklockReceiver,
+    MockBlocklockRevertingReceiver,
     BlocklockTest,
     TypesLib,
     BLS
@@ -228,6 +229,125 @@ contract SubscriptionFundingTest is BlocklockTest {
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
     }
 
+    function test_fulfillBlocklock_SubscriptionRequest_withRevertingReceiver() public {
+        /// @dev test we can still collect payment for reverting callback receiver and 
+        /// payment is not blocked for subscription funding (and direct funding in direct funding test)
+
+        // create subscription and fund it
+        assert(mockBlocklockReceiver.subscriptionId() == 0);
+
+        vm.prank(alice);
+        MockBlocklockRevertingReceiver mockBlocklockReceiver = new MockBlocklockRevertingReceiver(address(blocklockSender));
+        
+        vm.prank(alice);
+        mockBlocklockReceiver.createSubscriptionAndFundNative{value: 5 ether}();
+
+        uint256 subId = mockBlocklockReceiver.subscriptionId();
+        assert(subId != 0);
+        console.log("Subscription id = ", subId);
+
+        uint256 totalSubBalanceBeforeRequest = 5 ether;
+
+        // get request price
+        uint32 callbackGasLimit = 100_000;
+        uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
+        console.log("Request price for offchain oracle callbackGasLimit", requestPrice);
+
+        // make blocklock request
+        vm.prank(alice);
+        uint32 requestCallbackGasLimit = 100_000;
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+            requestCallbackGasLimit, ciphertextDataUint[3 ether].chainHeight, ciphertextDataUint[3 ether].ciphertext
+        );
+
+        // fetch request information including callbackGasLimit from decryption sender
+        TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
+
+        /// @dev Overhead for EIP-150
+        uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
+
+        assertTrue(
+            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
+        );
+
+        assertTrue(
+            decryptionRequest.callbackGasLimit
+                == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
+            "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
+        );
+
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
+        assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
+        assertTrue(
+            blocklockRequest.directFundingFeePaid == 0,
+            "User contract should not be charged immediately for subscription request"
+        );
+        assertTrue(
+            blocklockRequest.decryptionRequestID == requestId,
+            "Request id mismatch between blocklockSender and decryptionSender"
+        );
+
+        // fulfill blocklock request
+        /// @notice When we use less gas price, the total tx price including gas
+        // limit for callback and external call from oracle is less than user payment or
+        // calculated request price at request time
+        // we don't use user payment as the gas price for callback from oracle.
+        vm.txGasPrice(100_000);
+        uint256 gasBefore = gasleft();
+
+        vm.prank(admin);
+        vm.expectEmit(true, true, false, true);
+        emit BlocklockSender.BlocklockCallbackFailed(requestId);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
+        );
+
+        uint256 gasAfter = gasleft();
+        uint256 gasUsed = gasBefore - gasAfter;
+        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
+        console.log("Tx Gas used:", gasUsed);
+        console.log("Tx Gas price (wei):", tx.gasprice);
+        console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
+
+        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail due to lack of funds");
+
+        // check for fee deductions from subscription account
+        // subId should be charged at this point, and request count for subId should be increased
+        (uint96 nativeBalance, uint256 reqCount,,) = blocklockSender.getSubscription(subId);
+
+        uint256 exactFeePaid = totalSubBalanceBeforeRequest - nativeBalance;
+
+        console.log("Subscription native balance after request = ", nativeBalance);
+        console.log("Subscription fee charged for request = ", exactFeePaid);
+        /// @notice check that the exactFeePaid is covered by estimated price and not higher than estimated price derived from
+        /// calling blocklockSender.calculateRequestPriceNative(callbackGasLimit);
+        console.log(totalSubBalanceBeforeRequest, nativeBalance, exactFeePaid);
+        assertTrue(requestPrice >= exactFeePaid, "Request price estimation should cover exact fee charged for request");
+        assertTrue(
+            totalSubBalanceBeforeRequest == exactFeePaid + nativeBalance, "subId should be charged at this point"
+        );
+
+        assertTrue(gasUsed * tx.gasprice < exactFeePaid, "subId should be charged for overhead");
+        assertTrue(reqCount == 1, "Incorrect request count, it should be one");
+        
+        /// @notice exactFeePaid is zero
+        assertTrue(
+            blocklockSender.s_withdrawableSubscriptionFeeNative() == exactFeePaid,
+            "Request price paid should be withdrawable by admin at this point"
+        );
+
+        vm.prank(admin);
+        uint256 adminBalance = admin.balance;
+        blocklockSender.withdrawSubscriptionFeesNative(payable(admin));
+        assertTrue(admin.balance + exactFeePaid > adminBalance, "Admin balance should be higher after withdrawing fees");
+
+        assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
+    }
+
     function test_fulfillBlocklockRequest_forAdditionalSubscriberAddress() public {
         // create subscription and fund it
         vm.prank(alice);
@@ -425,7 +545,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail");
+        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail due to lack of funds");
 
         // check for fee deductions from subscription account
         // subId should be charged at this point, and request count for subId should be increased
@@ -563,7 +683,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail");
+        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail due to lack of funds");
 
         // check for fee deductions from subscription account
         // subId should be charged at this point, and request count for subId should be increased
@@ -855,7 +975,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         vm.prank(admin);
         // @dev for callback issues from the oracle, we don't expect a callback failed event
         // or charge to user. We detect them before doing the callback, e.g., failing signature
-        // verification or decryption verification
+        // verification or decryption verification, so we ignore BlocklockCallbackFailed event check here.
         // vm.expectEmit();
         // emit BlocklockSender.BlocklockCallbackFailed(requestId);
         vm.expectRevert("Decryption verification failed");
@@ -999,7 +1119,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail");
+        assertTrue(!decryptionSender.hasErrored(requestId), "Callback to receiver contract should not fail due to lack of funds");
 
         assertTrue(!decryptionRequest.isFulfilled, "Decryption logic should not have been reached");
         assertTrue(
