@@ -21,7 +21,7 @@ contract BlocklockTest is Deployment {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     SignatureSchemeAddressProvider internal signatureSchemeAddressProvider;
-    BlocklockSignatureScheme internal blocklockScheme;
+    BlocklockSignatureScheme internal blocklockSignatureScheme;
     DecryptionSender internal decryptionSender;
     BlocklockSender internal blocklockSender;
     MockBlocklockReceiver internal mockBlocklockReceiver;
@@ -30,7 +30,7 @@ contract BlocklockTest is Deployment {
         // setup base test
         super.setUp();
 
-        (signatureSchemeAddressProvider, blocklockScheme, decryptionSender, blocklockSender, mockBlocklockReceiver) =
+        (signatureSchemeAddressProvider, blocklockSignatureScheme, decryptionSender, blocklockSender, mockBlocklockReceiver) =
             deployContracts();
 
         // set blocklockSender contract config
@@ -55,7 +55,7 @@ contract BlocklockTest is Deployment {
         assertTrue(decryptionSender.hasRole(ADMIN_ROLE, admin));
 
         assert(address(signatureSchemeAddressProvider) != address(0));
-        assert(address(blocklockScheme) != address(0));
+        assert(address(blocklockSignatureScheme) != address(0));
         assert(address(decryptionSender) != address(0));
         assert(address(blocklockSender) != address(0));
         assert(address(mockBlocklockReceiver) != address(0));
@@ -69,6 +69,37 @@ contract BlocklockTest is Deployment {
         vm.prank(alice);
         vm.expectRevert();
         mockBlocklockReceiver.createSubscriptionAndFundNative{value: 0}();
+    }
+
+    function test_updateSignatureScheme() public {
+        // non-zero address with zero code
+        string memory bn254_schemeID = "BN254";
+        address schemeAddr = makeAddr(bn254_schemeID);
+        assertTrue(schemeAddr != address(0), "schemeAddr should not be zero address");
+        assertTrue(schemeAddr.code.length == 0, "schemeAddr should not have any code");
+        vm.prank(admin);
+        vm.expectRevert("Invalid contract address for schemeAddress");
+        signatureSchemeAddressProvider.updateSignatureScheme(bn254_schemeID, schemeAddr);
+
+        // non-zero address with non-zero code
+        schemeAddr = address(blocklockSignatureScheme);
+        assertTrue(schemeAddr != address(0), "schemeAddr address should not be zero address");
+        assertTrue(schemeAddr.code.length > 0, "schemeAddr address should have code");
+        vm.prank(admin);
+        signatureSchemeAddressProvider.updateSignatureScheme(bn254_schemeID, schemeAddr);
+        assertTrue(signatureSchemeAddressProvider.getSignatureSchemeAddress(bn254_schemeID) == schemeAddr);
+
+        // replacing existing scheme contract reverts
+        schemeAddr = address(blocklockSender);
+        vm.prank(admin);
+        vm.expectRevert("Scheme already added for schemeID");
+        signatureSchemeAddressProvider.updateSignatureScheme(bn254_schemeID, schemeAddr);
+        assertTrue(signatureSchemeAddressProvider.getSignatureSchemeAddress(bn254_schemeID) != schemeAddr, "Scheme contract address should not have been replaced");
+
+        // zero address with zero code
+        vm.prank(admin);
+        vm.expectRevert("Invalid contract address for schemeAddress");
+        signatureSchemeAddressProvider.updateSignatureScheme(bn254_schemeID, address(0));
     }
 
     // helper functions

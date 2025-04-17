@@ -46,7 +46,7 @@ abstract contract Deployment is Base {
         internal
         returns (
             SignatureSchemeAddressProvider signatureSchemeAddressProvider,
-            BlocklockSignatureScheme blocklockScheme,
+            BlocklockSignatureScheme blocklockSignatureScheme,
             DecryptionSender decryptionSender,
             BlocklockSender blocklockSender,
             MockBlocklockReceiver mockBlocklockReceiver
@@ -75,10 +75,10 @@ abstract contract Deployment is Base {
         signatureSchemeAddressProvider = new SignatureSchemeAddressProvider(admin);
 
         vm.prank(admin);
-        blocklockScheme = new BlocklockSignatureScheme(pk.x, pk.y);
+        blocklockSignatureScheme = new BlocklockSignatureScheme(pk.x, pk.y);
 
         vm.prank(admin);
-        signatureSchemeAddressProvider.updateSignatureScheme(SCHEME_ID, address(blocklockScheme));
+        signatureSchemeAddressProvider.updateSignatureScheme(SCHEME_ID, address(blocklockSignatureScheme));
 
         vm.prank(admin);
         decryptionSender.initialize(admin, address(signatureSchemeAddressProvider));

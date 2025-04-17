@@ -38,7 +38,7 @@ contract SignatureSchemeAddressProvider is ISignatureSchemeAddressProvider, Acce
         require(_grantRole(ADMIN_ROLE, owner), "Grant role failed");
     }
 
-    /// @notice Updates the contract address of a given signature scheme.
+    /// @notice Adds support for a new signature scheme contract address.
     /// @dev Ensures the provided contract address is non-zero and contains contract code.
     /// @param schemeID The identifier of the signature scheme.
     /// @param schemeAddress The new address of the signature scheme contract.
@@ -46,6 +46,7 @@ contract SignatureSchemeAddressProvider is ISignatureSchemeAddressProvider, Acce
         require(
             schemeAddress != address(0) && schemeAddress.code.length > 0, "Invalid contract address for schemeAddress"
         );
+        require(schemes[schemeID] == address(0), "Scheme already added for schemeID");
         schemes[schemeID] = schemeAddress;
         emit NewSignatureSchemeAddressAdded(schemeID, schemes[schemeID], block.timestamp);
     }

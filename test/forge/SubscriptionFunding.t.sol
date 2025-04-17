@@ -1013,7 +1013,8 @@ contract SubscriptionFundingTest is BlocklockTest {
         /// @notice reverting callback should add request id to the erroredRequestIds set in decryptionSender
         /// @dev for failing callbacks, the request id is not added to list of errored callbacks
         assertTrue(
-            !decryptionSender.hasErrored(requestId), "Callback to receiver contract will be executed but decryption will fail if user decrypts within callback"
+            !decryptionSender.hasErrored(requestId),
+            "Callback to receiver contract will be executed but decryption will fail if user decrypts within callback"
         );
 
         // check for fee deductions from subscription account
@@ -1035,7 +1036,10 @@ contract SubscriptionFundingTest is BlocklockTest {
         assertTrue(reqCount == 1, "Incorrect request count, it should be one");
 
         decryptionRequest = decryptionSender.getRequest(requestId);
-        assertTrue(decryptionRequest.isFulfilled, "Decryption key was incorrect and internal callback reverted but request should be marked as fulfilled");
+        assertTrue(
+            decryptionRequest.isFulfilled,
+            "Decryption key was incorrect and internal callback reverted but request should be marked as fulfilled"
+        );
         assertTrue(
             mockBlocklockReceiver.plainTextValue() != ciphertextDataUint[3 ether].plaintext,
             "Ciphertext should not be decrypted yet"
