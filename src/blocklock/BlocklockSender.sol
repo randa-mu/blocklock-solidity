@@ -158,9 +158,8 @@ contract BlocklockSender is
 
         bytes memory condition = abi.encode(blockHeight);
 
-        uint256 decryptionRequestID = _registerCiphertext(
-            SCHEME_ID, callbackGasLimitWithOverhead, abi.encode(ciphertext), condition
-        );
+        uint256 decryptionRequestID =
+            _registerCiphertext(SCHEME_ID, callbackGasLimitWithOverhead, abi.encode(ciphertext), condition);
         r.decryptionRequestID = uint64(decryptionRequestID);
 
         // Store the signature requestID for this blockHeight
