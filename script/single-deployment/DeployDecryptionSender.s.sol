@@ -48,8 +48,8 @@ contract DeployDecryptionSender is JsonUtils, EnvReader {
 
             vm.broadcast();
             address contractAddress;
-            if (Constants.USE_RANDAMU_FACTORY) {
-                contractAddress = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
+            if (vm.envBool("USE_RANDAMU_FACTORY")) {
+                contractAddress = Factory(vm.envAddress("RANDAMU_CREATE2_FACTORY_CONTRACT_ADDRESS")).deploy(Constants.SALT, code);
 
                 decryptionSenderInstance = DecryptionSender(contractAddress);
             } else {
@@ -76,8 +76,8 @@ contract DeployDecryptionSender is JsonUtils, EnvReader {
         bytes memory code = type(DecryptionSender).creationCode;
 
         vm.broadcast();
-        if (Constants.USE_RANDAMU_FACTORY) {
-            implementation = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
+        if (vm.envBool("USE_RANDAMU_FACTORY")) {
+            implementation = Factory(vm.envAddress("RANDAMU_CREATE2_FACTORY_CONTRACT_ADDRESS")).deploy(Constants.SALT, code);
         } else {
             DecryptionSender decryptionSender = new DecryptionSender{salt: Constants.SALT}();
             implementation = address(decryptionSender);

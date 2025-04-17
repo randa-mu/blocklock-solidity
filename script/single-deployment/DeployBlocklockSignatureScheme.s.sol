@@ -28,8 +28,8 @@ contract DeployBlocklockSignatureScheme is JsonUtils, EnvReader {
 
         vm.broadcast();
         address contractAddress;
-        if (Constants.USE_RANDAMU_FACTORY) {
-            contractAddress = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
+        if (vm.envBool("USE_RANDAMU_FACTORY")) {
+            contractAddress = Factory(vm.envAddress("RANDAMU_CREATE2_FACTORY_CONTRACT_ADDRESS")).deploy(Constants.SALT, code);
 
             blocklockSignatureScheme = BlocklockSignatureScheme(contractAddress);
         } else {

@@ -50,8 +50,8 @@ contract DeployBlocklockSender is JsonUtils, EnvReader {
             vm.broadcast();
             address contractAddress;
 
-            if (Constants.USE_RANDAMU_FACTORY) {
-                contractAddress = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
+            if (vm.envBool("USE_RANDAMU_FACTORY")) {
+                contractAddress = Factory(vm.envAddress("RANDAMU_CREATE2_FACTORY_CONTRACT_ADDRESS")).deploy(Constants.SALT, code);
 
                 blocklockSenderInstance = BlocklockSender(contractAddress);
             } else {
@@ -78,8 +78,8 @@ contract DeployBlocklockSender is JsonUtils, EnvReader {
         bytes memory code = type(BlocklockSender).creationCode;
 
         vm.broadcast();
-        if (Constants.USE_RANDAMU_FACTORY) {
-            implementation = Factory(Constants.CREATE2_FACTORY).deploy(Constants.SALT, code);
+        if (vm.envBool("USE_RANDAMU_FACTORY")) {
+            implementation = Factory(vm.envAddress("RANDAMU_CREATE2_FACTORY_CONTRACT_ADDRESS")).deploy(Constants.SALT, code);
         } else {
             BlocklockSender blocklockSender = new BlocklockSender{salt: Constants.SALT}();
             implementation = address(blocklockSender);

@@ -8,7 +8,9 @@ Create a `.env` file. Then copy the `.env.example` to the `.env` file and set th
 
 ## Deploy the CREATE2 Factory Contract
 
-Deploy the [CREATE2 Factory.sol](src/factory/Factory.sol) contract and set the `CREATE2_FACTORY` address in the [Constants.sol library](script/libraries/Constants.sol) used by the deployment scripts. Also set the address linked to the deployer private key as the `ADMIN` address in the same [Constants.sol library](script/libraries/Constants.sol) file. This address will be set as the default admin in the core contracts.
+If deploying to a network that does not support the [deterministic deployer contract used by Foundry](https://book.getfoundry.sh/guides/deterministic-deployments-using-create2), deploy the [CREATE2 Factory.sol](src/factory/Factory.sol) contract and set the `CREATE2_FACTORY` address in the `.env` file with the variable name `RANDAMU_CREATE2_FACTORY_CONTRACT_ADDRESS` and set the `USE_RANDAMU_FACTORY` `.env` variable to true. 
+
+Note: The wallet address linked to the deployer private key is used as the `ADMIN` address in the core contracts and fetched using the [EnvReader](script/utils/EnvReader.sol).
 
 ```sh
 source .env
