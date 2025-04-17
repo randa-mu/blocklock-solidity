@@ -111,11 +111,11 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
 }
 ```
 
-#### 3.Request Blocklock encryption
+#### 3. Request Blocklock encryption
 Define a function to initiate blocklock encryption requests originating from your application.
-In this function, interact with the deployed BlocklockSender contract instance to register the encryption request on-chain. 
+In this function, interact with the deployed `BlocklockSender` contract instance to register the encryption request on-chain. 
 
-The function should return a requestId, which can be stored within your contract for tracking and managing the lifecycle of the blocklock encryption request.
+The function should return a `requestId`, which can be stored within your contract for tracking and managing the lifecycle of the blocklock encryption request.
 
 ```solidity
 function createBlocklockRequest(uint256 decryptionBlockNumber, TypesLib.Ciphertext calldata encryptedData)
@@ -132,7 +132,7 @@ function createBlocklockRequest(uint256 decryptionBlockNumber, TypesLib.Cipherte
 
 #### 4. Handle the Blocklock Callback
 
-Once the blocklock request is registered, the dcipher network will monitor the blockchain and, upon reaching the specified block height, invoke the `receiveBlocklock()` callback function on your contract to delivers the decryption key.
+Once the blocklock request is registered, the dcipher network will monitor the blockchain and, upon reaching the specified block height, invoke the `receiveBlocklock()` callback function on your contract to deliver the decryption key.
 
 To handle the decryption event, you must override the `receiveBlocklock()` function within your contract and implement the desired application logic.
 
@@ -147,9 +147,9 @@ function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey)
         plainTextValue = abi.decode(blocklock.decrypt(encryptedValue, decryptionKey), (uint256));
     }
 ```
-> 💡 **Note:** `blocklock.decrypt` automatically verifies the dcipher threshold decryption key for you because the power of threshold signatures scheme!
+> 💡 **Note:** `blocklock.decrypt` automatically verifies the dcipher threshold decryption key for you because of the power of threshold signatures scheme!
 
-#### 5. Deploy the BlocklockHandler contract
+#### 5. Deploy the `BlocklockHandler` contract
 Please check the supprted network section to ensure your desired network is supported before deployment. You also need to use the deployed **BlocklockSender (Proxy)** address to initialized your contract.
 
 When deploying, make sure your desired network is supported. Use the deployed `BlocklockSender (Proxy)` address when initializing your contract.
