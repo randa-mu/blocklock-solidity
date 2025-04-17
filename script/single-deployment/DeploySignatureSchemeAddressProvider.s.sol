@@ -29,7 +29,8 @@ contract DeploySignatureSchemeAddressProvider is JsonUtils, EnvReader {
         vm.broadcast();
         address contractAddress;
         if (vm.envBool("USE_RANDAMU_FACTORY")) {
-            contractAddress = Factory(vm.envAddress("RANDAMU_CREATE2_FACTORY_CONTRACT_ADDRESS")).deploy(Constants.SALT, code);
+            contractAddress =
+                Factory(vm.envAddress("RANDAMU_CREATE2_FACTORY_CONTRACT_ADDRESS")).deploy(Constants.SALT, code);
 
             signatureSchemeAddressProvider = SignatureSchemeAddressProvider(contractAddress);
         } else {

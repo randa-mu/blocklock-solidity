@@ -32,7 +32,8 @@ contract DeployBlocklockReceiver is JsonUtils {
         vm.broadcast();
         address contractAddress;
         if (vm.envBool("USE_RANDAMU_FACTORY")) {
-            contractAddress = Factory(vm.envAddress("RANDAMU_CREATE2_FACTORY_CONTRACT_ADDRESS")).deploy(Constants.SALT, code);
+            contractAddress =
+                Factory(vm.envAddress("RANDAMU_CREATE2_FACTORY_CONTRACT_ADDRESS")).deploy(Constants.SALT, code);
 
             mockBlocklockReceiver = MockBlocklockReceiver(payable(contractAddress));
         } else {
