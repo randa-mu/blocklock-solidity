@@ -169,7 +169,7 @@ contract DirectFundingTest is BlocklockTest {
             requestCallbackGasLimit, ciphertextDataUint[3 ether].chainHeight, ciphertextDataUint[3 ether].ciphertext
         );
 
-        vm.expectRevert("No request with specified requestID");
+        vm.expectRevert("No pending request with specified requestID");
         vm.prank(admin);
         decryptionSender.fulfillDecryptionRequest(
             requestId + 1, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
