@@ -182,7 +182,10 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        assertTrue(!decryptionSender.hasPaymentErrored(requestId), "Payment collection in callback to receiver contract should not fail");
+        assertTrue(
+            !decryptionSender.hasPaymentErrored(requestId),
+            "Payment collection in callback to receiver contract should not fail"
+        );
 
         // check for fee deductions from subscription account
         // subId should be charged at this point, and request count for subId should be increased
@@ -881,7 +884,10 @@ contract SubscriptionFundingTest is BlocklockTest {
         /// @dev reverts due to fee collection failing, not callback / receiver contract logic
         /// @dev even though we only emit event for failing calls to receiver contracts,
         /// we can still catch failing fee collections
-        assertTrue(decryptionSender.hasPaymentErrored(requestId), "Payment collection in callback to receiver contract should have failed");
+        assertTrue(
+            decryptionSender.hasPaymentErrored(requestId),
+            "Payment collection in callback to receiver contract should have failed"
+        );
 
         // check for fee deductions from subscription account
         // subId should not be charged at this point, and request count for subId should be increased

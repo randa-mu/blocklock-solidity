@@ -125,12 +125,8 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         TypesLib.Ciphertext calldata ciphertext
     ) internal returns (uint256 requestId, uint256 requestPrice) {
         requestPrice = blocklock.calculateRequestPriceNative(callbackGasLimit);
-        return (
-            blocklock.requestBlocklock{value: requestPrice}(
-                callbackGasLimit, blockHeight, ciphertext
-            ),
-            requestPrice
-        );
+        return
+            (blocklock.requestBlocklock{value: requestPrice}(callbackGasLimit, blockHeight, ciphertext), requestPrice);
     }
 
     /// @notice Requests a blocklock with a subscription and returns the request ID.

@@ -176,11 +176,12 @@ contract BlocklockSender is
     /// @param ciphertext The ciphertext that will be used in the blocklock request
     /// @dev This function allows users to request a blocklock for a specific block height. The blocklock is not associated with any subscription ID
     ///      and requires a ciphertext to be provided. The function checks that the contract is configured and not disabled before processing the request.
-    function requestBlocklock(
-        uint32 callbackGasLimit,
-        uint256 blockHeight,
-        TypesLib.Ciphertext calldata ciphertext
-    ) external payable onlyConfiguredNotDisabled returns (uint256) {
+    function requestBlocklock(uint32 callbackGasLimit, uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext)
+        external
+        payable
+        onlyConfiguredNotDisabled
+        returns (uint256)
+    {
         uint256 decryptionRequestID = requestBlocklockWithSubscription(
             callbackGasLimit,
             0, // no subId
