@@ -87,7 +87,7 @@ describe("Blocklock integration tests", () => {
     expect(await wallet.getAddress()).not.to.equal(ZeroAddress);
   });
 
-  it.only("can request blocklock decryption from user contract with on-chain decryption", async () => {
+  it("can request blocklock decryption from user contract with on-chain decryption", async () => {
     /** Smart Contract Deployments */
     // deploy signature scheme address provider
     const SignatureSchemeAddressProvider = new ethers.ContractFactory(
@@ -219,8 +219,12 @@ describe("Blocklock integration tests", () => {
     console.log(`callback address ${callback}, scheme id ${schemeID}`);
     const bls = await BlsBn254.create();
     const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
-    console.log("default public key", blocklock_default_pk);
-    console.log("default public key", pubKey);
+
+    const pubKeySerialised = serialiseG2Point(pubKey);
+    expect(pubKeySerialised[0]).to.equal(blocklock_default_pk.x.c0);
+    expect(pubKeySerialised[1]).to.equal(blocklock_default_pk.x.c1);
+    expect(pubKeySerialised[2]).to.equal(blocklock_default_pk.y.c0);
+    expect(pubKeySerialised[3]).to.equal(blocklock_default_pk.y.c1);
 
     const conditionBytes = isHexString(condition) ? getBytes(condition) : toUtf8Bytes(condition);
 
