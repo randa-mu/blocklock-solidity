@@ -10,10 +10,10 @@ import {
     BlocklockSignatureScheme,
     DecryptionSender,
     MockBlocklockReceiver,
-    BlocklockTest
+    BlocklockTest,
+    TypesLib,
+    BLS
 } from "./blocklock/Blocklock.t.sol";
-
-import {TypesLib, BLS} from "./blocklock/Base.t.sol";
 
 /// @title DirectFunding test contract
 /// @notice Tests for requests paid for via the direct funding route
