@@ -13,7 +13,7 @@ import {
     BlocklockTest,
     TypesLib,
     BLS
-} from "./blocklock/Blocklock.t.sol";
+} from "./base/Blocklock.t.sol";
 
 /// @title DirectFunding test contract
 /// @notice Tests for requests paid for via the direct funding route
