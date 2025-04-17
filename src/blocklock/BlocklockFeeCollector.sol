@@ -134,6 +134,7 @@ abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, Su
         uint256 blsPairingCheckOverheadWei = weiPerUnitGas * s_config.blsPairingCheckOverhead;
 
         // Calculate the total cost with flat fee and overhead, applying the native premium percentage
+        // The premium is applied on baseCost = l1CostWei + baseFeeWei + blsPairingCheckOverheadWei, and then a flat fee is added:
         uint256 totalCostWithFlatFeeWei = (
             ((l1CostWei + baseFeeWei + blsPairingCheckOverheadWei) * (100 + s_config.nativePremiumPercentage)) / 100
         ) + flatFeeWei;
