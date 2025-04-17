@@ -71,6 +71,16 @@ contract DeployBlocklockSender is JsonUtils, EnvReader {
 
             console.log("BlocklockSender proxy contract deployed at: ", contractAddress);
         }
+
+        setBlocklockSenderUserBillingConfiguration(
+            uint32(vm.envUint("MAX_GAS_LIMIT")),
+            uint32(vm.envUint("GAS_AFTER_PAYMENT_CALCULATION")),
+            uint32(vm.envUint("FULFILLMENT_FLAT_FEE_NATIVE_PPM")),
+            uint32(vm.envUint("WEI_PER_UNIT_GAS")),
+            uint32(vm.envUint("BLS_PAIRING_CHECK_OVERHEAD")),
+            uint8(vm.envUint("NATIVE_PREMIUM_PERCENTAGE")),
+            blocklockSenderInstance
+        );
     }
 
     /// @notice Deploys the BlocklockSender implementation contract.
@@ -88,5 +98,25 @@ contract DeployBlocklockSender is JsonUtils, EnvReader {
         }
 
         console.log("BlocklockSender implementation contract deployed at: ", implementation);
+    }
+
+    function setBlocklockSenderUserBillingConfiguration(
+        uint32 maxGasLimit,
+        uint32 gasAfterPaymentCalculation,
+        uint32 fulfillmentFlatFeeNativePPM,
+        uint32 weiPerUnitGas,
+        uint32 blsPairingCheckOverhead,
+        uint8 nativePremiumPercentage,
+        BlocklockSender blocklockSender
+    ) internal {
+        vm.broadcast();
+        blocklockSender.setConfig(
+            maxGasLimit,
+            gasAfterPaymentCalculation,
+            fulfillmentFlatFeeNativePPM,
+            weiPerUnitGas,
+            blsPairingCheckOverhead,
+            nativePremiumPercentage
+        );
     }
 }

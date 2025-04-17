@@ -404,9 +404,9 @@ contract BlocklockSender is
     /// @param maxGasLimit The maximum gas limit allowed for requests
     /// @param gasAfterPaymentCalculation The gas used after the payment calculation
     /// @param fulfillmentFlatFeeNativePPM The flat fee for fulfillment in native tokens, in parts per million (PPM)
+    /// 1 PPM = 0.0001%, so: 1,000,000 PPM = 100%, 10,000 PPM = 1%, 500 PPM = 0.05%
     /// @param weiPerUnitGas Wei per unit of gas for callback gas measurements
     /// @param blsPairingCheckOverhead Gas overhead for bls pairing checks for signature and decryption key verification
-    /// 1 PPM = 0.0001%, so: 1,000,000 PPM = 100%, 10,000 PPM = 1%, 500 PPM = 0.05%
     /// @param nativePremiumPercentage The percentage premium applied to the native token cost
     /// @dev Only the contract admin can call this function. It validates that the `nativePremiumPercentage` is not greater than a predefined maximum value
     /// (`PREMIUM_PERCENTAGE_MAX`). After validation, it updates the contract's configuration and emits an event `ConfigSet` with the new configuration.

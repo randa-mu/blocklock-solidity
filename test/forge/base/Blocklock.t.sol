@@ -46,7 +46,7 @@ contract BlocklockTest is Deployment {
         uint32 blsPairingCheckOverhead = 800_000;
         uint8 nativePremiumPercentage = 10;
 
-        setBlocklockSenderBillingConfiguration(
+        setBlocklockSenderUserBillingConfiguration(
             maxGasLimit,
             gasAfterPaymentCalculation,
             fulfillmentFlatFeeNativePPM,
@@ -118,7 +118,7 @@ contract BlocklockTest is Deployment {
     }
 
     // helper functions
-    function setBlocklockSenderBillingConfiguration(
+    function setBlocklockSenderUserBillingConfiguration(
         uint32 maxGasLimit,
         uint32 gasAfterPaymentCalculation,
         uint32 fulfillmentFlatFeeNativePPM,
