@@ -214,6 +214,9 @@ contract DecryptionSender is
             paymentErroredRequestIds.add(requestID);
             emit DecryptionReceiverCallbackFailed(requestID);
         } else {
+            if (hasPaymentErrored(requestID)) {
+                paymentErroredRequestIds.remove(requestID);
+            }
             fulfilledRequestIds.add(requestID);
             emit DecryptionReceiverCallbackSuccess(requestID, decryptionKey, signature);
         }

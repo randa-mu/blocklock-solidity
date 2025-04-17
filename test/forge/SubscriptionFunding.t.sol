@@ -929,11 +929,11 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
 
+        /// @notice we can retry fulfilling the request after subscription is topped up
+        /// For this to work, the request id should be in the list of request ids in flight
         vm.prank(admin);
         mockBlocklockReceiver.topUpSubscriptionNative{value: 2 ether}();
 
-        /// @notice we can retry fulfilling the request after subscription is topped up
-        /// For this to work, the request id should be in the list of request ids in flight
         vm.txGasPrice(100_000);
         gasBefore = gasleft();
 
@@ -951,6 +951,20 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
         console.log(
             "Total withdrawable subscription balance (wei):", blocklockSender.s_withdrawableSubscriptionFeeNative()
+        );
+
+        vm.prank(admin);
+        adminBalance = admin.balance;
+        blocklockSender.withdrawSubscriptionFeesNative(payable(admin));
+        assertTrue(
+            admin.balance > adminBalance, "Admin balance should increase after payment withdrawal"
+        );
+
+        assertTrue(blocklockSender.s_totalNativeBalance() > nativeBalance, "Native balance to withdraw should be greater than old subscription balance");
+
+        assertTrue(
+            !decryptionSender.hasPaymentErrored(requestId),
+            "Payment collection in callback to receiver contract should no longer fail after successful retry"
         );
     }
 
