@@ -998,7 +998,8 @@ contract SubscriptionFundingTest is BlocklockTest {
         // verification or decryption verification, so we ignore BlocklockCallbackFailed event check here.
         // vm.expectEmit();
         // emit BlocklockSender.BlocklockCallbackFailed(requestId);
-        vm.expectRevert("Decryption verification failed");
+        vm.expectEmit(true, false, false, false);
+        emit BlocklockSender.BlocklockCallbackFailed(requestId);
         decryptionSender.fulfillDecryptionRequest(requestId, hex"00", ciphertextDataUint[3 ether].signature);
 
         uint256 gasAfter = gasleft();
@@ -1012,7 +1013,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         /// @notice reverting callback should add request id to the erroredRequestIds set in decryptionSender
         /// @dev for failing callbacks, the request id is not added to list of errored callbacks
         assertTrue(
-            !decryptionSender.hasErrored(requestId), "Callback to receiver contract should not have been executed"
+            !decryptionSender.hasErrored(requestId), "Callback to receiver contract will be executed but decryption will fail if user decrypts within callback"
         );
 
         // check for fee deductions from subscription account
@@ -1025,16 +1026,16 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         console.log(totalSubBalanceBeforeRequest, nativeBalance, exactFeePaid);
 
-        assertTrue(exactFeePaid == 0, "Exact fee paid should be zero");
+        assertTrue(exactFeePaid > 0, "Exact fee paid should not be zero");
         assertTrue(
             totalSubBalanceBeforeRequest == exactFeePaid + nativeBalance, "subId should not be charged at this point"
         );
         // check fee paid covers tx gas price and overhead
-        assertTrue(gasUsed * tx.gasprice > exactFeePaid, "Actual gas price should be less than exact fee paid");
-        assertTrue(reqCount == 0, "Incorrect request count, it should be one");
+        assertTrue(gasUsed * tx.gasprice < exactFeePaid, "Actual gas price should be less than exact fee paid");
+        assertTrue(reqCount == 1, "Incorrect request count, it should be one");
 
         decryptionRequest = decryptionSender.getRequest(requestId);
-        assertTrue(!decryptionRequest.isFulfilled, "Decryption key was incorrect so request not fulfilled");
+        assertTrue(decryptionRequest.isFulfilled, "Decryption key was incorrect and internal callback reverted but request should be marked as fulfilled");
         assertTrue(
             mockBlocklockReceiver.plainTextValue() != ciphertextDataUint[3 ether].plaintext,
             "Ciphertext should not be decrypted yet"
@@ -1051,23 +1052,20 @@ contract SubscriptionFundingTest is BlocklockTest {
         );
 
         vm.prank(admin);
-        vm.expectRevert(abi.encodeWithSignature("InsufficientBalance()"));
         uint256 adminBalance = admin.balance;
         blocklockSender.withdrawSubscriptionFeesNative(payable(admin));
-        assertTrue(admin.balance == adminBalance, "Admin balance should not increase after zero fee collection");
+        assertTrue(admin.balance > adminBalance, "Admin balance should not increase after zero fee collection");
 
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
 
-        /// @notice we can retry fulfilling the request with the correct decryption key
-        /// fulfill blocklock request
-        /// @notice When we use less gas price, the total tx price including gas
-        /// limit for callback and external call from oracle is less than user payment or
-        /// calculated request price at request time
-        /// we don't use user payment as the gas price for callback from oracle.
+        /// @notice we cannot retry fulfilling the request with the correct decryption key
+        /// if we call fulfillDecryptionRequest, we get an error with No pending request with specified requestID
+        /// In some cases user might register incorrect ciphertext leading to this scenario.
         vm.txGasPrice(100_000);
         gasBefore = gasleft();
 
         vm.prank(admin);
+        vm.expectRevert("No pending request with specified requestID");
         decryptionSender.fulfillDecryptionRequest(
             requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
         );

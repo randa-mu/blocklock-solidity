@@ -20,7 +20,6 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 import {IDecryptionSender} from "../interfaces/IDecryptionSender.sol";
 import {IDecryptionReceiver} from "../interfaces/IDecryptionReceiver.sol";
-import {IBlocklockSender} from "../interfaces/IBlocklockSender.sol";
 
 import {ISignatureScheme} from "../interfaces/ISignatureScheme.sol";
 import {ISignatureSchemeAddressProvider} from "../interfaces/ISignatureSchemeAddressProvider.sol";
@@ -202,16 +201,6 @@ contract DecryptionSender is
             sigScheme.verifySignature(messageHash, signature, sigScheme.getPublicKeyBytes()),
             "Signature verification failed"
         );
-
-        (bool canDecryptSuccessfully,) = request.callback.call(
-            abi.encodeWithSelector(
-                IBlocklockSender.decrypt.selector,
-                IBlocklockSender(request.callback).getRequest(requestID).ciphertext,
-                decryptionKey
-            )
-        );
-
-        require(canDecryptSuccessfully, "Decryption verification failed");
 
         bytes memory response = abi.encodeWithSelector(
             IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature
