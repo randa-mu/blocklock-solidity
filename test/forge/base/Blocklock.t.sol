@@ -30,8 +30,13 @@ contract BlocklockTest is Deployment {
         // setup base test
         super.setUp();
 
-        (signatureSchemeAddressProvider, blocklockSignatureScheme, decryptionSender, blocklockSender, mockBlocklockReceiver) =
-            deployContracts();
+        (
+            signatureSchemeAddressProvider,
+            blocklockSignatureScheme,
+            decryptionSender,
+            blocklockSender,
+            mockBlocklockReceiver
+        ) = deployContracts();
 
         // set blocklockSender contract config
         uint32 maxGasLimit = 500_000;
@@ -94,7 +99,10 @@ contract BlocklockTest is Deployment {
         vm.prank(admin);
         vm.expectRevert("Scheme already added for schemeID");
         signatureSchemeAddressProvider.updateSignatureScheme(bn254_schemeID, schemeAddr);
-        assertTrue(signatureSchemeAddressProvider.getSignatureSchemeAddress(bn254_schemeID) != schemeAddr, "Scheme contract address should not have been replaced");
+        assertTrue(
+            signatureSchemeAddressProvider.getSignatureSchemeAddress(bn254_schemeID) != schemeAddr,
+            "Scheme contract address should not have been replaced"
+        );
 
         // zero address with zero code
         vm.prank(admin);
