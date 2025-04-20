@@ -16,13 +16,13 @@ Note: The wallet address linked to the deployer private key is used as the `ADMI
 source .env
 
 # Deploy CREATE2 Factory
-forge script script/DeployFactory.s.sol:DeployFactory --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge script script/DeployFactory.s.sol:DeployFactory --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --slow 
 ```
 
 For Filecoin Calibration Testnet, a common [deployment issue](https://github.com/filecoin-project/fevm-foundry-kit) that you may see is a failure due to gas. Simply pass in a higher gas limit to fix this (either via. a higher gas estimate multiplier using the `-g` flag or a fixed gas limit) e.g.,
 
 ```sh
-forge script script/DeployFactory.s.sol:DeployFactory --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast -g 10000
+forge script script/DeployFactory.s.sol:DeployFactory --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --slow  -g 10000
 ```
 
 ## Deploy All Contracts
@@ -33,7 +33,7 @@ To deploy all contracts in a single run, the `DeployAllContracts` script is used
 ```sh
 source .env
 
-forge script script/DeployAllContracts.s.sol:DeployAllContracts --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge script script/DeployAllContracts.s.sol:DeployAllContracts --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --slow 
 ```
 
 For Etherscan verification, ensure that the `ETHERSCAN_API_KEY` environment variable is set and add the `--verify` flag to the forge script deployment commands.
@@ -46,7 +46,7 @@ To deploy a single contract, the scripts within the `script/single-deployment` d
 ```sh
 source .env
 
-forge script script/single-deployment/DeployBlocklockSignatureScheme.s.sol:DeployBlocklockSignatureScheme --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge script script/single-deployment/DeployBlocklockSignatureScheme.s.sol:DeployBlocklockSignatureScheme --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --slow 
 ```
 
 To resolve dependencies between the contract deployments, a `.json` file named [Deployment_input.json](script/json/Deployment_input.json) in the [script/json](script/json) folder is filled with contract addresses for the following contracts after they are deployed (either as single deployments or part of the single run deployment for all contracts):
@@ -59,7 +59,7 @@ The addresses from this input file are read in by scripts using them. To overwri
 For example, running the following command writes a JSON property `{"signatureSchemeAddressProviderAddress": "0x7D020A4E3D8795581Ec06E0e57701dDCf7B19EDF"}` to the Deployment_input.json file:
 
 ```bash
-forge script script/single-deployments/DeploySignatureSchemeAddressProvider.s.sol:DeploySignatureSchemeAddressProvider --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge script script/single-deployments/DeploySignatureSchemeAddressProvider.s.sol:DeploySignatureSchemeAddressProvider --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --slow 
 ```
 
 Which is used by the [DeployBlocklockSignatureScheme.sol](script/single-deployments/DeployBlocklockSignatureScheme.s.sol) deployment script when deploying [BlocklockSignatureScheme.sol](src/signature-schemes/BlocklockSignatureScheme.sol).
@@ -70,7 +70,7 @@ Which is used by the [DeployBlocklockSignatureScheme.sol](script/single-deployme
 To upgrade the impelementation contract for any of the `Sender` contracts, set the `IS_UPGRADE` to `true` in the `.env` file. Then in [Constants.sol](script/libraries/Constants.sol), increment the `SALT` for deployment. Then run the deployment command only for the specific contract to upgrade, e.g., if upgrading `DecryptionSender` implementation, run the following command for a single contract deployment:
 
 ```bash
-forge script script/single-deployments/DeployDecryptionSender.s.sol:DeployDecryptionSender --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge script script/single-deployments/DeployDecryptionSender.s.sol:DeployDecryptionSender --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --slow 
 ```
 
 ## Deployment addresses
