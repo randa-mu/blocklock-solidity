@@ -36,8 +36,20 @@ source .env
 forge script script/DeployAllContracts.s.sol:DeployAllContracts --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --slow 
 ```
 
-For Etherscan verification, ensure that the `ETHERSCAN_API_KEY` environment variable is set and add the `--verify` flag to the forge script deployment commands.
 
+To enable contract verification on Etherscan (or equivalents), set your Etherscan API key in the `.env` file:
+```bash
+ETHERSCAN_API_KEY=<your_key>
+```
+
+When running a Forge script for deployment, add the following flags:
+   - `--etherscan-api-key $ETHERSCAN_API_KEY` – Passes your API key.
+   - `--verify` – Automatically verifies all contracts found in the deployment receipt.
+
+Example:
+   ```bash
+   forge script script/DeployAllContracts.s.sol:DeployAllContracts --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --slow --verify --etherscan-api-key $ETHERSCAN_API_KEY
+   ```
 
 ## Deploy a Single Contract
 
