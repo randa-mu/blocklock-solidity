@@ -113,7 +113,7 @@ contract MockBlocklockReceiver is AbstractBlocklockReceiver {
 
 #### 3. Request Blocklock encryption
 Define a function to initiate blocklock encryption requests originating from your application.
-In this function, interact with the deployed `BlocklockSender` contract instance to register the encryption request on-chain. 
+In this function, interact with the deployed `BlocklockSender` contract instance to register the encryption request on-chain, as shown in the following example. 
 
 The function should return a `requestId`, which can be stored within your contract for tracking and managing the lifecycle of the blocklock encryption request.
 
