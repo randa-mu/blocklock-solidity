@@ -67,7 +67,7 @@ Since decryption keys must be securely verified based on the block condition, th
 
     Once the specified block number is reached, a callback function (`receiveBlocklock（）`) will be triggered to deliver the decryption key, allowing the unlocking of encrypted data.
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 ### Installation
 To get started, install the **blocklock-solidity** & **blocklock-js** library in your smart contract project using your preferred development tool.
