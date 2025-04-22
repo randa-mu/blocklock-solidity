@@ -10,7 +10,7 @@ A Solidity library enabling on-chain blocklock encryption and decryption, from t
 
 Controlling access to data based on time is crucial for various use cases, such as auctions, voting, and content release schedules. `blocklock-solidity` provides developers with tools to implement blocklock encryption on-chain, ensuring that encrypted data can only be decrypted after a specified block height, thus enhancing security and fairness in time-sensitive operations. 
 
-This blocklock library is powered by the dciper threshold network using **BLS pairing-based signature scheme** and **identity-based encryption** to achive data encryption toward the future block height without relaying on the trust of a thrid party.  It’s especially useful in decentralized settings where there's no trusted third party to enforce timing.
+This blocklock library is powered by the dciper threshold network using **BLS pairing-based signature scheme** and **identity-based encryption** to achieve data encryption toward a future block height without relying on a trusted third party.  It is especially useful in decentralized settings where there is no such trusted third party to enforce timing.
 
 The library is designed with modularity and simplicity in mind, allowing developers to easily integrate it into their existing smart contract projects to achieve blocklock on-chain. Its extensible architecture makes it suitable for a wide range of applications that require robust on-chain randomness.
 
