@@ -62,7 +62,7 @@ Since decryption keys must be securely verified based on the block condition, th
     This TypeScript library supports the following Solidity types: `uint256`, `int256`, `address`, `string`, `bool`, `bytes32`, `bytes`, `uint256[]`, `address[]`, and `struct`.
 2. **Blocklock Request**
 
-    Interact with the on-chain contract at `blocklock.requestBlocklock()` to create a blocklock request. Submit the encrypted data and specify the chain height for decryption. After request is stored, and a `requestId` is generated for tracking.
+    Interact with the on-chain contract at `blocklock.requestBlocklock()` to create a blocklock request. Submit the encrypted data and specify the chain height for decryption. After your request is stored, a `requestId` is generated for tracking.
 3. **Decryption**
 
     Once the specified block number is reached, a callback function (`receiveBlocklock（）`) will be triggered to deliver the decryption key, allowing the unlocking of encrypted data.
