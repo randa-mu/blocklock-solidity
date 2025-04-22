@@ -59,7 +59,7 @@ Since decryption keys must be securely verified based on the block condition, th
 
      Generate the encrypted data (`TypesLib.Ciphertext`) with the dcipher threshold network public key for the decryption at the desired block height, using our [blocklock.js](https://github.com/randa-mu/blocklock-js) library. 
 
-    The TypeScript library supports the following Solidity types: `uint256`, `int256`, `address`, `string`, `bool`, `bytes32`, `bytes`, `uint256[]`, `address[]`, and `struct`.
+    This TypeScript library supports the following Solidity types: `uint256`, `int256`, `address`, `string`, `bool`, `bytes32`, `bytes`, `uint256[]`, `address[]`, and `struct`.
 2. **Blocklock Request**
 
     Interact with the on-chain contract at `blocklock.requestBlocklock()` to create a blocklock request. Submit the encrypted data and specify the chain height for decryption. After request is stored, and a `requestId` is generated for tracking.
