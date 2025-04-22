@@ -119,6 +119,13 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         return address(this).balance;
     }
 
+    /// @notice Requests a blocklock without a subscription and returns the request ID and request price.
+    /// @dev This function calls the `requestBlocklock` function from the `blocklock` contract, passing the required parameters such as
+    ///      `callbackGasLimit`, `blockHeight`, and `ciphertext`.
+    /// @param callbackGasLimit The gas limit for the callback function to be executed after the blocklock request.
+    /// @param blockHeight The block height for which the blocklock request is made.
+    /// @param ciphertext The ciphertext to be used in the blocklock request.
+    /// @notice This function internally calls the `blocklock.requestBlocklock` function.
     function _requestBlocklockPayInNative(
         uint32 callbackGasLimit,
         uint256 blockHeight,
@@ -130,13 +137,13 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     }
 
     /// @notice Requests a blocklock with a subscription and returns the request ID.
-    /// @dev This function calls the `requestBlocklock` function from the `blocklock` contract, passing the required parameters such as
+    /// @dev This function calls the `requestBlocklockWithSubscription` function from the `blocklock` contract, passing the required parameters such as
     ///      `callbackGasLimit`, `subscriptionId`, `blockHeight`, and `ciphertext`.
     /// @param callbackGasLimit The gas limit for the callback function to be executed after the blocklock request.
     /// @param blockHeight The block height for which the blocklock request is made.
     /// @param ciphertext The ciphertext to be used in the blocklock request.
     /// @return requestId The unique identifier for the blocklock request.
-    /// @notice This function internally calls the `blocklock.requestBlocklock` function.
+    /// @notice This function internally calls the `blocklock.requestBlocklockWithSubscription` function.
     function _requestBlocklockWithSubscription(
         uint32 callbackGasLimit,
         uint256 blockHeight,

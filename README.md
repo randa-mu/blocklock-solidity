@@ -96,62 +96,51 @@ import {AbstractBlocklockReceiver} from "blocklock-solidity/src/AbstractBlockloc
 
 #### Example Usage
 
+An example `receiver` contract [MockBlocklockReceiver.sol](src/mocks/MockBlocklockReceiver.sol) has been provided in the `src/mocks` folder.
+
+The contract makes conditional encryption requests for an `uint256` value.
+
+Requests can be funded in two ways: 
+1. Direct funding
+2. Subscription account
+
+
+##### Direct Funding 
+
+The `createTimelockRequestWithDirectFunding` function allows smart contracts make requests without an active subscription. 
+
 ```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
+/// @notice Requests a blocklock with a subscription and returns the request ID.
+/// @dev This function calls the `requestBlocklock` function from the `blocklock` contract, passing the required parameters such as
+///      `callbackGasLimit`, `subscriptionId`, `blockHeight`, and `ciphertext`.
+/// @param callbackGasLimit The gas limit for the callback function to be executed after the blocklock request.
+/// @param blockHeight The block height for which the blocklock request is made.
+/// @param ciphertext The ciphertext to be used in the blocklock request.
+/// @notice This function internally calls the `blocklock.requestBlocklock` function.
+function createTimelockRequestWithDirectFunding(
+        uint32 callbackGasLimit,
+        uint256 blockHeight,
+        TypesLib.Ciphertext calldata encryptedData
+    ) external returns (uint256, uint256) {
+```
+The function returns the request id and request price in wei.
 
-import {TypesLib} from "../libraries/TypesLib.sol";
-import {AbstractBlocklockReceiver} from "../AbstractBlocklockReceiver.sol";
+Please note that to make a request via this function, the smart contract should be pre-funded with native tokens / ETH enough to fund the request price.
 
-/// @title MockBlocklockReceiver
-/// @dev A mock implementation of a Blocklock receiver that interacts with the Blocklock contract
-/// and receives decryption keys from Randamu's threshold network.
-/// This contract stores encrypted values and decrypts them when the decryption key is received.
-contract MockBlocklockReceiver is AbstractBlocklockReceiver {
-    /// @notice Stores the request ID associated with the blocklock request.
-    uint256 public requestId;
-
-    /// @notice Stores the encrypted value associated with the blocklock request.
-    TypesLib.Ciphertext public encryptedValue;
-
-    /// @notice Stores the decrypted plaintext value after decryption.
-    uint256 public plainTextValue;
-
-    /// @dev Initializes the contract by setting the Blocklock contract address.
-    /// @param blocklockContract The address of the Blocklock contract.
-    constructor(address blocklockContract) AbstractBlocklockReceiver(blocklockContract) {}
-
-    /// @notice Creates a conditional encryption request with the specified decryption chain height and encrypted data.
-    /// @dev This function requests a conditional encryption by calling `requestBlocklock`, stores the encrypted data, and returns the request ID.
-    /// @param decryptionChainHeight The chain height at which the encrypted data can be decrypted.
-    /// @param encryptedData The encrypted data that needs to be securely stored until the decryption block is reached.
-    /// @return requestId The ID of the created timelock request.
-    function createTimelockRequest(uint256 decryptionBlockNumber, TypesLib.Ciphertext calldata encryptedData)
-        external
-        returns (uint256)
-    {
-        // create timelock request
-        requestId = blocklock.requestBlocklock(decryptionBlockNumber, encryptedData);
-        // store Ciphertext
-        encryptedValue = encryptedData;
-        return requestId;
-    }
-
-    /// @notice Handles the receipt of a decryption key linked to a conditional encryption
-    /// request by verifying the request ID and decrypting the stored ciphertext.
-    /// @dev This function is called when a conditional encryption condition is met
-    /// e.g., chain height. 
-    /// The function ensures the request ID matches and then decrypts the stored ciphertext using the provided decryption key.
-    /// @param _requestId The ID of the request that needs to be verified.
-    /// @param decryptionKey The decryption key used to decrypt the stored ciphertext.
-    /// @return None This function does not return a value but updates the state variable `plainTextValue` with the decrypted result.
-    function _onBlocklockReceived(uint256 _requestId, bytes calldata decryptionKey) internal override {
-        require(requestId == _requestId, "Invalid request id.");
-        // decrypt stored Ciphertext with decryption key
-        plainTextValue = abi.decode(blocklock.decrypt(encryptedValue, decryptionKey), (uint256));
-    }
+To fund the contract, the following function can be used:
+```solidity
+/// @notice Function to fund the contract with native tokens for direct funding requests.
+function fundContractNative() external payable {
+    require(msg.value > 0, "You must send some ETH");
+    emit Funded(msg.sender, msg.value);
 }
 ```
+To determine the request price 
+
+
+##### Subscription Account Funding 
+
+
 
 #### How It Works
 
