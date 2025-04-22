@@ -152,8 +152,6 @@ function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey)
 #### 5. Deploy the `BlocklockHandler` contract
 Please check the supported network section to ensure your desired network is supported before deployment. You also need to use the deployed **BlocklockSender (Proxy)** address to initialize your contract.
 
-When deploying, make sure your desired network is supported. Use the deployed `BlocklockSender (Proxy)` address when initializing your contract.
-
 Example in Foundry Script for Filecoin Calibration: 
 ```solidity
 address blocklockSenderProxy = 0xfF66908E1d7d23ff62791505b2eC120128918F44;
