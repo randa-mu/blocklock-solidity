@@ -132,7 +132,7 @@ function createBlocklockRequest(uint256 decryptionBlockNumber, TypesLib.Cipherte
 
 #### 4. Handle the Blocklock Callback
 
-Once the blocklock request is registered, the dcipher network will monitor the blockchain and, upon reaching the specified block height, invoke the `receiveBlocklock()` callback function on your contract to deliver the decryption key.
+Once the blocklock request is registered, the dcipher network will monitor the blockchain and, upon reaching the specified block height, invoke the `receiveBlocklock()` callback function of your contract to deliver the decryption key.
 
 To handle the decryption event, you must override the `receiveBlocklock()` function within your contract and implement the desired application logic.
 
