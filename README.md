@@ -96,7 +96,7 @@ import {AbstractBlocklockReceiver} from "blocklock-solidity/src/AbstractBlockloc
 
 #### Example Usage
 
-An example `receiver` contract [MockBlocklockReceiver.sol](src/mocks/MockBlocklockReceiver.sol) has been provided in the `src/mocks` folder.
+An example decryption key `receiver` contract [MockBlocklockReceiver.sol](src/mocks/MockBlocklockReceiver.sol) has been provided in the `src/mocks` folder. It inherits from the [AbstractBlocklockReceiver](src/AbstractBlocklockReceiver.sol) base contract.
 
 The contract makes conditional encryption requests for an `uint256` value.
 
@@ -107,27 +107,32 @@ Requests can be funded in two ways:
 
 ##### Direct Funding 
 
-The `createTimelockRequestWithDirectFunding` function allows smart contracts make requests without an active subscription. 
+The following internal function allows the smart contract to make requests without an active subscription. 
 
 ```solidity
-/// @notice Requests a blocklock with a subscription and returns the request ID.
+/// @notice Requests a blocklock without a subscription and returns the request ID and request price.
 /// @dev This function calls the `requestBlocklock` function from the `blocklock` contract, passing the required parameters such as
-///      `callbackGasLimit`, `subscriptionId`, `blockHeight`, and `ciphertext`.
+///      `callbackGasLimit`, `blockHeight`, and `ciphertext`.
 /// @param callbackGasLimit The gas limit for the callback function to be executed after the blocklock request.
 /// @param blockHeight The block height for which the blocklock request is made.
 /// @param ciphertext The ciphertext to be used in the blocklock request.
 /// @notice This function internally calls the `blocklock.requestBlocklock` function.
-function createTimelockRequestWithDirectFunding(
-        uint32 callbackGasLimit,
-        uint256 blockHeight,
-        TypesLib.Ciphertext calldata encryptedData
-    ) external returns (uint256, uint256) {
+function _requestBlocklockPayInNative(
+    uint32 callbackGasLimit,
+    uint256 blockHeight,
+    TypesLib.Ciphertext calldata ciphertext
+) internal returns (uint256 requestId, uint256 requestPrice) {
+    requestPrice = blocklock.calculateRequestPriceNative(callbackGasLimit);
+    return
+        (blocklock.requestBlocklock{value: requestPrice}(callbackGasLimit, blockHeight, ciphertext), requestPrice);
+}
 ```
 The function returns the request id and request price in wei.
 
 Please note that to make a request via this function, the smart contract should be pre-funded with native tokens / ETH enough to fund the request price.
 
-To fund the contract, the following function can be used:
+To fund the contract, the following function can be used (also inherited from [AbstractBlocklockReceiver.sol](src/AbstractBlocklockReceiver.sol)):
+
 ```solidity
 /// @notice Function to fund the contract with native tokens for direct funding requests.
 function fundContractNative() external payable {
@@ -135,11 +140,84 @@ function fundContractNative() external payable {
     emit Funded(msg.sender, msg.value);
 }
 ```
-To determine the request price 
+
+The contract can be funded by anyone and can also be funded via direct native token / Ether transfer to its address.
+
+To determine the request price prior to the request, the following function in the `BlocklockSender` contract interface can be used to fetch an estimated price:
+
+```solidity
+/// @notice Calculates the estimated price in native tokens for a request based on the provided gas limit
+/// @param _callbackGasLimit The gas limit for the callback execution
+/// @return The estimated request price in native token (e.g., ETH)
+function calculateRequestPriceNative(uint32 _callbackGasLimit) external view returns (uint256);
+```
 
 
-##### Subscription Account Funding 
+##### Subscription Account 
 
+To create requests with a subscription account, the subscription account should be created and pre-funded to cover for requests. A subscription account or id can be shared with multiple decryption key `receiver` smart contracts as well.
+
+To create a subscription, the following function in [AbstractBlocklockReceiver.sol](src/AbstractBlocklockReceiver.sol) is used:
+
+```solidity
+/// @notice Creates and funds a new Randamu subscription using native currency.
+/// @dev Only callable by the contract owner. If a subscription already exists, it will not be recreated.
+/// @dev The ETH value sent in the transaction (`msg.value`) will be used to fund the subscription.
+function createSubscriptionAndFundNative() external payable onlyOwner {
+    subscriptionId = _subscribe();
+    blocklock.fundSubscriptionWithNative{value: msg.value}(subscriptionId);
+}
+```
+
+It sets the `subscriptionId` variable in the contract which is used to make subscription funded requests when the function below is called:
+
+```solidity
+/// @notice Requests a blocklock with a subscription and returns the request ID.
+/// @dev This function calls the `requestBlocklockWithSubscription` function from the `blocklock` contract, passing the required parameters such as
+///      `callbackGasLimit`, `subscriptionId`, `blockHeight`, and `ciphertext`.
+/// @param callbackGasLimit The gas limit for the callback function to be executed after the blocklock request.
+/// @param blockHeight The block height for which the blocklock request is made.
+/// @param ciphertext The ciphertext to be used in the blocklock request.
+/// @return requestId The unique identifier for the blocklock request.
+/// @notice This function internally calls the `blocklock.requestBlocklockWithSubscription` function.
+function _requestBlocklockWithSubscription(
+    uint32 callbackGasLimit,
+    uint256 blockHeight,
+    TypesLib.Ciphertext calldata ciphertext
+) internal returns (uint256 requestId) {
+    return blocklock.requestBlocklockWithSubscription(callbackGasLimit, subscriptionId, blockHeight, ciphertext);
+}
+```
+
+
+###### Sharing Subscription Accounts 
+
+To share a subscription account, the smart contract that owns the subscription needs to call the `updateSubscription` function to approve other contracts to use it's created subscription id.
+
+```solidity
+/// @notice Adds a list of consumer addresses to the Randamu subscription.
+/// @dev Requires the subscription ID to be set before calling.
+/// @param consumers An array of addresses to be added as authorized consumers.
+function updateSubscription(address[] calldata consumers) external onlyOwner {
+    require(subscriptionId != 0, "subID not set");
+    for (uint256 i = 0; i < consumers.length; i++) {
+        blocklock.addConsumer(subscriptionId, consumers[i]);
+    }
+}
+
+Once this is done, the other contract can then call the `setSubId` and start making requests using the shared subscription account. 
+
+```solidity
+/// @notice Sets the Randamu subscription ID used for conditional encryption oracle services.
+/// @dev Only callable by the contract owner.
+/// @param subId The new subscription ID to be set.
+function setSubId(uint256 subId) external onlyOwner {
+    subscriptionId = subId;
+    emit NewSubscriptionId(subId);
+}
+```
+
+Please note that the approved contract must also implement [AbstractBlocklockReceiver.sol](src/AbstractBlocklockReceiver.sol).
 
 
 #### How It Works
