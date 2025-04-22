@@ -4,15 +4,14 @@ pragma solidity ^0.8;
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {SubscriptionAPI} from "../subscription/SubscriptionAPI.sol";
-import {CallWithExactGas} from "../utils/CallWithExactGas.sol";
 
 /// @title BlocklockFeeCollector contract
 /// @notice An abstract contract for collecting fees related to blocklock functionality
 /// @dev This contract is intended to be inherited by other contracts that need to collect fees.
-/// @dev The contract includes functionality from CallWithExactGas, ReentrancyGuard, and SubscriptionAPI.
+/// @dev The contract includes functionality from ReentrancyGuard, and SubscriptionAPI.
 /// @dev Inspired by Chainlink's VRFV2PlusWrapper contract at: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/vrf/dev/VRFV2PlusWrapper.sol
 /// @notice License: MIT
-abstract contract BlocklockFeeCollector is CallWithExactGas, ReentrancyGuard, SubscriptionAPI {
+abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
     /// @dev Upper bound for premium percentages to prevent overflow in fee calculations.
     uint8 internal constant PREMIUM_PERCENTAGE_MAX = 155;
 

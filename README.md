@@ -204,8 +204,9 @@ function updateSubscription(address[] calldata consumers) external onlyOwner {
         blocklock.addConsumer(subscriptionId, consumers[i]);
     }
 }
+```
 
-Once this is done, the other contract can then call the `setSubId` and start making requests using the shared subscription account. 
+After calling `updateSubscription` all approved contracts can then call the `setSubId` function and start making subscription funded conditional encryption requests using the shared subscription account. 
 
 ```solidity
 /// @notice Sets the Randamu subscription ID used for conditional encryption oracle services.
@@ -217,7 +218,7 @@ function setSubId(uint256 subId) external onlyOwner {
 }
 ```
 
-Please note that the approved contract must also implement [AbstractBlocklockReceiver.sol](src/AbstractBlocklockReceiver.sol).
+Please note that all approved contracts must also implement [AbstractBlocklockReceiver.sol](src/AbstractBlocklockReceiver.sol).
 
 
 #### How It Works
