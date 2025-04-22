@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Foundry Tests](https://img.shields.io/badge/Tested%20with-Foundry-red)](https://book.getfoundry.sh/)
 
-A Solidity library enabling on-chain blocklock encryption and decryption, from the [dcipher threshold network](https://dcipher.network/). This facilites secure time-based data unlocking mechanisms for smart contracts.
+A Solidity library enabling on-chain blocklock encryption and decryption, from the [dcipher threshold network](https://dcipher.network/). This facilitates secure time-based data unlocking mechanisms for smart contracts.
 
 ## ✨ Overview
 
@@ -166,6 +166,9 @@ Use [blocklock.js](https://github.com/randa-mu/blocklock-js) to encode and encry
 
 Below is a sample JavaScript/TypeScript snippet:
 ```Javascript
+import { getBytes } from "ethers";
+...
+
 // Encode the uint256 value
 const encoder = new SolidityEncoder();
 const msgBytes = encoder.encodeUint256(msg);
