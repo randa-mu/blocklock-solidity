@@ -34,7 +34,7 @@ Since decryption keys must be securely verified based on the block condition, th
 
 * `DecryptionSender.sol` - Delivers decryption keys to receivers once the unlock block is reached and the key is verified.
 * `DecryptionReceiverBase.sol` - An abstract contract that handles receiving and decoding decryption key deliveries. Ideal if your contract does not need to send blocklock requests, but still needs to respond to key delivery.
-* `SignatureSchemeAddressProvider.sol` - Maintains the list of supported signature schemes (e.g., BLS).
+* `SignatureSchemeAddressProvider.sol` - Maintains the list of supported threshold signature schemes (e.g., BLS on BN254, BLS on  BLS12-381).
 
 > 💡 **Note:** You only need to extend `AbstractBlocklockReceiver.sol` to integrate timelock encryption into your contracts. All other required contracts are already deployed on supported networks.
 
