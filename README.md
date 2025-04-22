@@ -83,7 +83,7 @@ $ npm install blocklock-solidity
 $ forge install randa-mu/blocklock-solidity
 ```
 
-Install **blocklock-js** so you can encrypt data in your applicatoin . 
+Install **blocklock-js** so you can encrypt data in your application. 
 ```sh
 $ npm install blocklock-js
 ```
