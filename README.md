@@ -150,7 +150,7 @@ function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey)
 > 💡 **Note:** `blocklock.decrypt` automatically verifies the dcipher threshold decryption key for you because of the power of threshold signatures scheme!
 
 #### 5. Deploy the `BlocklockHandler` contract
-Please check the supprted network section to ensure your desired network is supported before deployment. You also need to use the deployed **BlocklockSender (Proxy)** address to initialized your contract.
+Please check the supported network section to ensure your desired network is supported before deployment. You also need to use the deployed **BlocklockSender (Proxy)** address to initialize your contract.
 
 When deploying, make sure your desired network is supported. Use the deployed `BlocklockSender (Proxy)` address when initializing your contract.
 
