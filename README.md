@@ -12,7 +12,7 @@ Controlling access to data based on time is crucial for various use cases, such 
 
 This timelock library is powered by the dcipher threshold network using **BLS pairing-based signature scheme** and **identity-based encryption** to achieve data encryption toward a future block height without relying on a trusted third party.  It is especially useful in decentralized settings where no such trusted third party enforces timing.
 
-The library is designed with modularity and simplicity in mind, allowing developers to easily integrate it into their existing smart contract projects to achieve timelock on-chain. Its extensible architecture makes it suitable for a wide range of applications that require robust on-chain randomness.
+The library is designed with modularity and simplicity in mind, allowing developers to easily integrate it into their existing smart contract projects to achieve timelock on-chain for a wide range of applications.
 
 ### Features
 
