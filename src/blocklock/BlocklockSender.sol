@@ -138,7 +138,7 @@ contract BlocklockSender is
     /// @notice Requests a blocklock for a specified block height with the provided ciphertext and subscription ID
     /// @param callbackGasLimit The gas limit allocated for the callback execution after the blocklock request
     /// @param subId The subscription ID associated with the request
-    /// @param condition The condition for decryption represented as bytes. 
+    /// @param condition The condition for decryption represented as bytes.
     /// The decryption key is sent to the requesting callback / contract address
     /// when the condition is met.
     /// @param ciphertext The ciphertext that will be used in the blocklock request
@@ -151,30 +151,24 @@ contract BlocklockSender is
         bytes memory condition,
         TypesLib.Ciphertext calldata ciphertext
     ) public payable onlyConfiguredNotDisabled returns (uint256) {
-        if (subId == 0) {
-            require(msg.value > 0, "Direct funding required for request fulfillment callback");
-        }
+        require(subId != 0 || msg.value > 0, "Direct funding required for request fulfillment callback");
 
-        TypesLib.BlocklockRequest memory r = TypesLib.BlocklockRequest({
+        /// @dev subId must be zero for direct funding or non zero for active subscription
+        uint32 callbackGasLimitWithOverhead = _validateAndUpdateSubscription(callbackGasLimit, subId);
+
+        uint64 decryptionRequestID =
+            uint64(_registerCiphertext(SCHEME_ID, callbackGasLimitWithOverhead, abi.encode(ciphertext), condition));
+
+        blocklockRequestsWithDecryptionKey[decryptionRequestID] = TypesLib.BlocklockRequest({
             subId: subId,
             directFundingFeePaid: msg.value,
-            decryptionRequestID: 0,
+            decryptionRequestID: decryptionRequestID,
             condition: condition,
             ciphertext: ciphertext,
             signature: hex"",
             decryptionKey: hex"",
             callback: msg.sender
         });
-
-        /// @dev subId must be zero for direct funding or non zero for active subscription
-        uint32 callbackGasLimitWithOverhead = _validateAndUpdateSubscription(callbackGasLimit, subId);
-
-        uint256 decryptionRequestID =
-            _registerCiphertext(SCHEME_ID, callbackGasLimitWithOverhead, abi.encode(ciphertext), condition);
-        r.decryptionRequestID = uint64(decryptionRequestID);
-
-        // Store the signature requestID for this blockHeight
-        blocklockRequestsWithDecryptionKey[decryptionRequestID] = r;
 
         emit BlocklockRequested(decryptionRequestID, condition, ciphertext, msg.sender, block.timestamp);
         return decryptionRequestID;
@@ -183,18 +177,17 @@ contract BlocklockSender is
     /// @notice Requests a blocklock for a specified block height with the provided ciphertext without a subscription ID.
     /// Requires payment to be made for the request without a subscription.
     /// @param callbackGasLimit The gas limit allocated for the callback execution after the blocklock request
-    /// @param condition The condition for decryption represented as bytes. 
+    /// @param condition The condition for decryption represented as bytes.
     /// The decryption key is sent to the requesting callback / contract address
     /// when the condition is met.
     /// @param ciphertext The ciphertext that will be used in the blocklock request
     /// @dev This function allows users to request a blocklock for a specific block height. The blocklock is not associated with any subscription ID
     ///      and requires a ciphertext to be provided. The function checks that the contract is configured and not disabled before processing the request.
-    function requestBlocklock(uint32 callbackGasLimit, bytes calldata condition, TypesLib.Ciphertext calldata ciphertext)
-        external
-        payable
-        onlyConfiguredNotDisabled
-        returns (uint256)
-    {
+    function requestBlocklock(
+        uint32 callbackGasLimit,
+        bytes calldata condition,
+        TypesLib.Ciphertext calldata ciphertext
+    ) external payable onlyConfiguredNotDisabled returns (uint256) {
         uint256 decryptionRequestID = requestBlocklockWithSubscription(
             callbackGasLimit,
             0, // no subId
@@ -259,8 +252,6 @@ contract BlocklockSender is
 
         TypesLib.BlocklockRequest memory r = blocklockRequestsWithDecryptionKey[decryptionRequestID];
         require(r.decryptionRequestID > 0, "No request for request id");
-
-        r.signature = signature;
 
         (bool success,) = r.callback.call(
             abi.encodeWithSelector(IBlocklockReceiver.receiveBlocklock.selector, decryptionRequestID, decryptionKey)

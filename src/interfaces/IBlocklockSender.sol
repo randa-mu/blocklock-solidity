@@ -17,11 +17,12 @@ interface IBlocklockSender is ISubscription {
     /// @return requestID The unique identifier for the blocklock request
     /// @dev This function allows users to request a blocklock for a specific block height. The blocklock is not associated with any subscription ID
     ///      and requires a ciphertext to be provided. The function checks that the contract is configured and not disabled before processing the request.
-    function requestBlocklock(uint32 callbackGasLimit, bytes calldata condition, TypesLib.Ciphertext calldata ciphertext)
-        external
-        payable
-        returns (uint256 requestID);
-        
+    function requestBlocklock(
+        uint32 callbackGasLimit,
+        bytes calldata condition,
+        TypesLib.Ciphertext calldata ciphertext
+    ) external payable returns (uint256 requestID);
+
     /// @notice Requests the generation of a blocklock decryption key at a specific blockHeight.
     /// @dev Initiates a blocklock decryption key request.
     /// The blocklock decryption key will be generated once the chain reaches the specified `blockHeight`.
