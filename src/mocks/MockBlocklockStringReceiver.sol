@@ -14,12 +14,12 @@ contract MockBlocklockStringReceiver is AbstractBlocklockReceiver {
 
     function createTimelockRequestWithDirectFunding(
         uint32 callbackGasLimit,
-        uint256 blockHeight,
+        bytes calldata condition,
         TypesLib.Ciphertext calldata encryptedData
     ) external returns (uint256, uint256) {
         // create timelock request
         (uint256 requestID, uint256 requestPrice) =
-            _requestBlocklockPayInNative(callbackGasLimit, blockHeight, encryptedData);
+            _requestBlocklockPayInNative(callbackGasLimit, condition, encryptedData);
         // store request id
         requestId = requestID;
         // store Ciphertext
@@ -29,11 +29,11 @@ contract MockBlocklockStringReceiver is AbstractBlocklockReceiver {
 
     function createTimelockRequestWithSubscription(
         uint32 callbackGasLimit,
-        uint256 blockHeight,
+        bytes calldata condition,
         TypesLib.Ciphertext calldata encryptedData
     ) external payable returns (uint256) {
         // create timelock request
-        uint256 requestID = _requestBlocklockWithSubscription(callbackGasLimit, blockHeight, encryptedData);
+        uint256 requestID = _requestBlocklockWithSubscription(callbackGasLimit, condition, encryptedData);
         // store request id
         requestId = requestID;
         // store Ciphertext

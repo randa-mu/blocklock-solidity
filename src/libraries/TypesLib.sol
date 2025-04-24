@@ -19,7 +19,7 @@ library TypesLib {
         uint256 subId; // must be 0 for direct funding
         uint256 directFundingFeePaid; // must be > 0 for direct funding and if subId == 0
         uint64 decryptionRequestID;
-        uint256 blockHeight;
+        bytes condition;
         Ciphertext ciphertext;
         bytes signature;
         bytes decryptionKey;

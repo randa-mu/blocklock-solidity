@@ -138,7 +138,9 @@ contract DecryptionSender is
     /// @param schemeID The signature scheme identifier.
     /// @param callbackGasLimit The callback gas limit.
     /// @param ciphertext The encrypted data.
-    /// @param condition The optional condition for decryption.
+    /// @param condition The condition for decryption represented as bytes. 
+    /// The decryption key is sent to the requesting callback / contract address
+    /// when the condition is met.
     /// @return The unique request ID of the decryption request.
     function registerCiphertext(
         string calldata schemeID,

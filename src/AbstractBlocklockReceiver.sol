@@ -123,33 +123,35 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @dev This function calls the `requestBlocklock` function from the `blocklock` contract, passing the required parameters such as
     ///      `callbackGasLimit`, `blockHeight`, and `ciphertext`.
     /// @param callbackGasLimit The gas limit for the callback function to be executed after the blocklock request.
-    /// @param blockHeight The block height for which the blocklock request is made.
+    /// @param condition The condition for decryption of the Ciphertext. 
+    /// The decryption key is sent back to the contract when the condition is met.
     /// @param ciphertext The ciphertext to be used in the blocklock request.
     /// @notice This function internally calls the `blocklock.requestBlocklock` function.
     function _requestBlocklockPayInNative(
         uint32 callbackGasLimit,
-        uint256 blockHeight,
+        bytes memory condition,
         TypesLib.Ciphertext calldata ciphertext
     ) internal returns (uint256 requestId, uint256 requestPrice) {
         requestPrice = blocklock.calculateRequestPriceNative(callbackGasLimit);
         return
-            (blocklock.requestBlocklock{value: requestPrice}(callbackGasLimit, blockHeight, ciphertext), requestPrice);
+            (blocklock.requestBlocklock{value: requestPrice}(callbackGasLimit, condition, ciphertext), requestPrice);
     }
 
     /// @notice Requests a blocklock with a subscription and returns the request ID.
     /// @dev This function calls the `requestBlocklockWithSubscription` function from the `blocklock` contract, passing the required parameters such as
     ///      `callbackGasLimit`, `subscriptionId`, `blockHeight`, and `ciphertext`.
     /// @param callbackGasLimit The gas limit for the callback function to be executed after the blocklock request.
-    /// @param blockHeight The block height for which the blocklock request is made.
+    /// @param condition The condition for decryption of the Ciphertext. 
+    /// The decryption key is sent back to the contract when the condition is met.
     /// @param ciphertext The ciphertext to be used in the blocklock request.
     /// @return requestId The unique identifier for the blocklock request.
     /// @notice This function internally calls the `blocklock.requestBlocklockWithSubscription` function.
     function _requestBlocklockWithSubscription(
         uint32 callbackGasLimit,
-        uint256 blockHeight,
+        bytes memory condition,
         TypesLib.Ciphertext calldata ciphertext
     ) internal returns (uint256 requestId) {
-        return blocklock.requestBlocklockWithSubscription(callbackGasLimit, subscriptionId, blockHeight, ciphertext);
+        return blocklock.requestBlocklockWithSubscription(callbackGasLimit, subscriptionId, condition, ciphertext);
     }
 
     /// @notice Decrypts the provided ciphertext using the specified decryption key.
