@@ -15,7 +15,7 @@ abstract contract Base is Test {
 
     struct CiphertextDataUint {
         uint256 plaintext;
-        uint256 chainHeight;
+        bytes condition;
         TypesLib.Ciphertext ciphertext;
         bytes signature;
         bytes decryptionKey;
@@ -63,7 +63,7 @@ abstract contract Base is Test {
 
         ciphertextDataUint[plaintext] = CiphertextDataUint({
             plaintext: plaintext,
-            chainHeight: 18,
+            condition: abi.encodePacked("B", uint256(18)), // "B" for chain height or block number condition
             ciphertext: ciphertext,
             signature: signature,
             decryptionKey: decryptionKey
