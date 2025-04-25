@@ -115,7 +115,6 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
     /// @param _gas The amount of gas required for the request
     /// @param _requestGasPrice The gas price in wei per gas unit
     /// @return The total price in wei for processing the request, including fees and overhead.
-    // function _calculateRequestPriceNative(uint256 _gas, uint256 _requestGasPrice) internal view returns (uint256) {
     function _calculateRequestPriceNative(uint256 _gas, uint256 _requestGasPrice) internal view returns (uint256) {
         unchecked {
             // Cache the entire config struct to minimize storage reads
