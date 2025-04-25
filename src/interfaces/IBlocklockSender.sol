@@ -9,6 +9,20 @@ import {ISubscription} from "../interfaces/ISubscription.sol";
 /// @author Randamu
 /// @notice Interface for periphery smart contract used to interact with the decryption sender contract.
 interface IBlocklockSender is ISubscription {
+    /// @notice Requests a blocklock for a specified block height with the provided ciphertext without a subscription ID.
+    /// Requires payment to be made for the request without a subscription.
+    /// @param callbackGasLimit The gas limit allocated for the callback execution after the blocklock request
+    /// @param condition The block height at which the blocklock is requested
+    /// @param ciphertext The ciphertext that will be used in the blocklock request
+    /// @return requestID The unique identifier for the blocklock request
+    /// @dev This function allows users to request a blocklock for a specific block height. The blocklock is not associated with any subscription ID
+    ///      and requires a ciphertext to be provided. The function checks that the contract is configured and not disabled before processing the request.
+    function requestBlocklock(
+        uint32 callbackGasLimit,
+        bytes calldata condition,
+        TypesLib.Ciphertext calldata ciphertext
+    ) external payable returns (uint256 requestID);
+
     /// @notice Requests the generation of a blocklock decryption key at a specific blockHeight.
     /// @dev Initiates a blocklock decryption key request.
     /// The blocklock decryption key will be generated once the chain reaches the specified `blockHeight`.
@@ -16,22 +30,9 @@ interface IBlocklockSender is ISubscription {
     function requestBlocklockWithSubscription(
         uint32 callbackGasLimit,
         uint256 subId,
-        uint256 blockHeight,
+        bytes calldata condition,
         TypesLib.Ciphertext calldata ciphertext
     ) external payable returns (uint256 requestID);
-
-    /// @notice Requests a blocklock for a specified block height with the provided ciphertext without a subscription ID.
-    /// Requires payment to be made for the request without a subscription.
-    /// @param callbackGasLimit The gas limit allocated for the callback execution after the blocklock request
-    /// @param blockHeight The block height at which the blocklock is requested
-    /// @param ciphertext The ciphertext that will be used in the blocklock request
-    /// @return requestID The unique identifier for the blocklock request
-    /// @dev This function allows users to request a blocklock for a specific block height. The blocklock is not associated with any subscription ID
-    ///      and requires a ciphertext to be provided. The function checks that the contract is configured and not disabled before processing the request.
-    function requestBlocklock(uint32 callbackGasLimit, uint256 blockHeight, TypesLib.Ciphertext calldata ciphertext)
-        external
-        payable
-        returns (uint256 requestID);
 
     /// @notice Calculates the estimated price in native tokens for a request based on the provided gas limit
     /// @param _callbackGasLimit The gas limit for the callback execution

@@ -116,29 +116,33 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
     /// @param _requestGasPrice The gas price in wei per gas unit
     /// @return The total price in wei for processing the request, including fees and overhead.
     function _calculateRequestPriceNative(uint256 _gas, uint256 _requestGasPrice) internal view returns (uint256) {
-        // Fee in wei: gas price * gas required
-        // Determine the gas price per unit based on the input or the default configuration
-        uint256 weiPerUnitGas = _requestGasPrice > 0 ? _requestGasPrice : s_config.weiPerUnitGas;
+        unchecked {
+            // Cache the entire config struct to minimize storage reads
+            Config memory cfg = s_config;
 
-        // Calculate the base fee in wei: (gas required) * (gas price per unit)
-        uint256 baseFeeWei = weiPerUnitGas * (s_config.gasAfterPaymentCalculation + _gas);
+            // Use the provided gas price if set, otherwise fallback to config
+            uint256 weiPerUnitGas = _requestGasPrice > 0 ? _requestGasPrice : cfg.weiPerUnitGas;
 
-        // Fetch L1 cost in wei (Layer 1 related costs)
-        uint256 l1CostWei = _getL1CostWei();
+            // Base fee = gas required for request + post-call processing * gas price
+            uint256 baseFeeWei = weiPerUnitGas * (cfg.gasAfterPaymentCalculation + _gas);
 
-        // Calculate flat fee in native currency
-        uint256 flatFeeWei = 1e12 * uint256(s_config.fulfillmentFlatFeeNativePPM);
+            // Overhead cost of BLS pairing check (if applicable)
+            uint256 blsOverheadWei = weiPerUnitGas * cfg.blsPairingCheckOverhead;
 
-        // Calculate overhead cost for BLS pairing check
-        uint256 blsPairingCheckOverheadWei = weiPerUnitGas * s_config.blsPairingCheckOverhead;
+            // Layer 1 additional cost, e.g., calldata publishing on L2s like Arbitrum/Optimism
+            uint256 l1CostWei = _getL1CostWei();
 
-        // Calculate the total cost with flat fee and overhead, applying the native premium percentage
-        // The premium is applied on baseCost = l1CostWei + baseFeeWei + blsPairingCheckOverheadWei, and then a flat fee is added:
-        uint256 totalCostWithFlatFeeWei = (
-            ((l1CostWei + baseFeeWei + blsPairingCheckOverheadWei) * (100 + s_config.nativePremiumPercentage)) / 100
-        ) + flatFeeWei;
+            // Apply native token premium (percentage multiplier)
+            uint256 premiumPct = 100 + cfg.nativePremiumPercentage;
 
-        return totalCostWithFlatFeeWei;
+            // Flat fee (in wei), derived from PPM (parts per million)
+            uint256 flatFeeWei = 1e12 * uint256(cfg.fulfillmentFlatFeeNativePPM);
+
+            // Final fee = ((base cost + overheads) * premium%) + flat fee
+            uint256 totalCost = ((l1CostWei + baseFeeWei + blsOverheadWei) * premiumPct) / 100 + flatFeeWei;
+
+            return totalCost;
+        }
     }
 
     /// @notice Calculates the payment amount in native tokens, considering L1 gas fees if applicable
@@ -146,25 +150,26 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
     /// @param weiPerUnitGas The gas price in wei
     /// @return The total payment amount in native tokens (as uint96)
     function _calculatePaymentAmountNative(uint256 startGas, uint256 weiPerUnitGas) internal returns (uint96) {
-        // Retrieve L1 cost (non-zero only on L2s that need to reimburse L1 gas usage)
-        uint256 l1CostWei = _getL1CostWei(msg.data);
+        unchecked {
+            // Calculate base gas fee: (used gas) * gas price
+            uint256 gasUsed = s_config.gasAfterPaymentCalculation + startGas - gasleft();
+            uint256 baseFeeWei = gasUsed * weiPerUnitGas;
+            // Retrieve L1 cost (non-zero only on L2s that need to reimburse L1 gas usage)
+            uint256 l1CostWei = _getL1CostWei(msg.data);
+            if (l1CostWei > 0) {
+                // Emit L1 fee info if applicable
+                emit L1GasFee(l1CostWei);
+            }
 
-        // Calculate base gas fee: (used gas) * gas price
-        uint256 gasUsed = s_config.gasAfterPaymentCalculation + startGas - gasleft();
-        uint256 baseFeeWei = gasUsed * weiPerUnitGas;
-
-        // Flat fee charged in native token (in wei)
-        uint256 flatFeeWei = 1e12 * uint256(s_config.fulfillmentFlatFeeNativePPM);
-
-        // Emit L1 fee info if applicable
-        if (l1CostWei > 0) {
-            emit L1GasFee(l1CostWei);
+            // Use local caching for config values
+            uint256 premiumPct = uint256(s_config.nativePremiumPercentage);
+            // Flat fee charged in native token (in wei)
+            uint256 flatFeeWei = 1e12 * uint256(s_config.fulfillmentFlatFeeNativePPM);
+            // Apply premium percentage and add flat fee
+            uint256 totalFeeWei = ((l1CostWei + baseFeeWei) * (100 + premiumPct)) / 100 + flatFeeWei;
+            // implicitly checks for overflow on downcast
+            return uint96(totalFeeWei);
         }
-
-        // Apply premium percentage and add flat fee
-        uint256 totalFeeWei = ((l1CostWei + baseFeeWei) * (100 + s_config.nativePremiumPercentage)) / 100 + flatFeeWei;
-
-        return uint96(totalFeeWei);
     }
 
     /// @notice Charges a payment against a subscription and updates contract balances
@@ -172,18 +177,20 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
     /// @param payment The amount to charge in native tokens
     /// @param subId The subscription ID to charge; 0 means no subscription
     function _chargePayment(uint96 payment, uint256 subId) internal {
-        Subscription storage subcription = s_subscriptions[subId];
-
         if (subId > 0) {
-            uint96 prevBal = subcription.nativeBalance;
+            Subscription storage sub = s_subscriptions[subId];
+            uint96 bal = sub.nativeBalance;
 
-            _requireSufficientBalance(prevBal >= payment);
+            _requireSufficientBalance(bal >= payment);
 
-            subcription.nativeBalance = prevBal - payment;
-
-            s_withdrawableSubscriptionFeeNative += payment;
+            unchecked {
+                sub.nativeBalance = bal - payment;
+                s_withdrawableSubscriptionFeeNative += payment;
+            }
         } else {
-            s_withdrawableDirectFundingFeeNative += payment;
+            unchecked {
+                s_withdrawableDirectFundingFeeNative += payment;
+            }
         }
     }
 

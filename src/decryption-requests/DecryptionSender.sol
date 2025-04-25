@@ -138,7 +138,9 @@ contract DecryptionSender is
     /// @param schemeID The signature scheme identifier.
     /// @param callbackGasLimit The callback gas limit.
     /// @param ciphertext The encrypted data.
-    /// @param condition The optional condition for decryption.
+    /// @param condition The condition for decryption represented as bytes.
+    /// The decryption key is sent to the requesting callback / contract address
+    /// when the condition is met.
     /// @return The unique request ID of the decryption request.
     function registerCiphertext(
         string calldata schemeID,
@@ -149,13 +151,9 @@ contract DecryptionSender is
         lastRequestID += 1;
 
         require(signatureSchemeAddressProvider.isSupportedScheme(schemeID), "Signature scheme not supported");
-        require(ciphertext.isLengthWithinBounds(1, 4096), "Message failed length bounds check");
-        // condition is optional
-        require(condition.isLengthWithinBounds(0, 4096), "Condition failed length bounds check");
-        uint256 conditionLength = condition.length;
-        if (conditionLength > 0) {
-            require(!condition.isAllZero(), "Condition bytes cannot be all zeros");
-        }
+        require(ciphertext.isLengthWithinBounds(1, 4096), "Ciphertext failed length bounds check");
+        require(condition.isLengthWithinBounds(1, 4096), "Condition failed length bounds check");
+        require(!condition.isAllZero(), "Condition bytes cannot be all zeros");
 
         address schemeContractAddress = signatureSchemeAddressProvider.getSignatureSchemeAddress(schemeID);
         require(schemeContractAddress > address(0), "invalid signature scheme");
