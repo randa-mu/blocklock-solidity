@@ -84,7 +84,7 @@ contract BlocklockSender is
 
     /// @notice Event emitted when a blocklock callback is successful
     /// @param requestID The unique identifier of the blocklock request
-    /// @param condition The block height for which the blocklock is requested
+    /// @param condition The condition for decryption of the ciphertext
     /// @param ciphertext The ciphertext associated with the blocklock request
     /// @param decryptionKey The decryption key used for the blocklock
     /// @dev This event is emitted when the blocklock callback is successfully processed and the decryption key is provided
