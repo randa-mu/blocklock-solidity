@@ -164,7 +164,7 @@ describe("Blocklock integration tests", () => {
 
     const blockHeight = BigInt((await ethers.provider.getBlockNumber()) + 10);
     console.log("block height", blockHeight);
-    
+
     // condition bytes
     const types = ["string", "uint256"]; // "B" is a string, and blockHeight is a uint256
     const values = ["B", blockHeight];
@@ -173,14 +173,14 @@ describe("Blocklock integration tests", () => {
 
     // identity for IBE
     // encrypt_towards_identity_g1 expects a uint8Array as input for the identity
-    const identity = getBytes(encodedCondition); 
+    const identity = getBytes(encodedCondition);
 
     // message bytes
     const msg = ethers.parseEther("3"); // BigInt for 3 ETH
     const msgBytes = ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [msg]);
     const encodedMessage = getBytes(msgBytes);
 
-    // generate Ciphertext 
+    // generate Ciphertext
     const ct = encrypt_towards_identity_g1(encodedMessage, identity, blocklock_default_pk, BLOCKLOCK_IBE_OPTS);
 
     // configure request fees parameters
