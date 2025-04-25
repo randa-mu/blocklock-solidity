@@ -69,7 +69,7 @@ contract BlocklockSender is
 
     /// @notice Event emitted when a blocklock request is made
     /// @param requestID The unique identifier of the blocklock request
-    /// @param condition The block height for which the blocklock is requested
+    /// @param condition The condition for decryption of the ciphertext
     /// @param ciphertext The ciphertext associated with the blocklock request
     /// @param requester The address of the requester
     /// @param requestedAt The timestamp when the request was made
