@@ -161,13 +161,26 @@ describe("Blocklock integration tests", () => {
       wallet,
     );
     expect(await mockBlocklockReceiverInstance.plainTextValue()).to.equal(BigInt(0));
+
     const blockHeight = BigInt((await ethers.provider.getBlockNumber()) + 10);
     console.log("block height", blockHeight);
+    
+    // condition bytes
+    const types = ["string", "uint256"]; // "B" is a string, and blockHeight is a uint256
+    const values = ["B", blockHeight];
+    const encodedCondition = ethers.AbiCoder.defaultAbiCoder().encode(types, values);
+    console.log(values, encodedCondition);
+
+    // identity for IBE
+    // encrypt_towards_identity_g1 expects a uint8Array as input for the identity
+    const identity = getBytes(encodedCondition); 
+
+    // message bytes
     const msg = ethers.parseEther("3"); // BigInt for 3 ETH
     const msgBytes = ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [msg]);
     const encodedMessage = getBytes(msgBytes);
 
-    const identity = blockHeightToBEBytes(blockHeight);
+    // generate Ciphertext 
     const ct = encrypt_towards_identity_g1(encodedMessage, identity, blocklock_default_pk, BLOCKLOCK_IBE_OPTS);
 
     // configure request fees parameters
@@ -194,19 +207,20 @@ describe("Blocklock integration tests", () => {
     // make direct funding request
     let tx = await mockBlocklockReceiverInstance
       .connect(wallet)
-      .createTimelockRequestWithDirectFunding(100000, blockHeight, encodeCiphertextToSolidity(ct));
+      .createTimelockRequestWithDirectFunding(100000, encodedCondition, encodeCiphertextToSolidity(ct));
     let receipt = await tx.wait(1);
     if (!receipt) {
       throw new Error("transaction has not been mined");
     }
     // Blocklock agent or server side
     const blockRequest = await blocklockSender.getRequest(1n);
+    expect(blockRequest!.condition).to.equal(encodedCondition);
 
-    expect(blockRequest!.blockHeight).to.equal(BigInt(blockHeight));
     let blocklockRequestStatus = await blocklockSender.getRequest(1n);
     console.log(blocklockRequestStatus!.blockHeight);
-    expect(blocklockRequestStatus!.blockHeight).to.equal(BigInt(blockHeight));
+    expect(blocklockRequestStatus!.condition).to.equal(encodedCondition);
     expect(blocklockRequestStatus?.decryptionKey.length).to.equal(2);
+
     const decryptionSenderIface = DecryptionSender__factory.createInterface();
     const [requestID, callback, schemeID, condition, ciphertext] = extractSingleLog(
       decryptionSenderIface,
@@ -215,7 +229,7 @@ describe("Blocklock integration tests", () => {
       decryptionSenderIface.getEvent("DecryptionRequested"),
     );
     console.log(`received decryption request id ${requestID}`);
-    console.log(`blocklock request id ${blockRequest?.id}`);
+    console.log(`blocklock request id ${blockRequest?.decryptionRequestID}`);
     console.log(`callback address ${callback}, scheme id ${schemeID}`);
     const bls = await BlsBn254.create();
     const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
@@ -250,7 +264,7 @@ describe("Blocklock integration tests", () => {
       iface.getEvent("BlocklockCallbackSuccess"),
     );
     blocklockRequestStatus = await blocklockSender.getRequest(1n);
-    expect(blocklockRequestStatus!.blockHeight).to.equal(blockHeight);
+    expect(blocklockRequestStatus!.condition).to.equal(encodedCondition);
     expect(blocklockRequestStatus?.decryptionKey).not.to.equal(undefined);
     expect(blocklockRequestStatus?.decryptionKey.length).to.equal(66);
     expect(await mockBlocklockReceiverInstance.plainTextValue()).to.equal(BigInt(msg));

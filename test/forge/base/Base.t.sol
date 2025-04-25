@@ -44,26 +44,28 @@ abstract contract Base is Test {
         TypesLib.Ciphertext memory ciphertext = TypesLib.Ciphertext({
             u: BLS.PointG2({
                 x: [
-                    8170104253480136655189303292926596565998324573954843222301178640818583058767,
-                    3734667108182226346464699698648987468066959092442871843994743121863149281349
+                    15400123135410175383820132114210070294154316822955415832645881020977577238415,
+                    9335672780846811668659413216320771384451704387891684161568809056709633441627
+                    
                 ],
                 y: [
-                    11365405476005364849296689146191063620313890468494751033614653278517929462010,
-                    15447260375633765501272878130235011006969766368352637843994883527173054707607
+                    17465030637995234965729840389913899392948957861509585407647311800836417857964,
+                    17217796275830825345990918796120315699217836952192867448758285739983534744010
+                    
                 ]
             }),
-            v: hex"530131f0f06f06523924c2cf053d140edb615ec69c8588357691bfa5e0a83cfc",
-            w: hex"5cddd44e856474b93d85125c77f97ac4e7cbe8771a459e389d3b0d19ea0237c3"
+            v: hex"54b744fa0514a42e8e8bf8a23a0c619e059fbc072d1774f5c4d389a218dce7f1",
+            w: hex"c0884030be948e1477202760f15f302c56fd9e22e39cb0afb21e9a2140d363d4"
         });
 
         bytes memory signature =
-            hex"02c661272e7cfb65203d192e94a12ff524ac53462f354598e4868ff527ae0aef22c70822487a1c7d12be9365cc2ed9158887a1fd204c60fad152d7d7b51d8944";
+            hex"06b799aacebcbc3bd533cbd16bf42740be3402a20aec013e252553280df8774428e4c425fbe4c6803c0f58045e9a8dbd875d6c9a3d9b80c584c3481922927fd6";
 
-        bytes memory decryptionKey = hex"bf7692e46676000933d3a00129eafd80c5fa8a8a424012ac3c373bf6b3a2d8a8";
+        bytes memory decryptionKey = hex"948918d64af8e911c98d62c282764bed2488a47797a31e711956a6e87846efa7";
 
         ciphertextDataUint[plaintext] = CiphertextDataUint({
             plaintext: plaintext,
-            condition: abi.encodePacked("B", uint256(18)), // "B" for chain height or block number condition
+            condition: abi.encode("B", uint256(18)), // "B" for chain height or block number condition
             ciphertext: ciphertext,
             signature: signature,
             decryptionKey: decryptionKey
