@@ -24,7 +24,7 @@ abstract contract DecryptionReceiverBase is IDecryptionReceiver {
     /// @param schemeID Identifier of the encryption scheme used.
     /// @param callbackGasLimit Maximum gas allowed for the decryption callback.
     /// @param ciphertext The encrypted data to be decrypted.
-    /// @param condition The condition condition for decryption.
+    /// @param condition The condition for decryption.
     /// @return requestID A unique identifier for the submitted decryption request.
     function _registerCiphertext(
         string memory schemeID,
