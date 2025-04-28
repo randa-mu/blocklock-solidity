@@ -135,6 +135,29 @@ contract BlocklockSender is
     /// @dev Overridden upgrade authorization function to ensure only an authorized caller can authorize upgrades.
     function _authorizeUpgrade(address newImplementation) internal override onlyAdmin {}
 
+    /// @notice Requests a blocklock for a specified block height with the provided ciphertext without a subscription ID.
+    /// Requires payment to be made for the request without a subscription.
+    /// @param callbackGasLimit The gas limit allocated for the callback execution after the blocklock request
+    /// @param condition The condition for decryption represented as bytes.
+    /// The decryption key is sent to the requesting callback / contract address
+    /// when the condition is met.
+    /// @param ciphertext The ciphertext that will be used in the blocklock request
+    /// @dev This function allows users to request a blocklock for a specific block height. The blocklock is not associated with any subscription ID
+    ///      and requires a ciphertext to be provided. The function checks that the contract is configured and not disabled before processing the request.
+    function requestBlocklock(
+        uint32 callbackGasLimit,
+        bytes calldata condition,
+        TypesLib.Ciphertext calldata ciphertext
+    ) external payable onlyConfiguredNotDisabled returns (uint256) {
+        uint256 decryptionRequestID = requestBlocklockWithSubscription(
+            callbackGasLimit,
+            0, // no subId
+            condition,
+            ciphertext
+        );
+        return decryptionRequestID;
+    }
+    
     /// @notice Requests a blocklock for a specified block height with the provided ciphertext and subscription ID
     /// @param callbackGasLimit The gas limit allocated for the callback execution after the blocklock request
     /// @param subId The subscription ID associated with the request
@@ -171,29 +194,6 @@ contract BlocklockSender is
         });
 
         emit BlocklockRequested(decryptionRequestID, condition, ciphertext, msg.sender, block.timestamp);
-        return decryptionRequestID;
-    }
-
-    /// @notice Requests a blocklock for a specified block height with the provided ciphertext without a subscription ID.
-    /// Requires payment to be made for the request without a subscription.
-    /// @param callbackGasLimit The gas limit allocated for the callback execution after the blocklock request
-    /// @param condition The condition for decryption represented as bytes.
-    /// The decryption key is sent to the requesting callback / contract address
-    /// when the condition is met.
-    /// @param ciphertext The ciphertext that will be used in the blocklock request
-    /// @dev This function allows users to request a blocklock for a specific block height. The blocklock is not associated with any subscription ID
-    ///      and requires a ciphertext to be provided. The function checks that the contract is configured and not disabled before processing the request.
-    function requestBlocklock(
-        uint32 callbackGasLimit,
-        bytes calldata condition,
-        TypesLib.Ciphertext calldata ciphertext
-    ) external payable onlyConfiguredNotDisabled returns (uint256) {
-        uint256 decryptionRequestID = requestBlocklockWithSubscription(
-            callbackGasLimit,
-            0, // no subId
-            condition,
-            ciphertext
-        );
         return decryptionRequestID;
     }
 
