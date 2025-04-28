@@ -4,15 +4,15 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Foundry Tests](https://img.shields.io/badge/Tested%20with-Foundry-red)](https://book.getfoundry.sh/)
 
-A Solidity library enabling on-chain timelock encryption and decryption, from the [dcipher threshold network](https://dcipher.network/). This facilitates secure time-based data unlocking mechanisms for smart contracts.
+A Solidity library for secure, on-chain timelock encryption and decryption, powered by the [dcipher threshold network](https://dcipher.network/). It enables smart contracts to unlock sensitive data based on predefined conditions.
 
 ## ✨ Overview
 
-Controlling access to data based on time is crucial for various use cases, such as auctions, voting, and content release schedules. `blocklock-solidity` provides developers with tools to implement timelock encryption on-chain, ensuring that encrypted data can only be decrypted after a specified block height, thus enhancing security and fairness in time-sensitive operations. 
+Controlling access to data based on time (and other conditions, e.g., contract events) is crucial for various use cases, such as auctions, voting, and content release schedules. `blocklock-solidity` provides developers with tools to implement conditional encryption on-chain, ensuring that encrypted data can only be decrypted after a specified condition has been met, thus enhancing security and fairness in for example, time-sensitive operations. 
 
-This timelock library is powered by the dcipher threshold network using **BLS pairing-based signature scheme** and **identity-based encryption** to achieve data encryption toward a future block height without relying on a trusted third party.  It is especially useful in decentralized settings where no such trusted third party enforces timing.
+This conditional encryption library is powered by the dcipher threshold network using **BLS pairing-based signature scheme** and **identity-based encryption** to achieve data encryption toward a condition without relying on a trusted third party.
 
-The library is designed with modularity and simplicity in mind, allowing developers to easily integrate it into their existing smart contract projects to achieve timelock on-chain for a wide range of applications.
+The library is designed with modularity and simplicity in mind, allowing developers to easily integrate it into their existing smart contract projects to achieve conditional encryption on-chain for a wide range of applications, e.g., timelock encryption based on a predefined future chain height.
 
 ### Features
 * Conditional Encryption: Encrypt data that can only be decrypted after a specified condition has been met, e.g., chain height.
@@ -57,7 +57,7 @@ To run foundry coverage:
 FOUNDRY_PROFILE=coverage forge coverage --report summary
 ```
 
-This project also includes a [coverage.sh](utils/coverage.sh) script to generate and view test coverage reports using lcov. After the script runs, it generates and opens a html page showing lines of code covered by tests and those that have not been covered. If lcov is not installed, the script will attempt to install it automatically using Homebrew (macOS) or apt (Linux).
+This project also includes a [coverage.sh](utils/coverage.sh) script to generate and view test coverage reports using lcov. After the script runs, it generates and opens an html coverage report. If lcov is not installed, the script will attempt to install it automatically using Homebrew (macOS) or apt (Linux).
 
 To make the script executable:
 
@@ -105,12 +105,12 @@ import {AbstractBlocklockReceiver} from "blocklock-solidity/src/AbstractBlockloc
 #### 2. Extend the AbstractBlocklockReceiver contract
 Your contract must inherit from `AbstractBlocklockReceiver` and initialize with the deployed `BlocklockSender (Proxy)` contract from your desired network in the constructor.
 
-An example decryption key `receiver` contract [MockBlocklockReceiver.sol](src/mocks/MockBlocklockReceiver.sol) has been provided in the `src/mocks` folder. It inherits from the [AbstractBlocklockReceiver](src/AbstractBlocklockReceiver.sol) base contract.
+For a full example contract, please see [MockBlocklockReceiver.sol](src/mocks/MockBlocklockReceiver.sol) in the `src/mocks` folder. It inherits from the [AbstractBlocklockReceiver](src/AbstractBlocklockReceiver.sol) base contract.
 
-The contract makes conditional encryption requests for an `uint256` value.
+The contract makes conditional encryption requests using the Ciphertext representing a `uint256` variable.
 
-Requests can be funded in two ways: 
-1. Direct funding
+There are two options for funding conditional encryption requests, including: 
+1. Direct funding, and
 2. Subscription account
 
 
@@ -229,9 +229,9 @@ function setSubId(uint256 subId) external onlyOwner {
 Please note that all approved contracts must also implement [AbstractBlocklockReceiver.sol](src/AbstractBlocklockReceiver.sol).
 
 #### 3. Deploy the `BlocklockReceiver` contract
-Please check the supported network section to ensure your desired network is supported before deployment. You also need to use the deployed **BlocklockSender (Proxy)** address to initialize your contract.
+Before deploying, please verify that your target network is listed in the Supported Networks section. All contracts that initiate requests must be initialized with the appropriate deployed **BlocklockSender (Proxy)** specific to their host network.
 
-Example in Foundry Script for Filecoin Calibration Testnet: 
+Example Foundry Script for Filecoin Calibration Testnet deployment: 
 ```solidity
 address blocklockSenderProxy = 0xF8e2477647Ee6e33CaD4C915DaDc030b74AB976b;
 MockBlocklockReceiver mockBlocklockReceiver = new MockBlocklockReceiver(address(blocklockSenderProxy));
@@ -240,38 +240,15 @@ console.log("\nMockBlocklockReceiver deployed at: ", address(mockBlocklockReceiv
 
 
 To view a full example, please check the following links:
-- The example of [MockBlocklockReceiver.sol](./src/mocks/MockBlocklockReceiver.sol) 
-- The example of off-chain [data encoding and encryption](https://github.com/randa-mu/blocklock-js?tab=readme-ov-file#example-encrypting-a-uint256-4-eth-for-decryption-2-blocks-later).
+- Example solidity contract for creating conditional encryption requests and receiving decryption keys via callbacks - [MockBlocklockReceiver.sol](./src/mocks/MockBlocklockReceiver.sol) 
+- Example off-chain [data encoding and encryption](https://github.com/randa-mu/blocklock-js?tab=readme-ov-file#example-encrypting-a-uint256-4-eth-for-decryption-2-blocks-later).
 
 
 #### How It Works
 
-* Encryption: Use the off-chain TypeScript library ([blocklock-js](https://github.com/randa-mu/blocklock-js)) to generate the encrypted data (`TypesLib.Ciphertext`) with a threshold network public key. The following solidity types are supported by the TypeScript library - uint256, int256, address, string, bool, bytes32, bytes, uint256[], address[], and struct.
-* Timelock Request: Call `requestBlocklock` with the chain height after which decryption is allowed and the encrypted data or Ciphertext.
-* Decryption: Once the specified chain height is reached, a callback to your `receiveBlocklock` logic is triggered with the decryption key to unlock the data.
-
-```js
-// Encode the uint256 value
-const encoder = new SolidityEncoder();
-const msgBytes = encoder.encodeUint256(msg);
-const encodedMessage = getBytes(msgBytes);
-
-// Encrypt the encoded message
-const blocklockjs = new Blocklock(wallet, <blocklockSender-contract-address>);
-const ciphertext = blocklockjs.encrypt(encodedMessage, blockHeight);
-```
-
-To get a full example, please check the example in the [blocklock-js](https://github.com/randa-mu/blocklock-js?tab=readme-ov-file#example-encrypting-a-uint256-4-eth-for-decryption-2-blocks-later) library.
-
-
-## 📚 APIs
-#### BlocklockSender
-|Contract|Return|Description|
-|--------|-----------|-------|
-|`requestBlocklock(uint256 blockHeight, TypesLib.Ciphertext ciphertext)` | `uint256 requestID`|Requests the generation of a timelock decryption key at a specific blockHeight. |
-|`decrypt(TypesLib.Ciphertext ciphertext, bytes decryptionKey)` | `bytes`|Decrypt a ciphertext into a plaintext using a decryption key. |
-|`getRequest(uint256 requestID)`|`TypesLib.BlocklockRequest`|Retrieves a specific timelock request details.|
-|`isInFlight(uint256 requestID)`|`bool`|Returns `true` if the specified timelock request is pending.|
+* Encryption: Use the off-chain TypeScript library ([blocklock-js](https://github.com/randa-mu/blocklock-js)) to generate the encrypted data (`TypesLib.Ciphertext`) with a threshold network public key. The following solidity types are supported by the TypeScript library - uint256, int256, address, string, bool, bytes32, bytes, uint256[], address[], and struct. An example can be found in the [blocklock-js](https://github.com/randa-mu/blocklock-js?tab=readme-ov-file#example-encrypting-a-uint256-4-eth-for-decryption-2-blocks-later) library.
+* Conditional Encryption Request: Call the appropriate `requestBlocklock` function (depending on the request funding route as described above) with the callbackGasLimit, condition for decryption, and the encrypted data or Ciphertext.
+* Decryption: After the specified condition has been met, a callback to your `receiveBlocklock` logic is triggered with the decryption key which can be used unlock the data in your smart contract.
 
 ## 📜 Licensing
 
