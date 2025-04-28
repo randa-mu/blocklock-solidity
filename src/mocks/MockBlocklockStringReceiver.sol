@@ -4,31 +4,45 @@ pragma solidity ^0.8;
 import {TypesLib} from "../libraries/TypesLib.sol";
 import {AbstractBlocklockReceiver} from "../AbstractBlocklockReceiver.sol";
 
+/// @notice This contract is used for testing only and should not be used for production.
 contract MockBlocklockStringReceiver is AbstractBlocklockReceiver {
     uint256 public requestId;
-    TypesLib.Ciphertext public encrytpedValue;
+    TypesLib.Ciphertext public encryptedValue;
     string public plainTextValue;
 
     constructor(address blocklockContract) AbstractBlocklockReceiver(blocklockContract) {}
 
-    function createTimelockRequest(uint256 decryptionBlockNumber, TypesLib.Ciphertext calldata encryptedData)
-        external
-        returns (uint256)
-    {
+    function createTimelockRequestWithDirectFunding(
+        uint32 callbackGasLimit,
+        bytes calldata condition,
+        TypesLib.Ciphertext calldata encryptedData
+    ) external returns (uint256, uint256) {
         // create timelock request
-        requestId = blocklock.requestBlocklock(decryptionBlockNumber, encryptedData);
+        (uint256 requestID, uint256 requestPrice) =
+            _requestBlocklockPayInNative(callbackGasLimit, condition, encryptedData);
+        // store request id
+        requestId = requestID;
         // store Ciphertext
-        encrytpedValue = encryptedData;
-        return requestId;
+        encryptedValue = encryptedData;
+        return (requestID, requestPrice);
     }
 
-    function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey)
-        external
-        override
-        onlyBlocklockContract
-    {
-        require(requestID == requestId, "Invalid request id");
-        // decrypt stored Ciphertext with decryption key
-        plainTextValue = abi.decode(blocklock.decrypt(encrytpedValue, decryptionKey), (string));
+    function createTimelockRequestWithSubscription(
+        uint32 callbackGasLimit,
+        bytes calldata condition,
+        TypesLib.Ciphertext calldata encryptedData
+    ) external payable returns (uint256) {
+        // create timelock request
+        uint256 requestID = _requestBlocklockWithSubscription(callbackGasLimit, condition, encryptedData);
+        // store request id
+        requestId = requestID;
+        // store Ciphertext
+        encryptedValue = encryptedData;
+        return requestID;
+    }
+
+    function _onBlocklockReceived(uint256 _requestId, bytes calldata decryptionKey) internal override {
+        require(requestId == _requestId, "Invalid request id");
+        plainTextValue = abi.decode(_decrypt(encryptedValue, decryptionKey), (string));
     }
 }

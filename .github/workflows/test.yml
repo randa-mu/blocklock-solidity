@@ -1,14 +1,14 @@
-name: CI
+name: Foundry
 
 on:
   push:
   pull_request:
   workflow_dispatch:
+  pull_request_target:
 
 env:
-  FOUNDRY_PROFILE: ci
-  BLS_KEY: ${{ secrets.BLS_KEY }}
-
+  BLS_PRIVATE_KEY: ${{ secrets.BLS_KEY }}
+    
 jobs:
   check:
     strategy:
@@ -41,13 +41,16 @@ jobs:
 
       - name: Run Forge build
         run: |
-          forge build --sizes
+          forge build --force --skip test --sizes
         id: build
 
       - name: Run Forge tests
         run: |
-          forge test -vvv
+          FOUNDRY_PROFILE=test forge test --gas-report
         id: forge-test
+      
+      - name: Run foundry coverage
+        run: FOUNDRY_PROFILE=coverage forge coverage --report summary
 
       - name: Run Hardhat tests
         run: |

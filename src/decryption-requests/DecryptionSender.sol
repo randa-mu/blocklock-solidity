@@ -8,9 +8,10 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 import {BLS} from "../libraries/BLS.sol";
 import {TypesLib} from "../libraries/TypesLib.sol";
-import {console} from "forge-std/console.sol";
 import {BytesLib} from "../libraries/BytesLib.sol";
 
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
@@ -20,16 +21,20 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IDecryptionSender} from "../interfaces/IDecryptionSender.sol";
 import {IDecryptionReceiver} from "../interfaces/IDecryptionReceiver.sol";
 
-import {ISignatureReceiver} from "../interfaces/ISignatureReceiver.sol";
-import {ISignatureSender} from "../interfaces/ISignatureSender.sol";
 import {ISignatureScheme} from "../interfaces/ISignatureScheme.sol";
 import {ISignatureSchemeAddressProvider} from "../interfaces/ISignatureSchemeAddressProvider.sol";
 
-/// @notice Smart Contract for Conditional Threshold Signing of messages sent within signature requests.
-/// by contract addresses implementing the SignatureReceiverBase abstract contract which implements the ISignatureReceiver interface.
-/// @notice Signature requests can also be made for requests requiring immediate signing of messages as the conditions are optional.
+import {CallWithExactGas} from "../utils/CallWithExactGas.sol";
+
+/// @title Decryption Sender contract
+/// @author Randamu
+/// @notice Contract used by offchain oracle to fulfill conditional encryption requests.
+/// @notice Passes decryption keys via callbacks to the BlocklockSender contract
+/// which handles payments for requests and forwards the decryption key to the users receiver contract.
 contract DecryptionSender is
     IDecryptionSender,
+    CallWithExactGas,
+    ReentrancyGuard,
     Multicall,
     Initializable,
     UUPSUpgradeable,
@@ -39,20 +44,33 @@ contract DecryptionSender is
     using EnumerableSet for EnumerableSet.UintSet;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-
     uint256 public lastRequestID = 0;
-    BLS.PointG2 private publicKey = BLS.PointG2({x: [uint256(0), uint256(0)], y: [uint256(0), uint256(0)]});
 
-    // Mapping from decryption requestID to conditional decryption request
+    /// @dev Mapping from decryption requestID to conditional decryption request
     mapping(uint256 => TypesLib.DecryptionRequest) public requests;
 
+    /// @dev Signature scheme address provider contract
     ISignatureSchemeAddressProvider public signatureSchemeAddressProvider;
 
+    /// @dev Set for storing unique fulfilled request Ids
     EnumerableSet.UintSet private fulfilledRequestIds;
-    EnumerableSet.UintSet private unfulfilledRequestIds;
-    EnumerableSet.UintSet private erroredRequestIds;
 
+    /// @dev Set for storing unique unfulfilled request Ids
+    EnumerableSet.UintSet private unfulfilledRequestIds;
+
+    /// @dev Set for storing unique request Ids with failing callbacks
+    EnumerableSet.UintSet private paymentErroredRequestIds;
+
+    /// @dev Emitted when the signature scheme address provider is updated.
     event SignatureSchemeAddressProviderUpdated(address indexed newSignatureSchemeAddressProvider);
+
+    /// @dev Emitted when a decryption request is made.
+    /// @param requestID The unique identifier for the decryption request.
+    /// @param callback The address that will receive the decryption callback.
+    /// @param schemeID The identifier for the signature scheme used.
+    /// @param condition The condition to be met for the decryption.
+    /// @param ciphertext The encrypted data that needs decryption.
+    /// @param requestedAt The timestamp when the decryption request was made.
     event DecryptionRequested(
         uint256 indexed requestID,
         address indexed callback,
@@ -61,11 +79,19 @@ contract DecryptionSender is
         bytes ciphertext,
         uint256 requestedAt
     );
+
+    /// @dev Emitted when a decryption receiver callback succeeds.
+    /// @param requestID The decryption request ID that was fulfilled.
+    /// @param decryptionKey The decryption key provided for the request.
+    /// @param signature The signature associated with the decryption.
     event DecryptionReceiverCallbackSuccess(uint256 indexed requestID, bytes decryptionKey, bytes signature);
 
+    /// @dev Emitted when a decryption receiver callback fails.
+    /// @param requestID The decryption request ID that failed.
     event DecryptionReceiverCallbackFailed(uint256 requestID);
 
-    modifier onlyOwner() {
+    /// @notice Ensures that only an account with the ADMIN_ROLE can execute a function.
+    modifier onlyAdmin() {
         _checkRole(ADMIN_ROLE);
         _;
     }
@@ -75,53 +101,59 @@ contract DecryptionSender is
         _disableInitializers();
     }
 
-    function initialize(
-        uint256[2] memory x,
-        uint256[2] memory y,
-        address owner,
-        address _signatureSchemeAddressProvider
-    ) public initializer {
+    /// @notice Initializes the DecryptionSender contract with the given parameters.
+    /// @param owner The address of the owner to be granted roles.
+    /// @param _signatureSchemeAddressProvider The address of the signature scheme provider contract.
+    /// @dev This function also sets the owner and signature scheme address provider.
+    function initialize(address owner, address _signatureSchemeAddressProvider) public initializer {
         __UUPSUpgradeable_init();
         __AccessControlEnumerable_init();
 
-        publicKey = BLS.PointG2({x: x, y: y});
         require(_grantRole(ADMIN_ROLE, owner), "Grant role failed");
         require(_grantRole(DEFAULT_ADMIN_ROLE, owner), "Grant role failed");
         signatureSchemeAddressProvider = ISignatureSchemeAddressProvider(_signatureSchemeAddressProvider);
     }
 
-    // OVERRIDDEN UPGRADE FUNCTIONS
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+    /// @dev Overridden upgrade authorization function to ensure only an authorized caller can authorize upgrades.
+    function _authorizeUpgrade(address newImplementation) internal override onlyAdmin {}
 
-    function _msgSender() internal view override(Context, ContextUpgradeable) returns (address) {
+    /// @dev Overridden msg.sender function to return the correct sender address.
+    function _msgSender() internal view override (Context, ContextUpgradeable) returns (address) {
         return msg.sender;
     }
 
-    function _msgData() internal pure override(Context, ContextUpgradeable) returns (bytes calldata) {
+    /// @dev Overridden msg.data function to return the correct data.
+    function _msgData() internal pure override (Context, ContextUpgradeable) returns (bytes calldata) {
         return msg.data;
     }
 
-    function _contextSuffixLength() internal pure override(Context, ContextUpgradeable) returns (uint256) {
+    /// @dev Overridden context suffix length function.
+    function _contextSuffixLength() internal pure override (Context, ContextUpgradeable) returns (uint256) {
         return 0;
     }
 
-    /**
-     * @dev See {IDecryptionSender-registerCiphertext}.
-     */
-    function registerCiphertext(string calldata schemeID, bytes calldata ciphertext, bytes calldata condition)
-        external
-        returns (uint256)
-    {
+    /// @notice Registers a new decryption request.
+    /// @dev The decryption request is recorded, including the encrypted data (ciphertext), conditions, and scheme ID.
+    /// This function can be called by any external party wishing to request decryption.
+    /// @param schemeID The signature scheme identifier.
+    /// @param callbackGasLimit The callback gas limit.
+    /// @param ciphertext The encrypted data.
+    /// @param condition The condition for decryption represented as bytes.
+    /// The decryption key is sent to the requesting callback / contract address
+    /// when the condition is met.
+    /// @return The unique request ID of the decryption request.
+    function registerCiphertext(
+        string calldata schemeID,
+        uint32 callbackGasLimit,
+        bytes calldata ciphertext,
+        bytes calldata condition
+    ) external returns (uint256) {
         lastRequestID += 1;
 
         require(signatureSchemeAddressProvider.isSupportedScheme(schemeID), "Signature scheme not supported");
-        require(ciphertext.isLengthWithinBounds(1, 4096), "Message failed length bounds check");
-        // condition is optional
-        require(condition.isLengthWithinBounds(0, 4096), "Condition failed length bounds check");
-        uint256 conditionLength = condition.length;
-        if (conditionLength > 0) {
-            require(!condition.isAllZero(), "Condition bytes cannot be all zeros");
-        }
+        require(ciphertext.isLengthWithinBounds(1, 4096), "Ciphertext failed length bounds check");
+        require(condition.isLengthWithinBounds(1, 4096), "Condition failed length bounds check");
+        require(!condition.isAllZero(), "Condition bytes cannot be all zeros");
 
         address schemeContractAddress = signatureSchemeAddressProvider.getSignatureSchemeAddress(schemeID);
         require(schemeContractAddress > address(0), "invalid signature scheme");
@@ -133,6 +165,7 @@ contract DecryptionSender is
             decryptionKey: hex"",
             signature: hex"",
             callback: msg.sender,
+            callbackGasLimit: callbackGasLimit,
             isFulfilled: false
         });
         unfulfilledRequestIds.add(lastRequestID);
@@ -142,14 +175,17 @@ contract DecryptionSender is
         return lastRequestID;
     }
 
-    /**
-     * @dev See {IDecryptionSender-fulfilSignatureRequest}.
-     */
-    function fulfilDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
+    /// @notice Fulfills a decryption request by providing the decryption key and signature.
+    /// @dev This function validates the provided signature, then sends the decryption key and signature back to the callback address.
+    /// @param requestID The unique request ID of the decryption request.
+    /// @param decryptionKey The decryption key to fulfill the request.
+    /// @param signature The signature corresponding to the decryption.
+    function fulfillDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
         external
-        onlyOwner
+        nonReentrant
+        onlyAdmin
     {
-        require(isInFlight(requestID), "No request with specified requestID");
+        require(isInFlight(requestID), "No pending request with specified requestID");
         TypesLib.DecryptionRequest memory request = requests[requestID];
 
         string memory schemeID = request.schemeID;
@@ -159,104 +195,94 @@ contract DecryptionSender is
         ISignatureScheme sigScheme = ISignatureScheme(schemeContractAddress);
         bytes memory messageHash = sigScheme.hashToBytes(request.condition);
 
-        require(sigScheme.verifySignature(messageHash, signature, getPublicKeyBytes()), "Signature verification failed");
-
-        (bool success,) = request.callback.call(
-            abi.encodeWithSelector(
-                IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature
-            )
+        require(
+            sigScheme.verifySignature(messageHash, signature, sigScheme.getPublicKeyBytes()),
+            "Signature verification failed"
         );
 
-        requests[requestID].decryptionKey = decryptionKey;
-        requests[requestID].signature = signature;
+        bytes memory response = abi.encodeWithSelector(
+            IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature
+        );
+
+        bool success = _callWithExactGas(request.callbackGasLimit, request.callback, response);
+
         requests[requestID].isFulfilled = true;
         unfulfilledRequestIds.remove(requestID);
         if (!success) {
-            erroredRequestIds.add(requestID);
+            paymentErroredRequestIds.add(requestID);
             emit DecryptionReceiverCallbackFailed(requestID);
         } else {
+            if (hasPaymentErrored(requestID)) {
+                paymentErroredRequestIds.remove(requestID);
+            }
             fulfilledRequestIds.add(requestID);
             emit DecryptionReceiverCallbackSuccess(requestID, decryptionKey, signature);
         }
     }
 
-    function retryCallback(uint256 requestID) external {
-        require(hasErrored(requestID), "No request with specified requestID");
-        TypesLib.DecryptionRequest memory request = requests[requestID];
-        (bool success,) = request.callback.call(
-            abi.encodeWithSelector(
-                IDecryptionReceiver.receiveDecryptionData.selector, requestID, request.decryptionKey, request.signature
-            )
-        );
-
-        if (!success) {
-            emit DecryptionReceiverCallbackFailed(requestID);
-        } else {
-            erroredRequestIds.remove(requestID);
-            fulfilledRequestIds.add(requestID);
-            emit DecryptionReceiverCallbackSuccess(requestID, request.decryptionKey, request.signature);
-        }
-    }
-
-    /**
-     * @dev See {IDecryptionSender-setSignatureSchemeAddressProvider}.
-     */
-    function setSignatureSchemeAddressProvider(address newSignatureSchemeAddressProvider) external onlyOwner {
+    /// @notice Sets a new signature scheme address provider.
+    /// @dev This allows the contract owner to update the provider used for signature scheme management.
+    /// @param newSignatureSchemeAddressProvider The address of the new signature scheme address provider.
+    function setSignatureSchemeAddressProvider(address newSignatureSchemeAddressProvider) external onlyAdmin {
         signatureSchemeAddressProvider = ISignatureSchemeAddressProvider(newSignatureSchemeAddressProvider);
         emit SignatureSchemeAddressProviderUpdated(newSignatureSchemeAddressProvider);
     }
 
-    /**
-     * @dev See {IDecryptionSender-getPublicKey}.
-     */
-    function getPublicKey() public view returns (uint256[2] memory, uint256[2] memory) {
-        return (publicKey.x, publicKey.y);
-    }
-
-    /**
-     * @dev See {IDecryptionSender-getPublicKeyBytes}.
-     */
-    function getPublicKeyBytes() public view returns (bytes memory) {
-        return BLS.g2Marshal(publicKey);
-    }
-
-    /**
-     * @dev See {IDecryptionSender-isInFlight}.
-     */
+    /// @notice Checks if a decryption request is still in progress (unfulfilled or errored).
+    /// @dev Used to check if a request is either still awaiting decryption or has encountered an error.
+    /// @param requestID The unique request ID of the decryption request.
+    /// @return True if the request is in flight (unfulfilled or errored), false otherwise.
     function isInFlight(uint256 requestID) public view returns (bool) {
-        return unfulfilledRequestIds.contains(requestID) || erroredRequestIds.contains(requestID);
+        return unfulfilledRequestIds.contains(requestID) || paymentErroredRequestIds.contains(requestID);
     }
 
-    function hasErrored(uint256 requestID) public view returns (bool) {
-        return erroredRequestIds.contains(requestID);
+    /// @notice Checks if a decryption request has errored out.
+    /// @dev Used to check if the request has failed and is in the errored state.
+    /// @param requestID The unique request ID of the decryption request.
+    /// @return True if the request has errored, false otherwise.
+    function hasPaymentErrored(uint256 requestID) public view returns (bool) {
+        return paymentErroredRequestIds.contains(requestID);
     }
 
-    /**
-     * @dev See {IDecryptionSender-getRequest}.
-     */
+    /// @notice Retrieves the details of a decryption request.
+    /// @dev Returns the full decryption request data for the given request ID.
+    /// @param requestID The unique request ID.
+    /// @return The decryption request object.
     function getRequest(uint256 requestID) external view returns (TypesLib.DecryptionRequest memory) {
         return requests[requestID];
     }
 
+    /// @notice Retrieves all fulfilled request IDs.
+    /// @dev Returns an array of all fulfilled request IDs.
+    /// @return An array of fulfilled request IDs.
     function getAllFulfilledRequestIds() external view returns (uint256[] memory) {
         return fulfilledRequestIds.values();
     }
 
+    /// @notice Retrieves all unfulfilled request IDs.
+    /// @dev Returns an array of all unfulfilled request IDs.
+    /// @return An array of unfulfilled request IDs.
     function getAllUnfulfilledRequestIds() external view returns (uint256[] memory) {
         return unfulfilledRequestIds.values();
     }
 
-    function getAllErroredRequestIds() external view returns (uint256[] memory) {
-        return erroredRequestIds.values();
+    /// @notice Retrieves all errored request IDs.
+    /// @dev Returns an array of all errored request IDs.
+    /// @return An array of errored request IDs.
+    function getAllpaymentErroredRequestIds() external view returns (uint256[] memory) {
+        return paymentErroredRequestIds.values();
     }
 
+    /// @notice Retrieves the count of unfulfilled request IDs.
+    /// @dev Returns the number of unfulfilled decryption requests.
+    /// @return The number of unfulfilled request IDs.
     function getCountOfUnfulfilledRequestIds() external view returns (uint256) {
         return unfulfilledRequestIds.length();
     }
 
-    /**
-     * @dev Returns the version number of the upgradeable contract.
-     */
+    /// @notice Returns the version number of the upgradeable contract.
+    /// @dev This allows querying of the current contract version.
+    /// @return The version number as a string.
     function version() external pure returns (string memory) {
         return "0.0.1";
     }
