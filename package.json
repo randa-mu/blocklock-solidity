@@ -5,7 +5,7 @@
     "publishConfig": {
         "access": "public"
     },
-    "version": "0.0.6",
+    "version": "0.0.7",
     "directories": {
         "lib": "lib",
         "test": "test"
@@ -15,7 +15,7 @@
         "build:forge": "FOUNDRY_PROFILE=build forge install && FOUNDRY_PROFILE=build forge build",
         "build:hardhat": "npx hardhat compile",
         "test": "npm run test:forge && npm run test:hardhat",
-        "test:forge": "FOUNDRY_PROFILE=test forge test",
+        "test:forge": "FOUNDRY_PROFILE=test forge test --gas-report",
         "test:hardhat": "npx hardhat test",
         "clean": "npx hardhat clean && forge clean",
         "lint": "npm run lint:forge && npm run lint:hardhat",
@@ -28,7 +28,8 @@
     "devDependencies": {
         "@commitlint/cli": "^19.2.1",
         "@commitlint/config-conventional": "^19.1.0",
-        "@noble/curves": "^1.6.0",
+        "@noble/curves": "1.6.0",
+        "@nomicfoundation/ethereumjs-util": "^9.0.4",
         "@nomicfoundation/hardhat-foundry": "^1.1.2",
         "@nomicfoundation/hardhat-toolbox": "^5.0.0",
         "@trivago/prettier-plugin-sort-imports": "^4.3.0",
@@ -41,9 +42,8 @@
         "chai": "4",
         "commander": "^12.1.0",
         "dotenv": "^16.4.5",
-        "hardhat": "^2.22.17",
+        "hardhat": "^2.22.19",
         "hardhat-gas-reporter": "^1.0.8",
-        "hardhat-tracer": "^3.1.0",
         "husky": "^9.0.11",
         "jest": "^29.7.0",
         "lint-staged": "^15.2.2",
