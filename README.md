@@ -238,15 +238,14 @@ MockBlocklockReceiver mockBlocklockReceiver = new MockBlocklockReceiver(address(
 console.log("\nMockBlocklockReceiver deployed at: ", address(mockBlocklockReceiver));
 ```
 
-
-To view a full example, please check the following links:
+To view a full example, please visit the following links:
 - The example of [MockBlocklockReceiver.sol](./src/mocks/MockBlocklockReceiver.sol) 
 - The example of off-chain [data encoding and encryption](https://github.com/randa-mu/blocklock-js?tab=readme-ov-file#example-encrypting-a-uint256-4-eth-for-decryption-2-blocks-later).
 
 
 #### How It Works
 
-* Encryption: Use the off-chain TypeScript library ([blocklock-js](https://github.com/randa-mu/blocklock-js)) to generate the encrypted data (`TypesLib.Ciphertext`) with a threshold network public key. The following solidity types are supported by the TypeScript library - uint256, int256, address, string, bool, bytes32, bytes, uint256[], address[], and struct. Please check the example in the [blocklock-js](https://github.com/randa-mu/blocklock-js?tab=readme-ov-file#example-encrypting-a-uint256-4-eth-for-decryption-2-blocks-later) library.
+* Encryption: Use the off-chain TypeScript library ([blocklock-js](https://github.com/randa-mu/blocklock-js)) to generate the encrypted data (`TypesLib.Ciphertext`) with a threshold network public key. The following solidity types are supported by the TypeScript library - uint256, int256, address, string, bool, bytes32, bytes, uint256[], address[], and struct. Please see the example in the [blocklock-js](https://github.com/randa-mu/blocklock-js?tab=readme-ov-file#example-encrypting-a-uint256-4-eth-for-decryption-2-blocks-later) library.
 * Timelock Request: Create a timelock encryption request on-chain, either via the direct funding or subscription funding route as described above passing the callbackGaslimit, condition for decryption and Ciphertext as inputs.
 * Decryption: Once the specified condition has been evaluated and met, a callback to your `receiveBlocklock` logic is triggered with the decryption key to unlock the data.
 
