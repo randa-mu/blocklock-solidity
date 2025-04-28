@@ -121,19 +121,19 @@ The following internal function allows the smart contract to make requests witho
 ```solidity
 /// @notice Requests a blocklock without a subscription and returns the request ID and request price.
 /// @dev This function calls the `requestBlocklock` function from the `blocklock` contract, passing the required parameters such as
-///      `callbackGasLimit`, `blockHeight`, and `ciphertext`.
+///      `callbackGasLimit`, `condition`, and `ciphertext`.
 /// @param callbackGasLimit The gas limit for the callback function to be executed after the blocklock request.
-/// @param blockHeight The block height for which the blocklock request is made.
+/// @param condition The condition for decryption of the Ciphertext encoded as bytes.
 /// @param ciphertext The ciphertext to be used in the blocklock request.
 /// @notice This function internally calls the `blocklock.requestBlocklock` function.
 function _requestBlocklockPayInNative(
     uint32 callbackGasLimit,
-    uint256 blockHeight,
+    bytes condition,
     TypesLib.Ciphertext calldata ciphertext
 ) internal returns (uint256 requestId, uint256 requestPrice) {
     requestPrice = blocklock.calculateRequestPriceNative(callbackGasLimit);
     return
-        (blocklock.requestBlocklock{value: requestPrice}(callbackGasLimit, blockHeight, ciphertext), requestPrice);
+        (blocklock.requestBlocklock{value: requestPrice}(callbackGasLimit, condition, ciphertext), requestPrice);
 }
 ```
 The function returns the request id and request price in wei.
@@ -183,18 +183,18 @@ It sets the `subscriptionId` variable in the contract which is used to make subs
 ```solidity
 /// @notice Requests a blocklock with a subscription and returns the request ID.
 /// @dev This function calls the `requestBlocklockWithSubscription` function from the `blocklock` contract, passing the required parameters such as
-///      `callbackGasLimit`, `subscriptionId`, `blockHeight`, and `ciphertext`.
+///      `callbackGasLimit`, `subscriptionId`, `condition`, and `ciphertext`.
 /// @param callbackGasLimit The gas limit for the callback function to be executed after the blocklock request.
-/// @param blockHeight The block height for which the blocklock request is made.
+/// @param condition The condition for decryption of the Ciphertext encoded as bytes.
 /// @param ciphertext The ciphertext to be used in the blocklock request.
 /// @return requestId The unique identifier for the blocklock request.
 /// @notice This function internally calls the `blocklock.requestBlocklockWithSubscription` function.
 function _requestBlocklockWithSubscription(
     uint32 callbackGasLimit,
-    uint256 blockHeight,
+    bytes condition,
     TypesLib.Ciphertext calldata ciphertext
 ) internal returns (uint256 requestId) {
-    return blocklock.requestBlocklockWithSubscription(callbackGasLimit, subscriptionId, blockHeight, ciphertext);
+    return blocklock.requestBlocklockWithSubscription(callbackGasLimit, subscriptionId, condition, ciphertext);
 }
 ```
 
@@ -238,10 +238,10 @@ MockBlocklockReceiver mockBlocklockReceiver = new MockBlocklockReceiver(address(
 console.log("\nMockBlocklockReceiver deployed at: ", address(mockBlocklockReceiver));
 ```
 
-
 To view a full example, please check the following links:
 - Example solidity contract for creating conditional encryption requests and receiving decryption keys via callbacks - [MockBlocklockReceiver.sol](./src/mocks/MockBlocklockReceiver.sol) 
 - Example off-chain [data encoding and encryption](https://github.com/randa-mu/blocklock-js?tab=readme-ov-file#example-encrypting-a-uint256-4-eth-for-decryption-2-blocks-later).
+
 
 
 #### How It Works
@@ -249,6 +249,7 @@ To view a full example, please check the following links:
 * Encryption: Use the off-chain TypeScript library ([blocklock-js](https://github.com/randa-mu/blocklock-js)) to generate the encrypted data (`TypesLib.Ciphertext`) with a threshold network public key. The following solidity types are supported by the TypeScript library - uint256, int256, address, string, bool, bytes32, bytes, uint256[], address[], and struct. An example can be found in the [blocklock-js](https://github.com/randa-mu/blocklock-js?tab=readme-ov-file#example-encrypting-a-uint256-4-eth-for-decryption-2-blocks-later) library.
 * Conditional Encryption Request: Call the appropriate `requestBlocklock` function (depending on the request funding route as described above) with the callbackGasLimit, condition for decryption, and the encrypted data or Ciphertext.
 * Decryption: After the specified condition has been met, a callback to your `receiveBlocklock` logic is triggered with the decryption key which can be used unlock the data in your smart contract.
+
 
 ## 📜 Licensing
 
