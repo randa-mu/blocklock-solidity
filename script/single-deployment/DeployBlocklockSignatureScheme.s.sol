@@ -13,7 +13,7 @@ import {BlocklockSignatureScheme} from "src/signature-schemes/BlocklockSignature
 import {SignatureSchemeAddressProvider} from "src/signature-schemes/SignatureSchemeAddressProvider.sol";
 import {Factory} from "src/factory/Factory.sol";
 
-/// @title DeploySignatureSchemeAddressProvider
+/// @title DeployBlocklockSignatureScheme
 /// @author Randamu
 /// @dev Script for deploying BlocklockSignatureScheme contract.
 contract DeployBlocklockSignatureScheme is JsonUtils, EnvReader {

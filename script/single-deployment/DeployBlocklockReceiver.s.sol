@@ -11,7 +11,7 @@ import {JsonUtils} from "../utils/JsonUtils.sol";
 import {MockBlocklockReceiver} from "src/mocks/MockBlocklockReceiver.sol";
 import {Factory} from "src/factory/Factory.sol";
 
-/// @title DeploySignatureSchemeAddressProvider
+/// @title DeployBlocklockReceiver
 /// @author Randamu
 /// @dev Script for deploying MockBlocklockReceiver contract.
 contract DeployBlocklockReceiver is JsonUtils {
