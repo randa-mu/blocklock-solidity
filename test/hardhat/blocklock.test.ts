@@ -201,7 +201,7 @@ describe("Blocklock integration tests", () => {
         weiPerUnitGas,
         blsPairingCheckOverhead,
         nativePremiumPercentage,
-        gasForCallExactCheck
+        gasForCallExactCheck,
       );
 
     // fund contract
@@ -209,11 +209,11 @@ describe("Blocklock integration tests", () => {
     // make direct funding request with enough callbackGasLimit to cover BLS operations in call to decrypt() function
     // in receiver contract
     const callbackGasLimit = 300000;
-    
+
     let tx = await mockBlocklockReceiverInstance
       .connect(wallet)
       .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct));
-    
+
     let receipt = await tx.wait(1);
     if (!receipt) {
       throw new Error("transaction has not been mined");
@@ -257,11 +257,43 @@ describe("Blocklock integration tests", () => {
     console.log("signature", sigBytes);
     const decryption_key = preprocess_decryption_key_g1(parsedCiphertext, { x: sig[0], y: sig[1] }, BLOCKLOCK_IBE_OPTS);
     console.log("decryption key", toHexString(decryption_key));
-    tx = await decryptionSenderInstance.connect(wallet).fulfillDecryptionRequest(requestID, decryption_key, sigBytes);
+
+    // fulfill the conditional encryption request if profitable
+    const estimatedGas = await decryptionSenderInstance
+      .connect(wallet)
+      .fulfillDecryptionRequest.estimateGas(requestID, decryption_key, sigBytes);
+    // estimated gas is always increased by callbackGasLimit and some margin
+    // so no need to add callbackGasLimit to estimated gas
+    expect(estimatedGas).to.be.gt(callbackGasLimit);
+    // avoid decimals by rounding up, as we can't pass decimal to tx gas parameters
+    const gasLimitWithBuffer = Math.ceil(Number(estimatedGas) * 1.05); // 5% buffer
+
+    // Fetch current gas pricing (EIP-1559 compatible)
+    const feeData = await wallet.provider.getFeeData();
+    const maxFeePerGas = feeData.maxFeePerGas!;
+    const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas!;
+    const userPayment = blocklockRequestStatus.directFundingFeePaid;
+
+    // Calculate if it's profitable to execute
+    const expectedTxCost = gasLimitWithBuffer * Number(maxFeePerGas);
+    const profitAfterTx = Number(userPayment) - expectedTxCost;
+
+    expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
+
+    // Submit transaction
+    // Actual tx fee paid = actualGasUsed * effectiveGasPrice
+    // where effectiveGasPrice = min(maxFeePerGas, baseFee + maxPriorityFeePerGas)
+    tx = await decryptionSenderInstance.connect(wallet).fulfillDecryptionRequest(requestID, decryption_key, sigBytes, {
+      gasLimit: gasLimitWithBuffer.toString(),
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+    });
     receipt = await tx.wait(1);
     if (!receipt) {
       throw new Error("transaction has not been mined");
     }
+
+    // Verify logs and request results
     const iface = BlocklockSender__factory.createInterface();
     const [, , ,] = extractSingleLog(
       iface,
@@ -269,9 +301,10 @@ describe("Blocklock integration tests", () => {
       await blocklockSender.getAddress(),
       iface.getEvent("BlocklockCallbackSuccess"),
     );
+
     blocklockRequestStatus = await blocklockSender.getRequest(1n);
     expect(blocklockRequestStatus!.condition).to.equal(encodedCondition);
-    expect(blocklockRequestStatus?.decryptionKey).not.to.equal(undefined);
+    expect(blocklockRequestStatus?.decryptionKey).to.not.equal(undefined);
     expect(blocklockRequestStatus?.decryptionKey.length).to.equal(66);
     expect(await mockBlocklockReceiverInstance.plainTextValue()).to.equal(BigInt(msg));
   });

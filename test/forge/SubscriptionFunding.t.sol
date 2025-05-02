@@ -108,7 +108,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         uint256 totalSubBalanceBeforeRequest = 6 ether;
 
         // get request price
-        uint32 callbackGasLimit = 200_000;
+        uint32 callbackGasLimit = 300_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
         console.log("Request price for offchain oracle callbackGasLimit", requestPrice);
 
@@ -483,7 +483,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100_000;
+        uint32 requestCallbackGasLimit = callbackGasLimit;
         uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
@@ -575,7 +575,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         uint256 totalSubBalanceBeforeRequest = 5 ether;
 
         // get request price
-        uint32 callbackGasLimit = 200_000;
+        uint32 callbackGasLimit = 500_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
         console.log("Request price for offchain oracle callbackGasLimit", requestPrice);
 
@@ -699,7 +699,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
     function test_FulfillBlocklock_SubscriptionRequest_With_OnlyRequestPriceBalance() public {
         // get request price
-        uint32 callbackGasLimit = 200_000;
+        uint32 callbackGasLimit = 500_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
         console.log("Request price for offchain oracle callbackGasLimit", requestPrice);
 
@@ -896,7 +896,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100_000;
+        uint32 requestCallbackGasLimit = callbackGasLimit;
         uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
@@ -1057,7 +1057,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100_000;
+        uint32 requestCallbackGasLimit = callbackGasLimit;
         uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );

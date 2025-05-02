@@ -19,7 +19,7 @@ import {
 /// @title DirectFunding test contract
 /// @notice Tests for requests paid for via the direct funding route
 contract DirectFundingTest is BlocklockTest {
-    function test_FulfillBlocklock_DirectFunding_Request() public {
+    function test_FulfillBlocklock_DirectFunding_Request_Successfully() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
@@ -27,7 +27,7 @@ contract DirectFundingTest is BlocklockTest {
         assertFalse(blocklockSender.s_disabled(), "BlocklockSender is paused");
 
         // get request price
-        uint32 callbackGasLimit = 200_000;
+        uint32 callbackGasLimit = 300_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
 
         // fund blocklock receiver contract
@@ -414,7 +414,7 @@ contract DirectFundingTest is BlocklockTest {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100_000;
+        uint32 requestCallbackGasLimit = callbackGasLimit;
         (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
@@ -529,7 +529,7 @@ contract DirectFundingTest is BlocklockTest {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100_000;
+        uint32 requestCallbackGasLimit = callbackGasLimit;
         (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
@@ -568,7 +568,7 @@ contract DirectFundingTest is BlocklockTest {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100_000;
+        uint32 requestCallbackGasLimit = callbackGasLimit;
         (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
@@ -661,7 +661,7 @@ contract DirectFundingTest is BlocklockTest {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100_000;
+        uint32 requestCallbackGasLimit = callbackGasLimit;
         (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
