@@ -192,10 +192,10 @@ describe("Blocklock integration tests", () => {
     const maxGasLimit = 500_000;
     const gasAfterPaymentCalculation = 400_000;
     const fulfillmentFlatFeeNativePPM = 1_000_000;
-    const weiPerUnitGas = 3000000;
+    const weiPerUnitGas = 3_000_000;
     const blsPairingCheckOverhead = 800_000;
     const nativePremiumPercentage = 10;
-    const gasForCallExactCheck = 5000;
+    const gasForCallExactCheck = 5_000;
 
     await blocklockSender
       .connect(wallet)
