@@ -24,8 +24,6 @@ import {IDecryptionReceiver} from "../interfaces/IDecryptionReceiver.sol";
 import {ISignatureScheme} from "../interfaces/ISignatureScheme.sol";
 import {ISignatureSchemeAddressProvider} from "../interfaces/ISignatureSchemeAddressProvider.sol";
 
-import {CallWithExactGas} from "../utils/CallWithExactGas.sol";
-
 /// @title Decryption Sender contract
 /// @author Randamu
 /// @notice Contract used by offchain oracle to fulfill conditional encryption requests.
@@ -33,7 +31,6 @@ import {CallWithExactGas} from "../utils/CallWithExactGas.sol";
 /// which handles payments for requests and forwards the decryption key to the users receiver contract.
 contract DecryptionSender is
     IDecryptionSender,
-    CallWithExactGas,
     ReentrancyGuard,
     Multicall,
     Initializable,
@@ -136,7 +133,6 @@ contract DecryptionSender is
     /// @dev The decryption request is recorded, including the encrypted data (ciphertext), conditions, and scheme ID.
     /// This function can be called by any external party wishing to request decryption.
     /// @param schemeID The signature scheme identifier.
-    /// @param callbackGasLimit The callback gas limit.
     /// @param ciphertext The encrypted data.
     /// @param condition The condition for decryption represented as bytes.
     /// The decryption key is sent to the requesting callback / contract address
@@ -144,7 +140,6 @@ contract DecryptionSender is
     /// @return The unique request ID of the decryption request.
     function registerCiphertext(
         string calldata schemeID,
-        uint32 callbackGasLimit,
         bytes calldata ciphertext,
         bytes calldata condition
     ) external returns (uint256) {
@@ -165,7 +160,6 @@ contract DecryptionSender is
             decryptionKey: hex"",
             signature: hex"",
             callback: msg.sender,
-            callbackGasLimit: callbackGasLimit,
             isFulfilled: false
         });
         unfulfilledRequestIds.add(lastRequestID);
@@ -183,7 +177,6 @@ contract DecryptionSender is
     function fulfillDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
         external
         nonReentrant
-        onlyAdmin
     {
         require(isInFlight(requestID), "No pending request with specified requestID");
         TypesLib.DecryptionRequest memory request = requests[requestID];
@@ -200,11 +193,9 @@ contract DecryptionSender is
             "Signature verification failed"
         );
 
-        bytes memory response = abi.encodeWithSelector(
-            IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature
+        (bool success,) = request.callback.call(
+            abi.encodeWithSelector(IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature)
         );
-
-        bool success = _callWithExactGas(request.callbackGasLimit, request.callback, response);
 
         requests[requestID].isFulfilled = true;
         unfulfilledRequestIds.remove(requestID);

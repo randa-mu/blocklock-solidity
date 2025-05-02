@@ -9,24 +9,45 @@ import {ISubscription} from "../interfaces/ISubscription.sol";
 /// @author Randamu
 /// @notice Interface for periphery smart contract used to interact with the decryption sender contract.
 interface IBlocklockSender is ISubscription {
-    /// @notice Requests a blocklock for a specified block height with the provided ciphertext without a subscription ID.
+    /// @notice Requests a blocklock for a specified condition with the provided ciphertext without a subscription ID.
     /// Requires payment to be made for the request without a subscription.
-    /// @param callbackGasLimit The gas limit allocated for the callback execution after the blocklock request
-    /// @param condition The block height at which the blocklock is requested
+    /// @param callbackGasLimit How much gas you'd like to receive in your
+    /// receiveBlocklock callback. Note that gasleft() inside receiveBlocklock
+    /// may be slightly less than this amount because of gas used calling the function
+    /// (argument decoding etc.), so you may need to request slightly more than you expect
+    /// to have inside receiveBlocklock. The acceptable range is
+    /// [0, maxGasLimit]
+    /// @param condition The condition for decryption represented as bytes.
+    /// The decryption key is sent to the requesting callback / contract address
+    /// when the condition is met.
     /// @param ciphertext The ciphertext that will be used in the blocklock request
-    /// @return requestID The unique identifier for the blocklock request
-    /// @dev This function allows users to request a blocklock for a specific block height. The blocklock is not associated with any subscription ID
-    ///      and requires a ciphertext to be provided. The function checks that the contract is configured and not disabled before processing the request.
+    /// @dev This function allows users to request a blocklock for a specific condition. 
+    ///      The blocklock is not associated with any subscription ID
+    ///      and requires a ciphertext to be provided. The function checks that the contract is 
+    ///      configured and not disabled before processing the request.
     function requestBlocklock(
         uint32 callbackGasLimit,
         bytes calldata condition,
         TypesLib.Ciphertext calldata ciphertext
     ) external payable returns (uint256 requestID);
 
-    /// @notice Requests the generation of a blocklock decryption key at a specific blockHeight.
-    /// @dev Initiates a blocklock decryption key request.
-    /// The blocklock decryption key will be generated once the chain reaches the specified `blockHeight`.
-    /// @return requestID The unique identifier assigned to this blocklock request.
+    /// @notice Requests a blocklock for a specified condition with the provided ciphertext and subscription ID
+    /// @param callbackGasLimit How much gas you'd like to receive in your
+    /// receiveBlocklock callback. Note that gasleft() inside receiveBlocklock
+    /// may be slightly less than this amount because of gas used calling the function
+    /// (argument decoding etc.), so you may need to request slightly more than you expect
+    /// to have inside receiveBlocklock. The acceptable range is
+    /// [0, maxGasLimit]
+    /// @param subId The subscription ID associated with the request
+    /// @param condition The condition for decryption represented as bytes.
+    /// The decryption key is sent to the requesting callback / contract address
+    /// when the condition is met.
+    /// @param ciphertext The ciphertext that will be used in the blocklock request
+    /// @return requestID The unique identifier for the blocklock request
+    /// @dev This function allows users to request a blocklock for a specific condition. 
+    ///      The blocklock is associated with a given subscription ID
+    ///      and requires a ciphertext to be provided. The function checks that the contract is 
+    ///      configured and not disabled before processing the request.
     function requestBlocklockWithSubscription(
         uint32 callbackGasLimit,
         uint256 subId,

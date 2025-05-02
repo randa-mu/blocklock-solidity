@@ -64,26 +64,24 @@ contract SubscriptionFundingTest is BlocklockTest {
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
-        // fetch request information including callbackGasLimit from decryption sender
-        TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
         /// @dev Overhead for EIP-150
         uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
 
         assertTrue(
-            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
             "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
         );
 
         assertTrue(
-            decryptionRequest.callbackGasLimit
+            blocklockRequest.callbackGasLimit
                 == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
             "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
         );
 
-        // fetch request information from blocklock sender
-        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
-
+    
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
             blocklockRequest.directFundingFeePaid == 0,
@@ -134,23 +132,24 @@ contract SubscriptionFundingTest is BlocklockTest {
         // fetch request information including callbackGasLimit from decryption sender
         TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
 
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
         /// @dev Overhead for EIP-150
         uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
 
         assertTrue(
-            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
             "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
         );
 
         assertTrue(
-            decryptionRequest.callbackGasLimit
+            blocklockRequest.callbackGasLimit
                 == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
             "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
         );
 
-        // fetch request information from blocklock sender
-        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
-
+        
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
             blocklockRequest.directFundingFeePaid == 0,
@@ -176,7 +175,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
-        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
         console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
         console.log("Tx Gas used:", gasUsed);
         console.log("Tx Gas price (wei):", tx.gasprice);
@@ -264,26 +263,25 @@ contract SubscriptionFundingTest is BlocklockTest {
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
-        // fetch request information including callbackGasLimit from decryption sender
-        TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
+     
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
         /// @dev Overhead for EIP-150
         uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
 
         assertTrue(
-            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
             "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
         );
 
         assertTrue(
-            decryptionRequest.callbackGasLimit
+            blocklockRequest.callbackGasLimit
                 == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
             "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
         );
 
-        // fetch request information from blocklock sender
-        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
-
+      
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
             blocklockRequest.directFundingFeePaid == 0,
@@ -311,7 +309,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
-        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
         console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
         console.log("Tx Gas used:", gasUsed);
         console.log("Tx Gas price (wei):", tx.gasprice);
@@ -513,24 +511,24 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         // fetch request information including callbackGasLimit from decryption sender
         TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
         /// @dev Overhead for EIP-150
         uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
 
         assertTrue(
-            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
             "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
         );
 
         assertTrue(
-            decryptionRequest.callbackGasLimit
+            blocklockRequest.callbackGasLimit
                 == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
             "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
         );
 
-        // fetch request information from blocklock sender
-        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
-
+        
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
             blocklockRequest.directFundingFeePaid == 0,
@@ -556,7 +554,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
-        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
         console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
         console.log("Tx Gas used:", gasUsed);
         console.log("Tx Gas price (wei):", tx.gasprice);
@@ -655,23 +653,24 @@ contract SubscriptionFundingTest is BlocklockTest {
         // fetch request information including callbackGasLimit from decryption sender
         TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
 
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
         /// @dev Overhead for EIP-150
         uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
 
         assertTrue(
-            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
             "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
         );
 
         assertTrue(
-            decryptionRequest.callbackGasLimit
+            blocklockRequest.callbackGasLimit
                 == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
             "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
         );
 
-        // fetch request information from blocklock sender
-        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
-
+    
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
             blocklockRequest.directFundingFeePaid == 0,
@@ -697,7 +696,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
-        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
         console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
         console.log("Tx Gas used:", gasUsed);
         console.log("Tx Gas price (wei):", tx.gasprice);
@@ -767,25 +766,22 @@ contract SubscriptionFundingTest is BlocklockTest {
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
-        // fetch request information including callbackGasLimit from decryption sender
-        TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
         /// @dev Overhead for EIP-150
         uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
 
         assertTrue(
-            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
             "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
         );
 
         assertTrue(
-            decryptionRequest.callbackGasLimit
+            blocklockRequest.callbackGasLimit
                 == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
             "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
         );
-
-        // fetch request information from blocklock sender
-        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
@@ -832,22 +828,22 @@ contract SubscriptionFundingTest is BlocklockTest {
         // fetch request information including callbackGasLimit from decryption sender
         TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
 
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
         /// @dev Overhead for EIP-150
         uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
 
         assertTrue(
-            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
             "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
         );
 
         assertTrue(
-            decryptionRequest.callbackGasLimit
+            blocklockRequest.callbackGasLimit
                 == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
             "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
         );
-
-        // fetch request information from blocklock sender
-        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
@@ -874,7 +870,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
-        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
         console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
         console.log("Tx Gas used:", gasUsed);
         console.log("Tx Gas price (wei):", tx.gasprice);
@@ -944,7 +940,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         gasAfter = gasleft();
         gasUsed = gasBefore - gasAfter;
-        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
         console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
         console.log("Tx Gas used:", gasUsed);
         console.log("Tx Gas price (wei):", tx.gasprice);
@@ -1002,22 +998,24 @@ contract SubscriptionFundingTest is BlocklockTest {
         // fetch request information including callbackGasLimit from decryption sender
         TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
 
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
         /// @dev Overhead for EIP-150
         uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
 
         assertTrue(
-            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
             "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
         );
 
         assertTrue(
-            decryptionRequest.callbackGasLimit
+            blocklockRequest.callbackGasLimit
                 == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
             "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
         );
 
-        // fetch request information from blocklock sender
-        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+        
 
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
@@ -1049,7 +1047,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
-        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
         console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
         console.log("Tx Gas used:", gasUsed);
         console.log("Tx Gas price (wei):", tx.gasprice);
@@ -1121,7 +1119,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         gasAfter = gasleft();
         gasUsed = gasBefore - gasAfter;
-        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
         console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
         console.log("Tx Gas used:", gasUsed);
         console.log("Tx Gas price (wei):", tx.gasprice);
@@ -1180,7 +1178,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
-        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
         console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
         console.log("Tx Gas used:", gasUsed);
         console.log("Tx Gas price (wei):", tx.gasprice);

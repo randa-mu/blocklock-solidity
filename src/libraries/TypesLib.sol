@@ -18,6 +18,7 @@ library TypesLib {
     struct BlocklockRequest {
         uint256 subId; // must be 0 for direct funding
         uint256 directFundingFeePaid; // must be > 0 for direct funding and if subId == 0
+        uint32 callbackGasLimit; // must be between 0 and maxGasLimit
         uint64 decryptionRequestID;
         bytes condition;
         Ciphertext ciphertext;
@@ -34,9 +35,6 @@ library TypesLib {
         bytes decryptionKey;
         bytes signature;
         address callback;
-        // used by offchain agent / oracle for callback gasLimit
-        // should cover costs for callbacks from decryptionSender to consumer contract via blocklockSender
-        uint32 callbackGasLimit;
         bool isFulfilled;
     }
 }

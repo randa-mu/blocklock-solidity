@@ -55,21 +55,21 @@ contract DirectFundingTest is BlocklockTest {
         // fetch request information including callbackGasLimit from decryption sender
         TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
 
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
         /// @dev Overhead for EIP-150
         uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
 
         assertTrue(
-            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
             "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
         );
         assertTrue(
-            decryptionRequest.callbackGasLimit
+            blocklockRequest.callbackGasLimit
                 == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
             "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
         );
-
-        // fetch request information from blocklock sender
-        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
         assertTrue(blocklockRequest.subId == 0, "Direct funding request id should be zero");
         assertTrue(
@@ -96,7 +96,7 @@ contract DirectFundingTest is BlocklockTest {
 
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
-        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
         console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
         console.log("Tx Gas used:", gasUsed);
         console.log("Tx Gas price (wei):", tx.gasprice);
@@ -189,18 +189,18 @@ contract DirectFundingTest is BlocklockTest {
         /// @dev Overhead for EIP-150
         uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
 
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
         assertTrue(
-            decryptionRequest.callbackGasLimit > requestCallbackGasLimit,
+            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
             "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
         );
         assertTrue(
-            decryptionRequest.callbackGasLimit
+            blocklockRequest.callbackGasLimit
                 == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
             "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
         );
-
-        // fetch request information from blocklock sender
-        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
         assertTrue(blocklockRequest.subId == 0, "Direct funding request id should be zero");
         assertTrue(
@@ -229,7 +229,7 @@ contract DirectFundingTest is BlocklockTest {
 
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
-        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
         console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
         console.log("Tx Gas used:", gasUsed);
         console.log("Tx Gas price (wei):", tx.gasprice);
@@ -369,7 +369,7 @@ contract DirectFundingTest is BlocklockTest {
 
         uint256 gasAfter = gasleft();
         uint256 gasUsed = gasBefore - gasAfter;
-        console.log("Request CallbackGasLimit:", decryptionRequest.callbackGasLimit);
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
         console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
         console.log("Tx Gas used:", gasUsed);
         console.log("Tx Gas price (wei):", tx.gasprice);

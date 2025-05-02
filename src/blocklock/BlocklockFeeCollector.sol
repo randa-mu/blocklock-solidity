@@ -127,7 +127,7 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
             uint256 baseFeeWei = weiPerUnitGas * (cfg.gasAfterPaymentCalculation + _gas);
 
             // Overhead cost of BLS pairing check (if applicable)
-            uint256 blsOverheadWei = weiPerUnitGas * cfg.blsPairingCheckOverhead;
+            uint256 overheadWei = weiPerUnitGas * (cfg.blsPairingCheckOverhead + _getEIP150Overhead(uint32(_gas)));
 
             // Layer 1 additional cost, e.g., calldata publishing on L2s like Arbitrum/Optimism
             uint256 l1CostWei = _getL1CostWei();
@@ -139,7 +139,7 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
             uint256 flatFeeWei = 1e12 * uint256(cfg.fulfillmentFlatFeeNativePPM);
 
             // Final fee = ((base cost + overheads) * premium%) + flat fee
-            uint256 totalCost = ((l1CostWei + baseFeeWei + blsOverheadWei) * premiumPct) / 100 + flatFeeWei;
+            uint256 totalCost = ((l1CostWei + baseFeeWei + overheadWei) * premiumPct) / 100 + flatFeeWei;
 
             return totalCost;
         }
