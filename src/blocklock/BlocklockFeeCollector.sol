@@ -37,7 +37,8 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
         uint32 fulfillmentFlatFeeNativePPM,
         uint32 weiPerUnitGas,
         uint32 blsPairingCheckOverhead,
-        uint8 nativePremiumPercentage
+        uint8 nativePremiumPercentage,
+        uint16 gasForCallExactCheck
     );
 
     /// @dev Ensures function is only called when the contract configuration parameters are set and
@@ -75,13 +76,15 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
     /// @param gasAfterPaymentCalculation The gas required for post-fulfillment accounting.
     /// @param fulfillmentFlatFeeNativePPM The flat fee (in parts-per-million) for native token payments.
     /// @param nativePremiumPercentage The percentage-based premium for native payments.
+    /// @param gasForCallExactCheck Gas required for exact EXTCODESIZE call and additional operations in CallWithExactGas library.
     function setConfig(
         uint32 maxGasLimit,
         uint32 gasAfterPaymentCalculation,
         uint32 fulfillmentFlatFeeNativePPM,
         uint32 weiPerUnitGas,
         uint32 blsPairingCheckOverhead,
-        uint8 nativePremiumPercentage
+        uint8 nativePremiumPercentage,
+        uint16 gasForCallExactCheck
     ) external virtual {}
 
     /// @notice Calculates the price of a request with the given callbackGasLimit at the current
@@ -89,9 +92,7 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
     /// @dev This function relies on the transaction gas price which is not automatically set during
     /// @dev simulation. To estimate the price at a specific gas price, use the estimatePrice function.
     /// @param _callbackGasLimit is the gas limit used to estimate the price.
-    function calculateRequestPriceNative(uint32 _callbackGasLimit) public view virtual returns (uint256) {
-        return _calculateRequestPriceNative(_callbackGasLimit, tx.gasprice);
-    }
+    function calculateRequestPriceNative(uint32 _callbackGasLimit) public view virtual returns (uint256) {}
 
     /// @notice Estimates the price of a request with a specific gas limit and gas price.
     /// @dev This is a convenience function that can be called in simulation to better understand
@@ -103,9 +104,7 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
         view
         virtual
         returns (uint256)
-    {
-        return _calculateRequestPriceNative(_callbackGasLimit, _requestGasPriceWei);
-    }
+    {}
 
     /// @notice Calculates the total price for a request in native currency (ETH).
     /// @dev This function accounts for the base gas fee, the L1 cost,

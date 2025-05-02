@@ -21,7 +21,7 @@ import {
 contract SubscriptionFundingTest is BlocklockTest {
     address[] public consumersToAddToSubscription;
 
-    function test_noChargeAtRequestTime_forBlocklockSubscriptionRequest() public {
+    function test_No_Charge_AtRequestTime_For_BlocklockSubscriptionRequest() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -59,7 +59,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100_000;
+        uint32 requestCallbackGasLimit = callbackGasLimit;
         uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
@@ -67,21 +67,11 @@ contract SubscriptionFundingTest is BlocklockTest {
         // fetch request information from blocklock sender
         TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
-        /// @dev Overhead for EIP-150
-        uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
-
         assertTrue(
-            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
-            "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
+            blocklockRequest.callbackGasLimit == requestCallbackGasLimit,
+            "Stored callbackGasLimit does not match callbacGasLimit from user request"
         );
 
-        assertTrue(
-            blocklockRequest.callbackGasLimit
-                == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
-            "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
-        );
-
-    
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
             blocklockRequest.directFundingFeePaid == 0,
@@ -99,7 +89,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         assertTrue(reqCount == 0, "Incorrect request count, it should be zero");
     }
 
-    function test_fulfillBlocklock_SubscriptionRequest() public {
+    function test_FulfillBlocklock_SubscriptionRequest_Successfully() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -118,13 +108,13 @@ contract SubscriptionFundingTest is BlocklockTest {
         uint256 totalSubBalanceBeforeRequest = 6 ether;
 
         // get request price
-        uint32 callbackGasLimit = 100_000;
+        uint32 callbackGasLimit = 200_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
         console.log("Request price for offchain oracle callbackGasLimit", requestPrice);
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100_000;
+        uint32 requestCallbackGasLimit = callbackGasLimit;
         uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
@@ -135,21 +125,11 @@ contract SubscriptionFundingTest is BlocklockTest {
         // fetch request information from blocklock sender
         TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
-        /// @dev Overhead for EIP-150
-        uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
-
         assertTrue(
-            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
-            "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
+            blocklockRequest.callbackGasLimit == requestCallbackGasLimit,
+            "Stored callbackGasLimit does not match callbacGasLimit from user request"
         );
 
-        assertTrue(
-            blocklockRequest.callbackGasLimit
-                == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
-            "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
-        );
-
-        
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
             blocklockRequest.directFundingFeePaid == 0,
@@ -217,7 +197,7 @@ contract SubscriptionFundingTest is BlocklockTest {
             blocklockSender.s_withdrawableDirectFundingFeeNative() == 0,
             "We don't expect any direct funding payments from this subscription request"
         );
-        /// @notice exactFeePaid is zero
+
         assertTrue(
             blocklockSender.s_withdrawableSubscriptionFeeNative() == exactFeePaid,
             "Request price paid should be withdrawable by admin at this point"
@@ -231,10 +211,255 @@ contract SubscriptionFundingTest is BlocklockTest {
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
     }
 
-    function test_fulfillBlocklock_SubscriptionRequest_withRevertingReceiver() public {
-        /// @dev test we can still collect payment for reverting callback receiver and
-        /// payment is not blocked for subscription funding (and direct funding in direct funding test)
+    function test_FulfillBlocklock_SubscriptionRequest_With_Low_CallbackGasLimit() public {
+        // create subscription and fund it
+        assert(mockBlocklockReceiver.subscriptionId() == 0);
 
+        vm.prank(alice);
+        mockBlocklockReceiver.createSubscriptionAndFundNative{value: 5 ether}();
+
+        uint256 subId = mockBlocklockReceiver.subscriptionId();
+        assert(subId != 0);
+        console.log("Subscription id = ", subId);
+
+        // top up subscription
+        /// @notice Anyone can top up a subscription account
+        vm.prank(admin);
+        mockBlocklockReceiver.topUpSubscriptionNative{value: 1 ether}();
+
+        uint256 totalSubBalanceBeforeRequest = 6 ether;
+
+        // get request price
+        uint32 callbackGasLimit = 20_000;
+        uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
+        console.log("Request price for offchain oracle callbackGasLimit", requestPrice);
+
+        // make blocklock request
+        vm.prank(alice);
+        uint32 requestCallbackGasLimit = callbackGasLimit;
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+            requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
+        );
+
+        // fetch request information including callbackGasLimit from decryption sender
+        TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
+
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
+        assertTrue(
+            blocklockRequest.callbackGasLimit == requestCallbackGasLimit,
+            "Stored callbackGasLimit does not match callbacGasLimit from user request"
+        );
+
+        assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
+        assertTrue(
+            blocklockRequest.directFundingFeePaid == 0,
+            "User contract should not be charged immediately for subscription request"
+        );
+        assertTrue(
+            blocklockRequest.decryptionRequestID == requestId,
+            "Request id mismatch between blocklockSender and decryptionSender"
+        );
+
+        // fulfill blocklock request
+        /// @notice When we use less gas price, the total tx price including gas
+        // limit for callback and external call from oracle is less than user payment or
+        // calculated request price at request time
+        // we don't use user payment as the gas price for callback from oracle.
+        vm.txGasPrice(100_000);
+        uint256 gasBefore = gasleft();
+
+        vm.prank(admin);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
+        );
+
+        uint256 gasAfter = gasleft();
+        uint256 gasUsed = gasBefore - gasAfter;
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
+        console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
+        console.log("Tx Gas used:", gasUsed);
+        console.log("Tx Gas price (wei):", tx.gasprice);
+        console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
+
+        assertTrue(
+            !decryptionSender.hasPaymentErrored(requestId),
+            "Payment collection in callback to receiver contract should not fail"
+        );
+
+        // check for fee deductions from subscription account
+        // subId should be charged at this point, and request count for subId should be increased
+        (uint96 nativeBalance, uint256 reqCount,,) = blocklockSender.getSubscription(subId);
+
+        uint256 exactFeePaid = totalSubBalanceBeforeRequest - nativeBalance;
+
+        console.log("Subscription native balance after request = ", nativeBalance);
+        console.log("Subscription fee charged for request = ", exactFeePaid);
+        /// @notice check that the exactFeePaid is covered by estimated price and not higher than estimated price derived from
+        /// calling blocklockSender.calculateRequestPriceNative(callbackGasLimit);
+        console.log(totalSubBalanceBeforeRequest, nativeBalance, exactFeePaid);
+        assertTrue(requestPrice >= exactFeePaid, "Request price estimation should cover exact fee charged for request");
+        assertTrue(
+            totalSubBalanceBeforeRequest == exactFeePaid + nativeBalance, "subId should be charged at this point"
+        );
+
+        assertTrue(gasUsed * tx.gasprice < exactFeePaid, "subId should be charged for overhead");
+        assertTrue(reqCount == 1, "Incorrect request count, it should be one");
+
+        decryptionRequest = decryptionSender.getRequest(requestId);
+        assertTrue(decryptionRequest.isFulfilled, "Decryption key not provided in decryption sender by offchain oracle");
+        assertTrue(
+            mockBlocklockReceiver.plainTextValue() != ciphertextDataUint[3 ether].plaintext,
+            "Plaintext should mismatch without decryption due to low callback gas limit not coevring decryption"
+        );
+        assertTrue(mockBlocklockReceiver.requestId() == 1, "Request id in receiver contract is incorrect");
+
+        assertTrue(
+            blocklockSender.s_withdrawableDirectFundingFeeNative() == 0,
+            "We don't expect any direct funding payments from this subscription request"
+        );
+
+        assertTrue(
+            blocklockSender.s_withdrawableSubscriptionFeeNative() == exactFeePaid,
+            "Request price paid should be withdrawable by admin at this point"
+        );
+
+        vm.prank(admin);
+        uint256 adminBalance = admin.balance;
+        blocklockSender.withdrawSubscriptionFeesNative(payable(admin));
+        assertTrue(admin.balance + exactFeePaid > adminBalance, "Admin balance should be higher after withdrawing fees");
+
+        assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
+    }
+
+    /// @notice If user specifies zero callbackGasLimit, they are still charged for gas overhead which is added
+    /// to cover for sending of keys and decryption
+    function test_FulfillBlocklock_SubscriptionRequest_With_Zero_CallbackGasLimit() public {
+        // create subscription and fund it
+        assert(mockBlocklockReceiver.subscriptionId() == 0);
+
+        vm.prank(alice);
+        mockBlocklockReceiver.createSubscriptionAndFundNative{value: 5 ether}();
+
+        uint256 subId = mockBlocklockReceiver.subscriptionId();
+        assert(subId != 0);
+        console.log("Subscription id = ", subId);
+
+        // top up subscription
+        /// @notice Anyone can top up a subscription account
+        vm.prank(admin);
+        mockBlocklockReceiver.topUpSubscriptionNative{value: 1 ether}();
+
+        uint256 totalSubBalanceBeforeRequest = 6 ether;
+
+        // get request price
+        uint32 callbackGasLimit = 0;
+        uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
+        console.log("Request price for offchain oracle callbackGasLimit", requestPrice);
+
+        // make blocklock request
+        vm.prank(alice);
+        uint32 requestCallbackGasLimit = callbackGasLimit;
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+            requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
+        );
+
+        // fetch request information including callbackGasLimit from decryption sender
+        TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
+
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
+        assertTrue(
+            blocklockRequest.callbackGasLimit == requestCallbackGasLimit,
+            "Stored callbackGasLimit does not match callbacGasLimit from user request"
+        );
+
+        assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
+        assertTrue(
+            blocklockRequest.directFundingFeePaid == 0,
+            "User contract should not be charged immediately for subscription request"
+        );
+        assertTrue(
+            blocklockRequest.decryptionRequestID == requestId,
+            "Request id mismatch between blocklockSender and decryptionSender"
+        );
+
+        // fulfill blocklock request
+        /// @notice When we use less gas price, the total tx price including gas
+        // limit for callback and external call from oracle is less than user payment or
+        // calculated request price at request time
+        // we don't use user payment as the gas price for callback from oracle.
+        vm.txGasPrice(100_000);
+        uint256 gasBefore = gasleft();
+
+        vm.prank(admin);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
+        );
+
+        uint256 gasAfter = gasleft();
+        uint256 gasUsed = gasBefore - gasAfter;
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
+        console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
+        console.log("Tx Gas used:", gasUsed);
+        console.log("Tx Gas price (wei):", tx.gasprice);
+        console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
+
+        assertTrue(
+            !decryptionSender.hasPaymentErrored(requestId),
+            "Payment collection in callback to receiver contract should not fail"
+        );
+
+        // check for fee deductions from subscription account
+        // subId should be charged at this point, and request count for subId should be increased
+        (uint96 nativeBalance, uint256 reqCount,,) = blocklockSender.getSubscription(subId);
+
+        uint256 exactFeePaid = totalSubBalanceBeforeRequest - nativeBalance;
+
+        console.log("Subscription native balance after request = ", nativeBalance);
+        console.log("Subscription fee charged for request = ", exactFeePaid);
+        /// @notice check that the exactFeePaid is covered by estimated price and not higher than estimated price derived from
+        /// calling blocklockSender.calculateRequestPriceNative(callbackGasLimit);
+        console.log(totalSubBalanceBeforeRequest, nativeBalance, exactFeePaid);
+        assertTrue(requestPrice >= exactFeePaid, "Request price estimation should cover exact fee charged for request");
+        assertTrue(
+            totalSubBalanceBeforeRequest == exactFeePaid + nativeBalance, "subId should be charged at this point"
+        );
+
+        assertTrue(gasUsed * tx.gasprice < exactFeePaid, "subId should be charged for overhead");
+        assertTrue(reqCount == 1, "Incorrect request count, it should be one");
+
+        decryptionRequest = decryptionSender.getRequest(requestId);
+        assertTrue(decryptionRequest.isFulfilled, "Decryption key not provided in decryption sender by offchain oracle");
+        assertTrue(
+            mockBlocklockReceiver.plainTextValue() != ciphertextDataUint[3 ether].plaintext,
+            "Plaintext does not match without decryption due to low callback gas limit not covering call to decrypt"
+        );
+        assertTrue(mockBlocklockReceiver.requestId() == 1, "Request id in receiver contract is incorrect");
+
+        assertTrue(
+            blocklockSender.s_withdrawableDirectFundingFeeNative() == 0,
+            "We don't expect any direct funding payments from this subscription request"
+        );
+
+        assertTrue(
+            blocklockSender.s_withdrawableSubscriptionFeeNative() == exactFeePaid,
+            "Request price paid should be withdrawable by admin at this point"
+        );
+
+        vm.prank(admin);
+        uint256 adminBalance = admin.balance;
+        blocklockSender.withdrawSubscriptionFeesNative(payable(admin));
+        assertTrue(admin.balance + exactFeePaid > adminBalance, "Admin balance should be higher after withdrawing fees");
+
+        assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
+    }
+
+    /// @dev This test case checks that we can still collect payment for reverting callback receiver and
+    /// payment is not blocked for subscription funding (and direct funding in direct funding test)
+    function test_FulfillBlocklock_SubscriptionRequest_WithRevertingReceiver() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -263,25 +488,14 @@ contract SubscriptionFundingTest is BlocklockTest {
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
-     
         // fetch request information from blocklock sender
         TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
-        /// @dev Overhead for EIP-150
-        uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
-
         assertTrue(
-            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
-            "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
+            blocklockRequest.callbackGasLimit == requestCallbackGasLimit,
+            "Stored callbackGasLimit does not match callbacGasLimit from user request"
         );
 
-        assertTrue(
-            blocklockRequest.callbackGasLimit
-                == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
-            "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
-        );
-
-      
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
             blocklockRequest.directFundingFeePaid == 0,
@@ -339,7 +553,6 @@ contract SubscriptionFundingTest is BlocklockTest {
         assertTrue(gasUsed * tx.gasprice < exactFeePaid, "subId should be charged for overhead");
         assertTrue(reqCount == 1, "Incorrect request count, it should be one");
 
-        /// @notice exactFeePaid is zero
         assertTrue(
             blocklockSender.s_withdrawableSubscriptionFeeNative() == exactFeePaid,
             "Request price paid should be withdrawable by admin at this point"
@@ -353,7 +566,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
     }
 
-    function test_fulfillBlocklockRequest_forAdditionalSubscriberAddress() public {
+    function test_FulfillBlocklockRequest_For_AdditionalSubscriberAddress() public {
         // create subscription and fund it
         vm.prank(alice);
         mockBlocklockReceiver.createSubscriptionAndFundNative{value: 5 ether}();
@@ -362,13 +575,13 @@ contract SubscriptionFundingTest is BlocklockTest {
         uint256 totalSubBalanceBeforeRequest = 5 ether;
 
         // get request price
-        uint32 callbackGasLimit = 100_000;
+        uint32 callbackGasLimit = 200_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
         console.log("Request price for offchain oracle callbackGasLimit", requestPrice);
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100_000;
+        uint32 requestCallbackGasLimit = callbackGasLimit;
         uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
@@ -470,7 +683,7 @@ contract SubscriptionFundingTest is BlocklockTest {
             blocklockSender.s_withdrawableDirectFundingFeeNative() == 0,
             "We don't expect any direct funding payments from this subscription request"
         );
-        /// @notice exactFeePaid is zero
+
         assertTrue(
             blocklockSender.s_withdrawableSubscriptionFeeNative() == exactFeePaid,
             "Request price paid should be withdrawable by admin at this point"
@@ -484,9 +697,9 @@ contract SubscriptionFundingTest is BlocklockTest {
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
     }
 
-    function test_fulfillBlocklock_SubscriptionRequest_withOnlyRequestPriceBalance() public {
+    function test_FulfillBlocklock_SubscriptionRequest_With_OnlyRequestPriceBalance() public {
         // get request price
-        uint32 callbackGasLimit = 100_000;
+        uint32 callbackGasLimit = 200_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
         console.log("Request price for offchain oracle callbackGasLimit", requestPrice);
 
@@ -504,7 +717,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         // make blocklock request
         vm.prank(alice);
-        uint32 requestCallbackGasLimit = 100_000;
+        uint32 requestCallbackGasLimit = callbackGasLimit;
         uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
@@ -514,21 +727,11 @@ contract SubscriptionFundingTest is BlocklockTest {
         // fetch request information from blocklock sender
         TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
-        /// @dev Overhead for EIP-150
-        uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
-
         assertTrue(
-            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
-            "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
+            blocklockRequest.callbackGasLimit == requestCallbackGasLimit,
+            "Stored callbackGasLimit does not match callbacGasLimit from user request"
         );
 
-        assertTrue(
-            blocklockRequest.callbackGasLimit
-                == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
-            "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
-        );
-
-        
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
             blocklockRequest.directFundingFeePaid == 0,
@@ -597,7 +800,7 @@ contract SubscriptionFundingTest is BlocklockTest {
             blocklockSender.s_withdrawableDirectFundingFeeNative() == 0,
             "We don't expect any direct funding payments from this subscription request"
         );
-        /// @notice exactFeePaid is zero
+
         assertTrue(
             blocklockSender.s_withdrawableSubscriptionFeeNative() == exactFeePaid,
             "Request price paid should be withdrawable by admin at this point"
@@ -611,7 +814,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
     }
 
-    function test_cancelSubscription() public {
+    function test_CancelSubscription() public {
         mockBlocklockReceiver = deployAndFundReceiverWithSubscription(alice, address(blocklockSender), 5 ether);
 
         uint256 aliceBalancePreCancellation = alice.balance;
@@ -627,125 +830,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         );
     }
 
-    /// @notice enough gas overhead still added for requests with zero gas limit specified
-    /// to cover for sending of keys and decryption
-    function test_fulfillBlocklock_SubscriptionRequest_withZeroCallbackGasLimit() public {
-        // create subscription and fund it
-        assert(mockBlocklockReceiver.subscriptionId() == 0);
-
-        vm.prank(alice);
-        mockBlocklockReceiver.createSubscriptionAndFundNative{value: 5 ether}();
-
-        uint256 totalSubBalanceBeforeRequest = 5 ether;
-
-        // get request price
-        uint32 callbackGasLimit = 0;
-        uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
-        console.log("Request price for offchain oracle callbackGasLimit", requestPrice);
-
-        // make blocklock request
-        vm.prank(alice);
-        uint32 requestCallbackGasLimit = callbackGasLimit;
-        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
-            requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
-        );
-
-        // fetch request information including callbackGasLimit from decryption sender
-        TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
-
-        // fetch request information from blocklock sender
-        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
-
-        /// @dev Overhead for EIP-150
-        uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
-
-        assertTrue(
-            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
-            "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
-        );
-
-        assertTrue(
-            blocklockRequest.callbackGasLimit
-                == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
-            "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
-        );
-
-    
-        assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
-        assertTrue(
-            blocklockRequest.directFundingFeePaid == 0,
-            "User contract should not be charged immediately for subscription request"
-        );
-        assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
-            "Request id mismatch between blocklockSender and decryptionSender"
-        );
-
-        // fulfill blocklock request
-        /// @notice When we use less gas price, the total tx price including gas
-        // limit for callback and external call from oracle is less than user payment or
-        // calculated request price at request time
-        // we don't use user payment as the gas price for callback from oracle.
-        vm.txGasPrice(100_000);
-        uint256 gasBefore = gasleft();
-
-        vm.prank(admin);
-        decryptionSender.fulfillDecryptionRequest(
-            requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
-        );
-
-        uint256 gasAfter = gasleft();
-        uint256 gasUsed = gasBefore - gasAfter;
-        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
-        console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
-        console.log("Tx Gas used:", gasUsed);
-        console.log("Tx Gas price (wei):", tx.gasprice);
-        console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
-
-        assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
-            "Payment collection in callback to receiver contract should not fail due to lack of funds"
-        );
-
-        // check for fee deductions from subscription account
-        // subId should be charged at this point, and request count for subId should be increased
-        (uint96 nativeBalance, uint256 reqCount,,) = blocklockSender.getSubscription(blocklockRequest.subId);
-
-        console.log("Subscription native balance after request = ", nativeBalance);
-        uint256 exactFeePaid = totalSubBalanceBeforeRequest - nativeBalance;
-        console.log("Subscription fee charged for request = ", exactFeePaid);
-        assertTrue(totalSubBalanceBeforeRequest > nativeBalance, "subId should be charged at this point");
-        // check exact gas cost for the whole transaction
-        assertTrue(gasUsed * tx.gasprice < exactFeePaid, "subId should be charged for overhead");
-        assertTrue(reqCount == 1, "Incorrect request count, it should be one");
-
-        decryptionRequest = decryptionSender.getRequest(requestId);
-        assertTrue(decryptionRequest.isFulfilled, "Decryption key not provided in decryption sender by offchain oracle");
-        assertTrue(
-            mockBlocklockReceiver.plainTextValue() == ciphertextDataUint[3 ether].plaintext,
-            "Plaintext values mismatch after decryption"
-        );
-        assertTrue(mockBlocklockReceiver.requestId() == 1, "Request id in receiver contract is incorrect");
-
-        assertTrue(
-            blocklockSender.s_withdrawableDirectFundingFeeNative() == 0,
-            "We don't expect any direct funding payments from this subscription request"
-        );
-        /// @notice exactFeePaid is zero
-        assertTrue(
-            blocklockSender.s_withdrawableSubscriptionFeeNative() == exactFeePaid,
-            "Request price paid should be withdrawable by admin at this point"
-        );
-
-        vm.prank(admin);
-        uint256 adminBalance = admin.balance;
-        blocklockSender.withdrawSubscriptionFeesNative(payable(admin));
-        assertTrue(admin.balance + exactFeePaid > adminBalance, "Admin balance should be higher after withdrawing fees");
-
-        assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
-    }
-
-    function test_cancellingSubscription_withPendingRequest_notAllowed() public {
+    function test_CancellingSubscription_WithPendingRequest_NotAllowed() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -769,18 +854,9 @@ contract SubscriptionFundingTest is BlocklockTest {
         // fetch request information from blocklock sender
         TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
-        /// @dev Overhead for EIP-150
-        uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
-
         assertTrue(
-            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
-            "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
-        );
-
-        assertTrue(
-            blocklockRequest.callbackGasLimit
-                == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
-            "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
+            blocklockRequest.callbackGasLimit == requestCallbackGasLimit,
+            "Stored callbackGasLimit does not match callbacGasLimit from user request"
         );
 
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
@@ -800,7 +876,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         assertTrue(blocklockSender.s_totalNativeBalance() == totalSubBalanceBeforeRequest, "User not charged");
     }
 
-    function test_callback_forSubscriptionWithZeroBalance_reverts() public {
+    function test_Callback_For_SubscriptionWithZeroBalance_Reverts() public {
         // create subscription but don't fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -831,18 +907,9 @@ contract SubscriptionFundingTest is BlocklockTest {
         // fetch request information from blocklock sender
         TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
-        /// @dev Overhead for EIP-150
-        uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
-
         assertTrue(
-            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
-            "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
-        );
-
-        assertTrue(
-            blocklockRequest.callbackGasLimit
-                == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
-            "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
+            blocklockRequest.callbackGasLimit == requestCallbackGasLimit,
+            "Stored callbackGasLimit does not match callbacGasLimit from user request"
         );
 
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
@@ -965,7 +1032,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         );
     }
 
-    function test_callback_forSubscriptionWithIncorrectDecryptionKey_reverts() public {
+    function test_Callback_For_SubscriptionWithIncorrectDecryptionKey_Reverts() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -1001,21 +1068,10 @@ contract SubscriptionFundingTest is BlocklockTest {
         // fetch request information from blocklock sender
         TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
 
-        /// @dev Overhead for EIP-150
-        uint256 callbackGasOverhead = requestCallbackGasLimit / 63 + 1;
-
         assertTrue(
-            blocklockRequest.callbackGasLimit > requestCallbackGasLimit,
-            "Gas buffer for _getEIP150Overhead() not added to callbackGasLimit from user request"
+            blocklockRequest.callbackGasLimit == requestCallbackGasLimit,
+            "Stored callbackGasLimit does not match callbacGasLimit from user request"
         );
-
-        assertTrue(
-            blocklockRequest.callbackGasLimit
-                == requestCallbackGasLimit + callbackGasOverhead + callbackWithDecryptionAndSignatureVerificationOverhead,
-            "Incorrect Gas buffer for _getEIP150Overhead() added to callbackGasLimit from user request"
-        );
-
-        
 
         assertTrue(blocklockRequest.subId != 0, "Subscription funding request id should not be zero");
         assertTrue(
@@ -1129,7 +1185,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         );
     }
 
-    function test_invalidSignature_forSubscriptionRequest_reverts() public {
+    function test_InvalidSignature_For_SubscriptionRequest_Reverts() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 

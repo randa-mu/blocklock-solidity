@@ -13,11 +13,9 @@ interface IDecryptionSender {
     /// @param ciphertext The encrypted data to be registered
     /// @param condition The condition that need to be met to decrypt the ciphertext
     /// @return requestID The unique ID assigned to the registered decryption request
-    function registerCiphertext(
-        string calldata schemeID,
-        bytes calldata ciphertext,
-        bytes calldata condition
-    ) external returns (uint256 requestID);
+    function registerCiphertext(string calldata schemeID, bytes calldata ciphertext, bytes calldata condition)
+        external
+        returns (uint256 requestID);
 
     /// @notice Provide the decryption key for a specific requestID alongside a signature.
     /// @dev This function is intended to be called after a decryption key has been generated off-chain.

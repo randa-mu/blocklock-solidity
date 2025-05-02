@@ -45,6 +45,7 @@ contract BlocklockTest is Deployment {
         uint32 weiPerUnitGas = 0.003 gwei;
         uint32 blsPairingCheckOverhead = 800_000;
         uint8 nativePremiumPercentage = 10;
+        uint16 gasForExactCallCheck = 5000;
 
         setBlocklockSenderUserBillingConfiguration(
             maxGasLimit,
@@ -52,11 +53,12 @@ contract BlocklockTest is Deployment {
             fulfillmentFlatFeeNativePPM,
             weiPerUnitGas,
             blsPairingCheckOverhead,
-            nativePremiumPercentage
+            nativePremiumPercentage,
+            gasForExactCallCheck
         );
     }
 
-    function test_deployment_configurations() public view {
+    function test_Deployment_Configurations() public view {
         assertTrue(decryptionSender.hasRole(ADMIN_ROLE, admin));
 
         assert(address(signatureSchemeAddressProvider) != address(0));
@@ -74,7 +76,7 @@ contract BlocklockTest is Deployment {
         console.logString(string(blocklockSender.DST_H4()));
     }
 
-    function test_callsToBlocklockSender_shouldRevert_ifBlocklockSenderAddressIsIncorrect() public {
+    function test_CallsToBlocklockSender_ShouldRevert_IfBlocklockSenderAddressIsIncorrect() public {
         vm.prank(alice);
         mockBlocklockReceiver = new MockBlocklockReceiver(admin);
 
@@ -83,7 +85,7 @@ contract BlocklockTest is Deployment {
         mockBlocklockReceiver.createSubscriptionAndFundNative{value: 0}();
     }
 
-    function test_updateSignatureScheme() public {
+    function test_Update_SignatureScheme() public {
         // non-zero address with zero code
         string memory bn254_schemeID = "BN254";
         address schemeAddr = makeAddr(bn254_schemeID);
@@ -124,7 +126,8 @@ contract BlocklockTest is Deployment {
         uint32 fulfillmentFlatFeeNativePPM,
         uint32 weiPerUnitGas,
         uint32 blsPairingCheckOverhead,
-        uint8 nativePremiumPercentage
+        uint8 nativePremiumPercentage,
+        uint16 gasForCallExactCheck
     ) internal {
         vm.prank(admin);
         blocklockSender.setConfig(
@@ -133,7 +136,8 @@ contract BlocklockTest is Deployment {
             fulfillmentFlatFeeNativePPM,
             weiPerUnitGas,
             blsPairingCheckOverhead,
-            nativePremiumPercentage
+            nativePremiumPercentage,
+            gasForCallExactCheck
         );
     }
 }

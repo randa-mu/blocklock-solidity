@@ -79,6 +79,7 @@ contract DeployBlocklockSender is JsonUtils, EnvReader {
             uint32(vm.envUint("WEI_PER_UNIT_GAS")),
             uint32(vm.envUint("BLS_PAIRING_CHECK_OVERHEAD")),
             uint8(vm.envUint("NATIVE_PREMIUM_PERCENTAGE")),
+            uint16(vm.envUint("GAS_FOR_CALL_EXACT_CHECK")),
             blocklockSenderInstance
         );
     }
@@ -107,6 +108,7 @@ contract DeployBlocklockSender is JsonUtils, EnvReader {
         uint32 weiPerUnitGas,
         uint32 blsPairingCheckOverhead,
         uint8 nativePremiumPercentage,
+        uint16 gasForCallExactCheck,
         BlocklockSender blocklockSender
     ) internal {
         vm.broadcast();
@@ -116,7 +118,8 @@ contract DeployBlocklockSender is JsonUtils, EnvReader {
             fulfillmentFlatFeeNativePPM,
             weiPerUnitGas,
             blsPairingCheckOverhead,
-            nativePremiumPercentage
+            nativePremiumPercentage,
+            gasForCallExactCheck
         );
     }
 }

@@ -138,11 +138,10 @@ contract DecryptionSender is
     /// The decryption key is sent to the requesting callback / contract address
     /// when the condition is met.
     /// @return The unique request ID of the decryption request.
-    function registerCiphertext(
-        string calldata schemeID,
-        bytes calldata ciphertext,
-        bytes calldata condition
-    ) external returns (uint256) {
+    function registerCiphertext(string calldata schemeID, bytes calldata ciphertext, bytes calldata condition)
+        external
+        returns (uint256)
+    {
         lastRequestID += 1;
 
         require(signatureSchemeAddressProvider.isSupportedScheme(schemeID), "Signature scheme not supported");
@@ -194,7 +193,9 @@ contract DecryptionSender is
         );
 
         (bool success,) = request.callback.call(
-            abi.encodeWithSelector(IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature)
+            abi.encodeWithSelector(
+                IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature
+            )
         );
 
         requests[requestID].isFulfilled = true;

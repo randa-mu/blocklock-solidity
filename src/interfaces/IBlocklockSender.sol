@@ -21,9 +21,9 @@ interface IBlocklockSender is ISubscription {
     /// The decryption key is sent to the requesting callback / contract address
     /// when the condition is met.
     /// @param ciphertext The ciphertext that will be used in the blocklock request
-    /// @dev This function allows users to request a blocklock for a specific condition. 
+    /// @dev This function allows users to request a blocklock for a specific condition.
     ///      The blocklock is not associated with any subscription ID
-    ///      and requires a ciphertext to be provided. The function checks that the contract is 
+    ///      and requires a ciphertext to be provided. The function checks that the contract is
     ///      configured and not disabled before processing the request.
     function requestBlocklock(
         uint32 callbackGasLimit,
@@ -44,9 +44,9 @@ interface IBlocklockSender is ISubscription {
     /// when the condition is met.
     /// @param ciphertext The ciphertext that will be used in the blocklock request
     /// @return requestID The unique identifier for the blocklock request
-    /// @dev This function allows users to request a blocklock for a specific condition. 
+    /// @dev This function allows users to request a blocklock for a specific condition.
     ///      The blocklock is associated with a given subscription ID
-    ///      and requires a ciphertext to be provided. The function checks that the contract is 
+    ///      and requires a ciphertext to be provided. The function checks that the contract is
     ///      configured and not disabled before processing the request.
     function requestBlocklockWithSubscription(
         uint32 callbackGasLimit,

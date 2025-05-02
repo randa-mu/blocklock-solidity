@@ -190,6 +190,7 @@ describe("Blocklock integration tests", () => {
     const weiPerUnitGas = 3000000;
     const blsPairingCheckOverhead = 800_000;
     const nativePremiumPercentage = 10;
+    const gasForCallExactCheck = 5000;
 
     await blocklockSender
       .connect(wallet)
@@ -200,6 +201,7 @@ describe("Blocklock integration tests", () => {
         weiPerUnitGas,
         blsPairingCheckOverhead,
         nativePremiumPercentage,
+        gasForCallExactCheck
       );
 
     // fund contract
