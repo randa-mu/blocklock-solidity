@@ -330,14 +330,3 @@ function parseSolidityCiphertextString(ciphertext: string): Ciphertext {
     W: getBytes(ct.w),
   };
 }
-
-// Convert block height to big-endian bytes
-function blockHeightToBEBytes(blockHeight: bigint): Uint8Array {
-  const buffer = new ArrayBuffer(32);
-  const dataView = new DataView(buffer);
-  dataView.setBigUint64(0, (blockHeight >> 192n) & 0xffff_ffff_ffff_ffffn);
-  dataView.setBigUint64(8, (blockHeight >> 128n) & 0xffff_ffff_ffff_ffffn);
-  dataView.setBigUint64(16, (blockHeight >> 64n) & 0xffff_ffff_ffff_ffffn);
-  dataView.setBigUint64(24, blockHeight & 0xffff_ffff_ffff_ffffn);
-  return new Uint8Array(buffer);
-}
