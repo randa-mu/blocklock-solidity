@@ -206,10 +206,14 @@ describe("Blocklock integration tests", () => {
 
     // fund contract
     await mockBlocklockReceiverInstance.connect(wallet).fundContractNative({ value: ethers.parseEther("2") });
-    // make direct funding request
+    // make direct funding request with enough callbackGasLimit to cover BLS operations in call to decrypt() function
+    // in receiver contract
+    const callbackGasLimit = 300000;
+    
     let tx = await mockBlocklockReceiverInstance
       .connect(wallet)
-      .createTimelockRequestWithDirectFunding(100000, encodedCondition, encodeCiphertextToSolidity(ct));
+      .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct));
+    
     let receipt = await tx.wait(1);
     if (!receipt) {
       throw new Error("transaction has not been mined");

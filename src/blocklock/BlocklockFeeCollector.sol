@@ -123,10 +123,8 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
             uint256 weiPerUnitGas = _requestGasPrice > 0 ? _requestGasPrice : cfg.weiPerUnitGas;
 
             // Base fee = gas required for request + post-call processing * gas price
-            uint256 baseFeeWei = weiPerUnitGas * (cfg.gasAfterPaymentCalculation + _gas);
-
-            // Overhead cost of BLS pairing check (if applicable)
-            uint256 overheadWei = weiPerUnitGas * (cfg.blsPairingCheckOverhead + _getEIP150Overhead(uint32(_gas)));
+            uint256 baseFeeWei = weiPerUnitGas
+                * (cfg.gasAfterPaymentCalculation + _gas + cfg.blsPairingCheckOverhead + _getEIP150Overhead(uint32(_gas)));
 
             // Layer 1 additional cost, e.g., calldata publishing on L2s like Arbitrum/Optimism
             uint256 l1CostWei = _getL1CostWei();
@@ -138,7 +136,7 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
             uint256 flatFeeWei = 1e12 * uint256(cfg.fulfillmentFlatFeeNativePPM);
 
             // Final fee = ((base cost + overheads) * premium%) + flat fee
-            uint256 totalCost = ((l1CostWei + baseFeeWei + overheadWei) * premiumPct) / 100 + flatFeeWei;
+            uint256 totalCost = ((l1CostWei + baseFeeWei) * premiumPct) / 100 + flatFeeWei;
 
             return totalCost;
         }
@@ -156,7 +154,7 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
             // Retrieve L1 cost (non-zero only on L2s that need to reimburse L1 gas usage)
             uint256 l1CostWei = _getL1CostWei(msg.data);
             if (l1CostWei > 0) {
-                // Emit L1 fee info if applicable
+                // Emit L1 fee information if applicable
                 emit L1GasFee(l1CostWei);
             }
 

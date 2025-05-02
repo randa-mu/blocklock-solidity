@@ -161,7 +161,7 @@ contract BlocklockSender is
     ) external payable onlyConfiguredNotDisabled returns (uint256) {
         uint256 decryptionRequestID = requestBlocklockWithSubscription(
             callbackGasLimit,
-            0, // no subId
+            0, // no subId for direct funding requests
             condition,
             ciphertext
         );
@@ -194,7 +194,7 @@ contract BlocklockSender is
         require(subId != 0 || msg.value > 0, "Direct funding required for request fulfillment callback");
 
         /// @dev subId must be zero for direct funding or non zero for active subscription
-        _validateAndUpdateSubscription(callbackGasLimit, subId);
+        _validateCallbackGasLimitAndUpdateSubscription(callbackGasLimit, subId);
 
         uint64 decryptionRequestID = uint64(_registerCiphertext(SCHEME_ID, abi.encode(ciphertext), condition));
 
@@ -221,9 +221,15 @@ contract BlocklockSender is
     /// @dev If the subscription ID is zero, it processes a new subscription by calculating the necessary fees.
     /// @param _callbackGasLimit The gas limit for the callback function.
     /// @param _subId The subscription ID. If greater than zero, it indicates an existing subscription, otherwise, a new subscription is created.
-    function _validateAndUpdateSubscription(uint32 _callbackGasLimit, uint256 _subId) internal {
+    function _validateCallbackGasLimitAndUpdateSubscription(uint32 _callbackGasLimit, uint256 _subId) internal {
+        // No lower bound on the requested gas limit. A user could request 0 callback gas limit
+        // but the overhead added covers bls pairing check operations and decryption as part of the callback
+        // and any other added logic in consumer contract might lead to out of gas revert.
+        require(_callbackGasLimit <= s_config.maxGasLimit, "Callback gasLimit too high");
+
         if (_subId > 0) {
-            _requireValidSubscription(s_subscriptionConfigs[_subId].owner);
+            address owner = s_subscriptionConfigs[_subId].owner;
+            _requireValidSubscription(owner);
             // Its important to ensure that the consumer is in fact who they say they
             // are, otherwise they could use someone else's subscription balance.
             mapping(uint256 => ConsumerConfig) storage consumerConfigs = s_consumers[msg.sender];
@@ -239,11 +245,6 @@ contract BlocklockSender is
 
             require(msg.value >= price, "Fee too low");
         }
-
-        // No lower bound on the requested gas limit. A user could request 0 callback gas limit
-        // but the overhead added covers bls pairing check operations and decryption as part of the callback
-        // and any other added logic in consumer contract might lead to out of gas revert.
-        require(_callbackGasLimit <= s_config.maxGasLimit, "Callback gasLimit too high");
     }
 
     /// @notice Handles the reception of decryption data (decryption key and signature) for a specific decryption request
@@ -259,8 +260,8 @@ contract BlocklockSender is
     {
         uint256 startGas = gasleft();
 
-        TypesLib.BlocklockRequest memory request = blocklockRequestsWithDecryptionKey[decryptionRequestID];
-        require(request.decryptionRequestID > 0, "No request for request id");
+        TypesLib.BlocklockRequest storage request = blocklockRequestsWithDecryptionKey[decryptionRequestID];
+        require(request.decryptionRequestID != 0, "No request for request id");
 
         bytes memory callbackCallData =
             abi.encodeWithSelector(IBlocklockReceiver.receiveBlocklock.selector, decryptionRequestID, decryptionKey);
@@ -269,13 +270,16 @@ contract BlocklockSender is
             request.callback, request.callbackGasLimit, s_config.gasForCallExactCheck
         );
 
-        if (!success) {
-            emit BlocklockCallbackFailed(decryptionRequestID);
+        if (success) {
+            request.decryptionKey = decryptionKey;
+            request.signature = signature;
+            emit BlocklockCallbackSuccess(
+                decryptionRequestID, request.condition, request.ciphertext, request.decryptionKey
+            );
         } else {
-            emit BlocklockCallbackSuccess(decryptionRequestID, request.condition, request.ciphertext, decryptionKey);
-            blocklockRequestsWithDecryptionKey[decryptionRequestID].decryptionKey = decryptionKey;
-            blocklockRequestsWithDecryptionKey[decryptionRequestID].signature = signature;
+            emit BlocklockCallbackFailed(decryptionRequestID);
         }
+
         _handlePaymentAndCharge(decryptionRequestID, startGas);
     }
 
