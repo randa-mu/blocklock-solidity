@@ -144,7 +144,12 @@ describe("Blocklock integration tests", () => {
       ]),
     );
     await uupsProxy2.waitForDeployment();
-    const blocklockSender = BlocklockSender.attach(await uupsProxy2.getAddress());
+    
+    const blocklockSender = BlocklockSender__factory.connect(
+      await uupsProxy2.getAddress(),
+      wallet
+    );
+
     // deploy user mock decryption receiver contract
     const MockBlocklockReceiver = new ethers.ContractFactory(
       MockBlocklockReceiver__factory.abi,
@@ -223,7 +228,7 @@ describe("Blocklock integration tests", () => {
     expect(blockRequest!.condition).to.equal(encodedCondition);
 
     let blocklockRequestStatus = await blocklockSender.getRequest(1n);
-    console.log(blocklockRequestStatus!.blockHeight);
+    console.log(blocklockRequestStatus!.condition);
     expect(blocklockRequestStatus!.condition).to.equal(encodedCondition);
     expect(blocklockRequestStatus?.decryptionKey.length).to.equal(2);
 
