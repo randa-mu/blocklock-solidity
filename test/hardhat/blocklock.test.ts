@@ -283,12 +283,17 @@ describe("Blocklock integration tests", () => {
     expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
 
     // Calculate if it's profitable to execute with buffer
+    // It is best to calculate if it's profitable to execute with buffer
+    // as in some scenarios or chains, the transaction could fail without adding the buffer if the actual gas used is 
+    // higher than the estimatedGasWithCallbackGasLimit.
+    // It is also safer to add a buffer to the estimatedGasWithCallbackGasLimit, not just estimatedGas
     const gasBuffer = (estimatedGasWithCallbackGasLimit * 120n) / 100n; // 20% buffer
     expectedTxCost = gasBuffer * effectiveGasPrice;
     profitAfterTx = BigInt(userPayment) - BigInt(expectedTxCost);
     expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
 
     // transaction passes whether we add buffer to the gas limit or don't
+    // because the actual gas used == estimated gas without callback gas limit
     tx = await decryptionSenderInstance.connect(wallet).fulfillDecryptionRequest(requestID, decryption_key, sigBytes, {
       gasLimit: gasBuffer,
       maxFeePerGas,
@@ -296,6 +301,13 @@ describe("Blocklock integration tests", () => {
     });
     const [success, txReceipt] = await checkTxMined(tx.hash, wallet.provider);
     expect(success).to.be.equal(true);
+
+    console.log("Estimated gas:", estimatedGas.toString());
+    console.log("Callback gas limit:", callbackGasLimit.toString());
+    console.log("Estimated gas + Callback gas limit:", estimatedGasWithCallbackGasLimit.toString());
+    console.log("Actual gas used:", txReceipt!.gasUsed.toString());
+
+    expect(estimatedGas).to.be.equal(txReceipt!.gasUsed);
 
     // Verify logs and request results
     const iface = BlocklockSender__factory.createInterface();
