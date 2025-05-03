@@ -264,8 +264,7 @@ describe("Blocklock integration tests", () => {
     const estimatedGas = await decryptionSenderInstance
       .connect(wallet)
       .fulfillDecryptionRequest.estimateGas(requestID, decryption_key, sigBytes);
-    // add callbackGasLimit to estimatedGas with a buffer when sending transaction. Any unsued gas is refunded.
-    expect(Number(estimatedGas) + callbackGasLimit).to.be.gt(callbackGasLimit);
+    const estimatedGasWithCallbackGasLimit = BigInt(estimatedGas) + BigInt(callbackGasLimit);
 
     // Fetch current gas pricing (EIP-1559 compatible)
     const feeData = await wallet.provider.getFeeData();
@@ -277,18 +276,22 @@ describe("Blocklock integration tests", () => {
     const effectiveGasPrice =
       maxFeePerGas < baseFeePerGas + maxPriorityFeePerGas ? maxFeePerGas : baseFeePerGas + maxPriorityFeePerGas;
 
-    const expectedTxCost = estimatedGas * effectiveGasPrice;
+    // Calculate if it's profitable to execute without buffer
+    let expectedTxCost = estimatedGasWithCallbackGasLimit * effectiveGasPrice;
+    let profitAfterTx = BigInt(userPayment) - BigInt(expectedTxCost);
+    expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
 
-    // Calculate if it's profitable to execute
-    const profitAfterTx = BigInt(userPayment) - BigInt(expectedTxCost);
-
+    // Calculate if it's profitable to execute with buffer
+    const gasBuffer = estimatedGasWithCallbackGasLimit * 120n / 100n; // 20% buffer
+    expectedTxCost = gasBuffer * effectiveGasPrice;
+    profitAfterTx = BigInt(userPayment) - BigInt(expectedTxCost);
     expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
 
     // Submit transaction
     // Actual tx fee paid = actualGasUsed * effectiveGasPrice
     // where effectiveGasPrice = min(maxFeePerGas, baseFee + maxPriorityFeePerGas)
     tx = await decryptionSenderInstance.connect(wallet).fulfillDecryptionRequest(requestID, decryption_key, sigBytes, {
-      gasLimit: estimatedGas,
+      gasLimit: gasBuffer,
       maxFeePerGas,
       maxPriorityFeePerGas,
     });
