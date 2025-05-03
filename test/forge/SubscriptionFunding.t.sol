@@ -1109,8 +1109,8 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        /// @notice reverting callback should add request id to the paymentErroredRequestIds set in decryptionSender
-        /// @dev for failing callbacks, the request id is not added to list of errored callbacks
+        /// @dev for failing callbacks, the request id is not added to list of payment errored callbacks
+        /// @dev only callbacks where the subscription balance could not cover payment are added.
         assertTrue(
             !decryptionSender.hasPaymentErrored(requestId),
             "Payment collection in callback to receiver contract will be executed but decryption will fail if user decrypts within callback"
