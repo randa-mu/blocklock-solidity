@@ -162,7 +162,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
+            !decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract should not fail"
         );
 
@@ -284,7 +284,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
+            !decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract should not fail"
         );
 
@@ -408,7 +408,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
+            !decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract should not fail"
         );
 
@@ -530,7 +530,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
+            !decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract should not fail due to lack of funds"
         );
 
@@ -764,7 +764,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
+            !decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract should not fail due to lack of funds"
         );
 
@@ -943,12 +943,12 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Gas price (wei):", tx.gasprice);
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
-        /// @notice reverting callback should add request id to the paymentErroredRequestIds set in decryptionSender
+        /// @notice reverting callback should add request id to the erroredRequestIds set in decryptionSender
         /// @dev reverts due to fee collection failing, not callback / receiver contract logic
         /// @dev even though we only emit event for failing calls to receiver contracts,
         /// we can still catch failing fee collections
         assertTrue(
-            decryptionSender.hasPaymentErrored(requestId),
+            decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract should have failed"
         );
 
@@ -1027,7 +1027,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         );
 
         assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
+            !decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract should no longer fail after successful retry"
         );
     }
@@ -1112,7 +1112,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         /// @dev for failing callbacks, the request id is not added to list of payment errored callbacks
         /// @dev only callbacks where the subscription balance could not cover payment are added.
         assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
+            !decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract will be executed but decryption will fail if user decrypts within callback"
         );
 
@@ -1241,7 +1241,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
+            !decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract should not fail due to lack of funds"
         );
 

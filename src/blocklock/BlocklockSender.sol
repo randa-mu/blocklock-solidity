@@ -266,10 +266,7 @@ contract BlocklockSender is
         bytes memory callbackCallData =
             abi.encodeWithSelector(IBlocklockReceiver.receiveBlocklock.selector, decryptionRequestID, decryptionKey);
 
-        bool success = callbackCallData._callWithExactGas(
-            request.callback, request.callbackGasLimit, s_config.gasForCallExactCheck
-        );
-
+        (bool success,) = callbackCallData._callWithExactGasEvenIfTargetIsNoContract(request.callback, request.callbackGasLimit, s_config.gasForCallExactCheck);
         if (success) {
             request.decryptionKey = decryptionKey;
             request.signature = signature;

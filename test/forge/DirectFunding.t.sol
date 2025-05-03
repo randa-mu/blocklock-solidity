@@ -95,7 +95,7 @@ contract DirectFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
+            !decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract should not fail"
         );
 
@@ -112,6 +112,101 @@ contract DirectFundingTest is BlocklockTest {
         // check deductions from user and withdrawable amount in blocklock sender for admin
         blocklockRequest = blocklockSender.getRequest(requestId);
 
+        console.log("Direct funding fee paid", blocklockRequest.directFundingFeePaid);
+        console.log(
+            "Revenue after actual callback tx cost", blocklockRequest.directFundingFeePaid - (gasUsed * tx.gasprice)
+        );
+
+        assertTrue(
+            blocklockSender.s_totalNativeBalance() == 0, "We don't expect any funded subscriptions at this point"
+        );
+        assertTrue(
+            blocklockSender.s_withdrawableDirectFundingFeeNative() == blocklockRequest.directFundingFeePaid,
+            "Request price paid should be withdrawable by admin at this point"
+        );
+        assertTrue(
+            blocklockSender.s_withdrawableSubscriptionFeeNative() == 0,
+            "We don't expect any funded subscriptions at this point"
+        );
+
+        vm.prank(admin);
+        uint256 adminBalance = admin.balance;
+        blocklockSender.withdrawDirectFundingFeesNative(payable(admin));
+        assertTrue(
+            admin.balance + blocklockRequest.directFundingFeePaid > adminBalance,
+            "Admin balance should be higher after withdrawing fees"
+        );
+    }
+
+    function test_Callback_Should_NotRevert_If_InterfaceIsNotImplemented() public {
+        assertTrue(blocklockSender.s_configured(), "BlocklockSender not configured");
+        assertFalse(blocklockSender.s_disabled(), "BlocklockSender is paused");
+
+        // get request price
+        uint32 callbackGasLimit = 500_000;
+        uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
+
+        // make blocklock request
+        vm.prank(alice);
+        uint32 requestCallbackGasLimit = callbackGasLimit;
+        uint256 requestId = blocklockSender.requestBlocklock{value: requestPrice}(
+            requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
+        );
+
+        // fetch request information including callbackGasLimit from decryption sender
+        TypesLib.DecryptionRequest memory decryptionRequest = decryptionSender.getRequest(requestId);
+
+        // fetch request information from blocklock sender
+        TypesLib.BlocklockRequest memory blocklockRequest = blocklockSender.getRequest(requestId);
+
+        assertTrue(
+            blocklockRequest.callbackGasLimit == requestCallbackGasLimit,
+            "Stored callbackGasLimit does not match callbacGasLimit from user request"
+        );
+
+        assertTrue(blocklockRequest.subId == 0, "Direct funding request id should be zero");
+        assertTrue(
+            blocklockRequest.directFundingFeePaid > 0 && blocklockRequest.directFundingFeePaid == requestPrice,
+            "Invalid price paid by user contract for request"
+        );
+        assertTrue(
+            blocklockRequest.decryptionRequestID == requestId,
+            "Request id mismatch between blocklockSender and decryptionSender"
+        );
+
+        // fulfill blocklock request
+        /// @notice When we use less gas price, the total tx price including gas
+        // limit for callback and external call from oracle is less than user payment or
+        // calculated request price at request time
+        // we don't use user payment as the gas price for callback from oracle.
+        vm.txGasPrice(100_000);
+        uint256 gasBefore = gasleft();
+
+        vm.prank(admin);
+        decryptionSender.fulfillDecryptionRequest(
+            requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
+        );
+
+        uint256 gasAfter = gasleft();
+        uint256 gasUsed = gasBefore - gasAfter;
+        console.log("Request CallbackGasLimit:", blocklockRequest.callbackGasLimit);
+        console.log("Request CallbackGasPrice:", blocklockRequest.directFundingFeePaid);
+        console.log("Tx Gas used:", gasUsed);
+        console.log("Tx Gas price (wei):", tx.gasprice);
+        console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
+
+        assertTrue(
+            !decryptionSender.hasErrored(requestId),
+            "Callback should not fail if calling address is not implementing the IBlocklockReceiver.receiveBlocklock interface"
+        );
+
+        decryptionRequest = decryptionSender.getRequest(requestId);
+        assertTrue(decryptionRequest.isFulfilled, "Request should be marked as fulfilled");
+
+        blocklockRequest = blocklockSender.getRequest(requestId);
+        assertTrue(blocklockRequest.decryptionKey.length > 2, "Decryption key should be registered on-chain after fulfilling request");
+
+        // we can still take payment
         console.log("Direct funding fee paid", blocklockRequest.directFundingFeePaid);
         console.log(
             "Revenue after actual callback tx cost", blocklockRequest.directFundingFeePaid - (gasUsed * tx.gasprice)
@@ -217,7 +312,7 @@ contract DirectFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
+            !decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract should not fail"
         );
 
@@ -339,7 +434,7 @@ contract DirectFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
+            !decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract should not fail"
         );
 
@@ -464,7 +559,7 @@ contract DirectFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
+            !decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract should not fail"
         );
 
@@ -604,7 +699,7 @@ contract DirectFundingTest is BlocklockTest {
         console.log("Tx Total cost (wei):", gasUsed * tx.gasprice);
 
         assertTrue(
-            !decryptionSender.hasPaymentErrored(requestId),
+            !decryptionSender.hasErrored(requestId),
             "Payment collection in callback to receiver contract should not be called"
         );
 

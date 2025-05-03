@@ -56,7 +56,11 @@ contract DecryptionSender is
     EnumerableSet.UintSet private unfulfilledRequestIds;
 
     /// @dev Set for storing unique request Ids with failing callbacks
-    EnumerableSet.UintSet private paymentErroredRequestIds;
+    /// @dev Callbacks can fail if collection of request fee from 
+    ///      subscription account fails in `_handlePaymentAndCharge` function call.
+    ///      We use `_callWithExactGasEvenIfTargetIsNoContract` function for callback so it works if 
+    ///      caller does not implement the interface.
+    EnumerableSet.UintSet private erroredRequestIds;
 
     /// @dev Emitted when the signature scheme address provider is updated.
     event SignatureSchemeAddressProviderUpdated(address indexed newSignatureSchemeAddressProvider);
@@ -201,11 +205,11 @@ contract DecryptionSender is
         requests[requestID].isFulfilled = true;
         unfulfilledRequestIds.remove(requestID);
         if (!success) {
-            paymentErroredRequestIds.add(requestID);
+            erroredRequestIds.add(requestID);
             emit DecryptionReceiverCallbackFailed(requestID);
         } else {
-            if (hasPaymentErrored(requestID)) {
-                paymentErroredRequestIds.remove(requestID);
+            if (hasErrored(requestID)) {
+                erroredRequestIds.remove(requestID);
             }
             fulfilledRequestIds.add(requestID);
             emit DecryptionReceiverCallbackSuccess(requestID, decryptionKey, signature);
@@ -225,15 +229,15 @@ contract DecryptionSender is
     /// @param requestID The unique request ID of the decryption request.
     /// @return True if the request is in flight (unfulfilled or errored), false otherwise.
     function isInFlight(uint256 requestID) public view returns (bool) {
-        return unfulfilledRequestIds.contains(requestID) || paymentErroredRequestIds.contains(requestID);
+        return unfulfilledRequestIds.contains(requestID) || erroredRequestIds.contains(requestID);
     }
 
     /// @notice Checks if a decryption request has errored out.
     /// @dev Used to check if the request has failed and is in the errored state.
     /// @param requestID The unique request ID of the decryption request.
     /// @return True if the request has errored, false otherwise.
-    function hasPaymentErrored(uint256 requestID) public view returns (bool) {
-        return paymentErroredRequestIds.contains(requestID);
+    function hasErrored(uint256 requestID) public view returns (bool) {
+        return erroredRequestIds.contains(requestID);
     }
 
     /// @notice Retrieves the details of a decryption request.
@@ -261,8 +265,8 @@ contract DecryptionSender is
     /// @notice Retrieves all errored request IDs.
     /// @dev Returns an array of all errored request IDs.
     /// @return An array of errored request IDs.
-    function getAllpaymentErroredRequestIds() external view returns (uint256[] memory) {
-        return paymentErroredRequestIds.values();
+    function getAllerroredRequestIds() external view returns (uint256[] memory) {
+        return erroredRequestIds.values();
     }
 
     /// @notice Retrieves the count of unfulfilled request IDs.
