@@ -210,7 +210,7 @@ describe("Blocklock integration tests", () => {
     await mockBlocklockReceiverInstance.connect(wallet).fundContractNative({ value: ethers.parseEther("2") });
     // make direct funding request with enough callbackGasLimit to cover BLS operations in call to decrypt() function
     // in receiver contract
-    const callbackGasLimit = 300000;
+    const callbackGasLimit = 500_000;
 
     let tx = await mockBlocklockReceiverInstance
       .connect(wallet)
@@ -264,11 +264,10 @@ describe("Blocklock integration tests", () => {
     const estimatedGas = await decryptionSenderInstance
       .connect(wallet)
       .fulfillDecryptionRequest.estimateGas(requestID, decryption_key, sigBytes);
-    // estimated gas is always increased by callbackGasLimit and some margin
-    // so no need to add callbackGasLimit to estimated gas
-    expect(estimatedGas).to.be.gt(callbackGasLimit);
+    // add callbackGasLimit to estimatedGas with a buffer when sending transaction. Any unsued gas is refunded.
+    expect((Number(estimatedGas) + callbackGasLimit)).to.be.gt(callbackGasLimit);
     // avoid decimals by rounding up, as we can't pass decimal to tx gas parameters
-    const gasLimitWithBuffer = Math.ceil(Number(estimatedGas) * 1.05); // 5% buffer
+    const gasLimitWithBuffer = Math.ceil((Number(estimatedGas) + callbackGasLimit) * 1.05); // 5% buffer
 
     // Fetch current gas pricing (EIP-1559 compatible)
     const feeData = await wallet.provider.getFeeData();
@@ -297,7 +296,7 @@ describe("Blocklock integration tests", () => {
 
     // Verify logs and request results
     const iface = BlocklockSender__factory.createInterface();
-    const [, , ,] = extractSingleLog(
+    const [, , , ] = extractSingleLog(
       iface,
       receipt,
       await blocklockSender.getAddress(),

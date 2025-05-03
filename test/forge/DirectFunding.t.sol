@@ -27,7 +27,7 @@ contract DirectFundingTest is BlocklockTest {
         assertFalse(blocklockSender.s_disabled(), "BlocklockSender is paused");
 
         // get request price
-        uint32 callbackGasLimit = 300_000;
+        uint32 callbackGasLimit = 500_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
 
         // fund blocklock receiver contract
