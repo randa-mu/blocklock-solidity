@@ -324,6 +324,251 @@ describe("Blocklock integration tests", () => {
     expect(blocklockRequestStatus?.decryptionKey.length).to.equal(66);
     expect(await mockBlocklockReceiverInstance.plainTextValue()).to.equal(BigInt(msg));
   });
+
+
+  it("can request blocklock decryption from user contract with on-chain decryption using filecoin gas units", async () => {
+    // The ratio of Ethereum gas to Filecoin gas is about 1:444. Expect Filecoin gas numbers to look much larger than those in Ethereum.
+    // https://docs.filecoin.io/smart-contracts/filecoin-evm-runtime/difference-with-ethereum
+
+    // Buffer of 444 causes the tx gas limit to exceed block gas limit in hardhat test and reverts
+    const filecoinGasBuffer = 44;
+
+    /** Smart Contract Deployments */
+    // deploy signature scheme address provider
+    const SignatureSchemeAddressProvider = new ethers.ContractFactory(
+      SignatureSchemeAddressProvider__factory.abi,
+      SignatureSchemeAddressProvider__factory.bytecode,
+      wallet,
+    );
+    const signatureSchemeAddressProvider = await SignatureSchemeAddressProvider.deploy(await wallet.getAddress());
+    await signatureSchemeAddressProvider.waitForDeployment();
+    const schemeProviderAddr = await signatureSchemeAddressProvider.getAddress();
+
+    // deploy blocklock scheme
+    const BlocklockScheme = new ethers.ContractFactory(
+      BlocklockSignatureScheme__factory.abi,
+      BlocklockSignatureScheme__factory.bytecode,
+      wallet,
+    );
+    const blocklockScheme = await BlocklockScheme.deploy(
+      [blocklock_default_pk.x.c0, blocklock_default_pk.x.c1],
+      [blocklock_default_pk.y.c0, blocklock_default_pk.y.c1],
+    );
+    await blocklockScheme.waitForDeployment();
+    const schemeProviderContract = SignatureSchemeAddressProvider__factory.connect(schemeProviderAddr, wallet);
+    await schemeProviderContract.updateSignatureScheme(SCHEME_ID, await blocklockScheme.getAddress());
+    // deploy decryption sender
+    const DecryptionSender = new ethers.ContractFactory(
+      DecryptionSender__factory.abi,
+      DecryptionSender__factory.bytecode,
+      wallet,
+    );
+    const decryptionSenderImplementation = await DecryptionSender.deploy();
+    await decryptionSenderImplementation.waitForDeployment();
+    let UUPSProxy = new ethers.ContractFactory(UUPSProxy__factory.abi, UUPSProxy__factory.bytecode, wallet);
+    const uupsProxy = await UUPSProxy.deploy(
+      await decryptionSenderImplementation.getAddress(),
+      DecryptionSender.interface.encodeFunctionData("initialize", [await wallet.getAddress(), schemeProviderAddr]),
+    );
+    await uupsProxy.waitForDeployment();
+    const decryptionSender = DecryptionSender.attach(await uupsProxy.getAddress());
+    const decryptionSenderInstance = DecryptionSender__factory.connect(await decryptionSender.getAddress(), wallet);
+    // deploy blocklock sender
+    const BlocklockSender = new ethers.ContractFactory(
+      BlocklockSender__factory.abi,
+      BlocklockSender__factory.bytecode,
+      wallet,
+    );
+    const blocklockSenderImplementation = await BlocklockSender.deploy();
+    await blocklockSenderImplementation.waitForDeployment();
+    const uupsProxy2 = await UUPSProxy.deploy(
+      await blocklockSenderImplementation.getAddress(),
+      BlocklockSender.interface.encodeFunctionData("initialize", [
+        await wallet.getAddress(),
+        await decryptionSender.getAddress(),
+      ]),
+    );
+    await uupsProxy2.waitForDeployment();
+
+    const blocklockSender = BlocklockSender__factory.connect(await uupsProxy2.getAddress(), wallet);
+
+    // configure request fees parameters
+    const maxGasLimit = 500_000 * filecoinGasBuffer;
+    const gasAfterPaymentCalculation = 400_000 * filecoinGasBuffer;
+    const fulfillmentFlatFeeNativePPM = 1_000_000;
+    const weiPerUnitGas = 3_000_000;
+    const blsPairingCheckOverhead = 800_000 * filecoinGasBuffer;
+    const nativePremiumPercentage = 10;
+    const gasForCallExactCheck = 5_000 * filecoinGasBuffer;
+
+    await blocklockSender
+      .connect(wallet)
+      .setConfig(
+        maxGasLimit,
+        gasAfterPaymentCalculation,
+        fulfillmentFlatFeeNativePPM,
+        weiPerUnitGas,
+        blsPairingCheckOverhead,
+        nativePremiumPercentage,
+        gasForCallExactCheck,
+      );
+
+    // deploy user mock decryption receiver contract
+    const MockBlocklockReceiver = new ethers.ContractFactory(
+      MockBlocklockReceiver__factory.abi,
+      MockBlocklockReceiver__factory.bytecode,
+      wallet,
+    );
+    const mockBlocklockReceiver = await MockBlocklockReceiver.deploy(await blocklockSender.getAddress());
+    await mockBlocklockReceiver.waitForDeployment();
+
+    /** Blocklock js Integration */
+    // User or client side
+    const mockBlocklockReceiverInstance = MockBlocklockReceiver__factory.connect(
+      await mockBlocklockReceiver.getAddress(),
+      wallet,
+    );
+    expect(await mockBlocklockReceiverInstance.plainTextValue()).to.equal(BigInt(0));
+
+    const blockHeight = BigInt((await ethers.provider.getBlockNumber()) + 10);
+    console.log("block height", blockHeight);
+
+    // condition bytes
+    const types = ["string", "uint256"]; // "B" is a string, and blockHeight is a uint256
+    const values = ["B", blockHeight];
+    const encodedCondition = ethers.AbiCoder.defaultAbiCoder().encode(types, values);
+    console.log(values, encodedCondition);
+
+    // identity for IBE
+    // encrypt_towards_identity_g1 expects a uint8Array as input for the identity
+    const identity = getBytes(encodedCondition);
+
+    // message bytes
+    const msg = ethers.parseEther("3"); // BigInt for 3 ETH
+    const msgBytes = ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [msg]);
+    const encodedMessage = getBytes(msgBytes);
+
+    // generate Ciphertext
+    const ct = encrypt_towards_identity_g1(encodedMessage, identity, blocklock_default_pk, BLOCKLOCK_IBE_OPTS);
+
+    // fund contract
+    await mockBlocklockReceiverInstance.connect(wallet).fundContractNative({ value: ethers.parseEther("2") });
+    // make direct funding request with enough callbackGasLimit to cover BLS operations in call to decrypt() function
+    // in receiver contract
+    // for filecoin, tx goes through if we also increase callback gas limit by buffer
+    const callbackGasLimit = 500_000;
+
+    let tx = await mockBlocklockReceiverInstance
+      .connect(wallet)
+      .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct));
+
+    let receipt = await tx.wait(1);
+    if (!receipt) {
+      throw new Error("transaction has not been mined");
+    }
+    // Blocklock agent or server side
+    const blockRequest = await blocklockSender.getRequest(1n);
+    expect(blockRequest!.condition).to.equal(encodedCondition);
+
+    let blocklockRequestStatus = await blocklockSender.getRequest(1n);
+    console.log(blocklockRequestStatus!.condition);
+    expect(blocklockRequestStatus!.condition).to.equal(encodedCondition);
+    expect(blocklockRequestStatus?.decryptionKey.length).to.equal(2);
+
+    const decryptionSenderIface = DecryptionSender__factory.createInterface();
+    const [requestID, callback, schemeID, condition, ciphertext] = extractSingleLog(
+      decryptionSenderIface,
+      receipt,
+      await decryptionSender.getAddress(),
+      decryptionSenderIface.getEvent("DecryptionRequested"),
+    );
+    console.log(`received decryption request id ${requestID}`);
+    console.log(`blocklock request id ${blockRequest?.decryptionRequestID}`);
+    console.log(`callback address ${callback}, scheme id ${schemeID}`);
+    const bls = await BlsBn254.create();
+    const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
+
+    const pubKeySerialised = serialiseG2Point(pubKey);
+    expect(pubKeySerialised[0]).to.equal(blocklock_default_pk.x.c0);
+    expect(pubKeySerialised[1]).to.equal(blocklock_default_pk.x.c1);
+    expect(pubKeySerialised[2]).to.equal(blocklock_default_pk.y.c0);
+    expect(pubKeySerialised[3]).to.equal(blocklock_default_pk.y.c1);
+
+    const conditionBytes = isHexString(condition) ? getBytes(condition) : toUtf8Bytes(condition);
+
+    const m = bls.hashToPoint(BLOCKLOCK_IBE_OPTS.dsts.H1_G1, conditionBytes);
+    const parsedCiphertext = parseSolidityCiphertextString(ciphertext);
+    console.log("Ciphertext", parsedCiphertext.U, toHexString(parsedCiphertext.V), toHexString(parsedCiphertext.W));
+    const signature = bls.sign(m, secretKey).signature;
+    const sig = bls.serialiseG1Point(signature);
+    const sigBytes = AbiCoder.defaultAbiCoder().encode(["uint256", "uint256"], [sig[0], sig[1]]);
+    console.log("signature", sigBytes);
+    const decryption_key = preprocess_decryption_key_g1(parsedCiphertext, { x: sig[0], y: sig[1] }, BLOCKLOCK_IBE_OPTS);
+    console.log("decryption key", toHexString(decryption_key));
+
+    // fulfill the conditional encryption request if profitable
+    const estimatedGas = await decryptionSenderInstance
+      .connect(wallet)
+      .fulfillDecryptionRequest.estimateGas(requestID, decryption_key, sigBytes);
+    const estimatedGasWithCallbackGasLimit = BigInt(estimatedGas) + BigInt(callbackGasLimit);
+
+    // Fetch current gas pricing (EIP-1559 compatible)
+    const feeData = await wallet.provider.getFeeData();
+    const maxFeePerGas = feeData.maxFeePerGas!;
+    const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas!;
+    const userPayment = blocklockRequestStatus.directFundingFeePaid;
+
+    const baseFeePerGas = (await wallet.provider.getBlock("latest"))?.baseFeePerGas!;
+    const effectiveGasPrice =
+      maxFeePerGas < baseFeePerGas + maxPriorityFeePerGas ? maxFeePerGas : baseFeePerGas + maxPriorityFeePerGas;
+
+    // Calculate if it's profitable to execute without buffer
+    let expectedTxCost = estimatedGasWithCallbackGasLimit * effectiveGasPrice;
+    let profitAfterTx = BigInt(userPayment) - BigInt(expectedTxCost);
+    expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
+
+    // Calculate if it's profitable to execute with buffer
+    // It is best to calculate if it's profitable to execute with buffer
+    // as in some scenarios or chains, the transaction could fail without adding the buffer if the actual gas used is 
+    // higher than the estimatedGasWithCallbackGasLimit.
+    // It is also safer to add a buffer to the estimatedGasWithCallbackGasLimit, not just estimatedGas
+    const gasBuffer = (estimatedGasWithCallbackGasLimit * 120n) / 100n; // 20% buffer
+    expectedTxCost = gasBuffer * effectiveGasPrice;
+    profitAfterTx = BigInt(userPayment) - BigInt(expectedTxCost);
+    expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
+
+    // transaction passes whether we add buffer to the gas limit or don't
+    // because the actual gas used == estimated gas without callback gas limit
+    tx = await decryptionSenderInstance.connect(wallet).fulfillDecryptionRequest(requestID, decryption_key, sigBytes, {
+      gasLimit: gasBuffer,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+    });
+    const [success, txReceipt] = await checkTxMined(tx.hash, wallet.provider);
+    expect(success).to.be.equal(true);
+
+    console.log("Estimated gas:", estimatedGas.toString());
+    console.log("Callback gas limit:", callbackGasLimit.toString());
+    console.log("Estimated gas + Callback gas limit:", estimatedGasWithCallbackGasLimit.toString());
+    console.log("Actual gas used:", txReceipt!.gasUsed.toString());
+
+    expect(estimatedGas).to.be.equal(txReceipt!.gasUsed);
+
+    // Verify logs and request results
+    const iface = BlocklockSender__factory.createInterface();
+    const [, , ,] = extractSingleLog(
+      iface,
+      txReceipt!,
+      await blocklockSender.getAddress(),
+      iface.getEvent("BlocklockCallbackSuccess"),
+    );
+
+    blocklockRequestStatus = await blocklockSender.getRequest(1n);
+    expect(blocklockRequestStatus!.condition).to.equal(encodedCondition);
+    expect(blocklockRequestStatus?.decryptionKey).to.not.equal(undefined);
+    expect(blocklockRequestStatus?.decryptionKey.length).to.equal(66);
+    expect(await mockBlocklockReceiverInstance.plainTextValue()).to.equal(BigInt(msg));
+  });
 });
 
 async function checkTxMined(txHash: string, provider: Provider): Promise<[boolean, TransactionReceipt | null]> {

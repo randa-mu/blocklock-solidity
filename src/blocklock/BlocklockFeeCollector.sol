@@ -38,7 +38,7 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
         uint32 weiPerUnitGas,
         uint32 blsPairingCheckOverhead,
         uint8 nativePremiumPercentage,
-        uint16 gasForCallExactCheck
+        uint32 gasForCallExactCheck
     );
 
     /// @dev Ensures function is only called when the contract configuration parameters are set and
@@ -84,7 +84,7 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
         uint32 weiPerUnitGas,
         uint32 blsPairingCheckOverhead,
         uint8 nativePremiumPercentage,
-        uint16 gasForCallExactCheck
+        uint32 gasForCallExactCheck
     ) external virtual {}
 
     /// @notice Calculates the price of a request with the given callbackGasLimit at the current

@@ -426,7 +426,7 @@ contract BlocklockSender is
         uint32 weiPerUnitGas,
         uint32 blsPairingCheckOverhead,
         uint8 nativePremiumPercentage,
-        uint16 gasForCallExactCheck
+        uint32 gasForCallExactCheck
     ) external override onlyAdmin {
         require(PREMIUM_PERCENTAGE_MAX > nativePremiumPercentage, "Invalid Premium Percentage");
 
@@ -473,7 +473,7 @@ contract BlocklockSender is
             uint32 weiPerUnitGas,
             uint32 blsPairingCheckOverhead,
             uint8 nativePremiumPercentage,
-            uint16 gasForCallExactCheck
+            uint32 gasForCallExactCheck
         )
     {
         return (

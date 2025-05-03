@@ -127,7 +127,7 @@ contract BlocklockTest is Deployment {
         uint32 weiPerUnitGas,
         uint32 blsPairingCheckOverhead,
         uint8 nativePremiumPercentage,
-        uint16 gasForCallExactCheck
+        uint32 gasForCallExactCheck
     ) internal {
         vm.prank(admin);
         blocklockSender.setConfig(

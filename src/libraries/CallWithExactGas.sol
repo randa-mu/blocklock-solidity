@@ -17,7 +17,7 @@ library CallWithExactGas {
     /// target with gasAmount gas.
     /// @dev Ignores the return data, which makes it immune to gas bomb attacks.
     /// @return success whether the call succeeded
-    function _callWithExactGas(bytes memory payload, address target, uint256 gasLimit, uint16 gasForCallExactCheck)
+    function _callWithExactGas(bytes memory payload, address target, uint256 gasLimit, uint32 gasForCallExactCheck)
         internal
         returns (bool success)
     {
@@ -69,7 +69,7 @@ library CallWithExactGas {
         bytes memory payload,
         address target,
         uint256 gasLimit,
-        uint16 gasForCallExactCheck,
+        uint32 gasForCallExactCheck,
         uint16 maxReturnBytes
     ) internal returns (bool success, bytes memory retData, uint256 gasUsed) {
         // allocate retData memory ahead of time
@@ -131,7 +131,7 @@ library CallWithExactGas {
         bytes memory payload,
         address target,
         uint256 gasLimit,
-        uint16 gasForCallExactCheck
+        uint32 gasForCallExactCheck
     ) internal returns (bool success, bool sufficientGas) {
         assembly {
             let g := gas()
