@@ -265,9 +265,7 @@ describe("Blocklock integration tests", () => {
       .connect(wallet)
       .fulfillDecryptionRequest.estimateGas(requestID, decryption_key, sigBytes);
     // add callbackGasLimit to estimatedGas with a buffer when sending transaction. Any unsued gas is refunded.
-    expect((Number(estimatedGas) + callbackGasLimit)).to.be.gt(callbackGasLimit);
-    // avoid decimals by rounding up, as we can't pass decimal to tx gas parameters
-    const gasLimitWithBuffer = Math.ceil((Number(estimatedGas) + callbackGasLimit) * 1.05); // 5% buffer
+    expect(Number(estimatedGas) + callbackGasLimit).to.be.gt(callbackGasLimit);
 
     // Fetch current gas pricing (EIP-1559 compatible)
     const feeData = await wallet.provider.getFeeData();
@@ -275,9 +273,14 @@ describe("Blocklock integration tests", () => {
     const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas!;
     const userPayment = blocklockRequestStatus.directFundingFeePaid;
 
+    const baseFeePerGas = (await wallet.provider.getBlock("latest"))?.baseFeePerGas!;
+    const effectiveGasPrice =
+      maxFeePerGas < baseFeePerGas + maxPriorityFeePerGas ? maxFeePerGas : baseFeePerGas + maxPriorityFeePerGas;
+
+    const expectedTxCost = estimatedGas * effectiveGasPrice;
+
     // Calculate if it's profitable to execute
-    const expectedTxCost = gasLimitWithBuffer * Number(maxFeePerGas);
-    const profitAfterTx = Number(userPayment) - expectedTxCost;
+    const profitAfterTx = BigInt(userPayment) - BigInt(expectedTxCost);
 
     expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
 
@@ -285,7 +288,7 @@ describe("Blocklock integration tests", () => {
     // Actual tx fee paid = actualGasUsed * effectiveGasPrice
     // where effectiveGasPrice = min(maxFeePerGas, baseFee + maxPriorityFeePerGas)
     tx = await decryptionSenderInstance.connect(wallet).fulfillDecryptionRequest(requestID, decryption_key, sigBytes, {
-      gasLimit: gasLimitWithBuffer.toString(),
+      gasLimit: estimatedGas,
       maxFeePerGas,
       maxPriorityFeePerGas,
     });
@@ -296,7 +299,7 @@ describe("Blocklock integration tests", () => {
 
     // Verify logs and request results
     const iface = BlocklockSender__factory.createInterface();
-    const [, , , ] = extractSingleLog(
+    const [, , ,] = extractSingleLog(
       iface,
       receipt,
       await blocklockSender.getAddress(),
