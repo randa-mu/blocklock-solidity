@@ -144,11 +144,29 @@ describe("Blocklock integration tests", () => {
       ]),
     );
     await uupsProxy2.waitForDeployment();
-    
-    const blocklockSender = BlocklockSender__factory.connect(
-      await uupsProxy2.getAddress(),
-      wallet
-    );
+
+    const blocklockSender = BlocklockSender__factory.connect(await uupsProxy2.getAddress(), wallet);
+
+    // configure request fees parameters
+    const maxGasLimit = 500_000;
+    const gasAfterPaymentCalculation = 400_000;
+    const fulfillmentFlatFeeNativePPM = 1_000_000;
+    const weiPerUnitGas = 3_000_000;
+    const blsPairingCheckOverhead = 800_000;
+    const nativePremiumPercentage = 10;
+    const gasForCallExactCheck = 5_000;
+
+    await blocklockSender
+      .connect(wallet)
+      .setConfig(
+        maxGasLimit,
+        gasAfterPaymentCalculation,
+        fulfillmentFlatFeeNativePPM,
+        weiPerUnitGas,
+        blsPairingCheckOverhead,
+        nativePremiumPercentage,
+        gasForCallExactCheck,
+      );
 
     // deploy user mock decryption receiver contract
     const MockBlocklockReceiver = new ethers.ContractFactory(
@@ -187,27 +205,6 @@ describe("Blocklock integration tests", () => {
 
     // generate Ciphertext
     const ct = encrypt_towards_identity_g1(encodedMessage, identity, blocklock_default_pk, BLOCKLOCK_IBE_OPTS);
-
-    // configure request fees parameters
-    const maxGasLimit = 500_000;
-    const gasAfterPaymentCalculation = 400_000;
-    const fulfillmentFlatFeeNativePPM = 1_000_000;
-    const weiPerUnitGas = 3_000_000;
-    const blsPairingCheckOverhead = 800_000;
-    const nativePremiumPercentage = 10;
-    const gasForCallExactCheck = 5_000;
-
-    await blocklockSender
-      .connect(wallet)
-      .setConfig(
-        maxGasLimit,
-        gasAfterPaymentCalculation,
-        fulfillmentFlatFeeNativePPM,
-        weiPerUnitGas,
-        blsPairingCheckOverhead,
-        nativePremiumPercentage,
-        gasForCallExactCheck,
-      );
 
     // fund contract
     await mockBlocklockReceiverInstance.connect(wallet).fundContractNative({ value: ethers.parseEther("2") });
