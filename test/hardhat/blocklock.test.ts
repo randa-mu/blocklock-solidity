@@ -29,6 +29,7 @@ import {
   Interface,
   Result,
   TransactionReceipt,
+  Provider,
 } from "ethers";
 import { ethers } from "hardhat";
 
@@ -282,29 +283,25 @@ describe("Blocklock integration tests", () => {
     expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
 
     // Calculate if it's profitable to execute with buffer
-    const gasBuffer = estimatedGasWithCallbackGasLimit * 120n / 100n; // 20% buffer
+    const gasBuffer = (estimatedGasWithCallbackGasLimit * 120n) / 100n; // 20% buffer
     expectedTxCost = gasBuffer * effectiveGasPrice;
     profitAfterTx = BigInt(userPayment) - BigInt(expectedTxCost);
     expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
 
-    // Submit transaction
-    // Actual tx fee paid = actualGasUsed * effectiveGasPrice
-    // where effectiveGasPrice = min(maxFeePerGas, baseFee + maxPriorityFeePerGas)
+    // transaction passes whether we add buffer to the gas limit or don't
     tx = await decryptionSenderInstance.connect(wallet).fulfillDecryptionRequest(requestID, decryption_key, sigBytes, {
       gasLimit: gasBuffer,
       maxFeePerGas,
       maxPriorityFeePerGas,
     });
-    receipt = await tx.wait(1);
-    if (!receipt) {
-      throw new Error("transaction has not been mined");
-    }
+    const [success, txReceipt] = await checkTxMined(tx.hash, wallet.provider);
+    expect(success).to.be.equal(true);
 
     // Verify logs and request results
     const iface = BlocklockSender__factory.createInterface();
     const [, , ,] = extractSingleLog(
       iface,
-      receipt,
+      txReceipt!,
       await blocklockSender.getAddress(),
       iface.getEvent("BlocklockCallbackSuccess"),
     );
@@ -316,6 +313,23 @@ describe("Blocklock integration tests", () => {
     expect(await mockBlocklockReceiverInstance.plainTextValue()).to.equal(BigInt(msg));
   });
 });
+
+async function checkTxMined(txHash: string, provider: Provider): Promise<[boolean, TransactionReceipt | null]> {
+  const receipt = await provider.getTransactionReceipt(txHash);
+
+  if (!receipt) {
+    console.log("Transaction not mined yet.");
+    return [false, null];
+  }
+
+  if (receipt.status === 1) {
+    console.log("Transaction mined and succeeded.");
+    return [true, receipt];
+  } else {
+    console.log("Transaction mined but failed.");
+    return [false, receipt];
+  }
+}
 
 function toHexString(bytes: Uint8Array): string {
   return "0x" + Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
