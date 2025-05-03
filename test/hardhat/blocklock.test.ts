@@ -455,8 +455,8 @@ describe("Blocklock integration tests", () => {
     await mockBlocklockReceiverInstance.connect(wallet).fundContractNative({ value: ethers.parseEther("2") });
     // make direct funding request with enough callbackGasLimit to cover BLS operations in call to decrypt() function
     // in receiver contract
-    // for filecoin, tx goes through if we also increase callback gas limit by buffer
-    const callbackGasLimit = 500_000;
+    // for filecoin, tx goes through if we also increase callback gas limit by buffer or not
+    const callbackGasLimit = 500_000 * filecoinGasBuffer;
 
     let tx = await mockBlocklockReceiverInstance
       .connect(wallet)
