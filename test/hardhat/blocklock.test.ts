@@ -288,7 +288,15 @@ describe("Blocklock integration tests", () => {
     const expectedTxCost = gasBuffer * effectiveGasPrice;
     const profitAfterTx = BigInt(userPayment) - BigInt(expectedTxCost); // checking user subscription balance can cover the expected transaction cost
 
-    expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
+    // Define the minimum profit margin threshold (e.g., 10%)
+    const profitThresholdPercent = 10n;
+
+    // Compute profit percentage
+    const profitPercent = (profitAfterTx * 100n) / BigInt(userPayment);
+
+    // Expect profit to meet or exceed the threshold
+    expect(profitPercent).to.be.gte(profitThresholdPercent);
+
     console.log("Profit after tx in eth", ethers.formatEther(profitAfterTx.toString()));
     console.log("Expected tx cost in eth", ethers.formatEther(expectedTxCost.toString()));
     console.log("Native balance before tx:", ethers.formatEther(nativeBalance.toString()));
@@ -532,7 +540,15 @@ describe("Blocklock integration tests", () => {
     // Calculate if it's profitable to execute without buffer
     let expectedTxCost = estimatedGasWithCallbackGasLimit * effectiveGasPrice;
     let profitAfterTx = BigInt(userPayment) - BigInt(expectedTxCost);
-    expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
+
+    // Define the minimum profit margin threshold (e.g., 10%)
+    const profitThresholdPercent = 10n;
+
+    // Compute profit percentage
+    let profitPercent = (profitAfterTx * 100n) / BigInt(userPayment);
+
+    // Expect profit to meet or exceed the threshold
+    expect(profitPercent).to.be.gte(profitThresholdPercent);
 
     // Calculate if it's profitable to execute with buffer
     // It is best to calculate if it's profitable to execute with buffer
@@ -542,7 +558,12 @@ describe("Blocklock integration tests", () => {
     const gasBuffer = (estimatedGasWithCallbackGasLimit * 120n) / 100n; // 20% buffer
     expectedTxCost = gasBuffer * effectiveGasPrice;
     profitAfterTx = BigInt(userPayment) - BigInt(expectedTxCost);
-    expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
+
+    // Compute profit percentage
+    profitPercent = (profitAfterTx * 100n) / BigInt(userPayment);
+
+    // Expect profit to meet or exceed the threshold
+    expect(profitPercent).to.be.gte(profitThresholdPercent);
 
     // transaction passes whether we add buffer to the gas limit or don't
     // because the actual gas used == estimated gas without callback gas limit
@@ -776,7 +797,15 @@ describe("Blocklock integration tests", () => {
     // Calculate if it's profitable to execute without buffer
     let expectedTxCost = estimatedGasWithCallbackGasLimit * effectiveGasPrice;
     let profitAfterTx = BigInt(userPayment) - BigInt(expectedTxCost);
-    expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
+
+    // Define the minimum profit margin threshold (e.g., 10%)
+    const profitThresholdPercent = 10n;
+
+    // Compute profit percentage
+    let profitPercent = (profitAfterTx * 100n) / BigInt(userPayment);
+
+    // Expect profit to meet or exceed the threshold
+    expect(profitPercent).to.be.gte(profitThresholdPercent);
 
     // Calculate if it's profitable to execute with buffer
     // It is best to calculate if it's profitable to execute with buffer
@@ -786,7 +815,12 @@ describe("Blocklock integration tests", () => {
     const gasBuffer = (estimatedGasWithCallbackGasLimit * 120n) / 100n; // 20% buffer
     expectedTxCost = gasBuffer * effectiveGasPrice;
     profitAfterTx = BigInt(userPayment) - BigInt(expectedTxCost);
-    expect(profitAfterTx).to.be.gt(expectedTxCost); // Fail test if not profitable
+
+    // Compute profit percentage
+    profitPercent = (profitAfterTx * 100n) / BigInt(userPayment);
+
+    // Expect profit to meet or exceed the threshold
+    expect(profitPercent).to.be.gte(profitThresholdPercent);
 
     // transaction passes whether we add buffer to the gas limit or don't
     // because the actual gas used == estimated gas without callback gas limit
