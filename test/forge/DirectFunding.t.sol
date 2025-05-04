@@ -204,7 +204,10 @@ contract DirectFundingTest is BlocklockTest {
         assertTrue(decryptionRequest.isFulfilled, "Request should be marked as fulfilled");
 
         blocklockRequest = blocklockSender.getRequest(requestId);
-        assertTrue(blocklockRequest.decryptionKey.length > 2, "Decryption key should be registered on-chain after fulfilling request");
+        assertTrue(
+            blocklockRequest.decryptionKey.length > 2,
+            "Decryption key should be registered on-chain after fulfilling request"
+        );
 
         // we can still take payment
         console.log("Direct funding fee paid", blocklockRequest.directFundingFeePaid);

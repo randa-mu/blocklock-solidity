@@ -56,9 +56,9 @@ contract DecryptionSender is
     EnumerableSet.UintSet private unfulfilledRequestIds;
 
     /// @dev Set for storing unique request Ids with failing callbacks
-    /// @dev Callbacks can fail if collection of request fee from 
+    /// @dev Callbacks can fail if collection of request fee from
     ///      subscription account fails in `_handlePaymentAndCharge` function call.
-    ///      We use `_callWithExactGasEvenIfTargetIsNoContract` function for callback so it works if 
+    ///      We use `_callWithExactGasEvenIfTargetIsNoContract` function for callback so it works if
     ///      caller does not implement the interface.
     EnumerableSet.UintSet private erroredRequestIds;
 
