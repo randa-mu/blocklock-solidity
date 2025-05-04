@@ -166,3 +166,4 @@ broadcast
 
 # Deployments
 script/json/Deployment_input.json
+flat/
