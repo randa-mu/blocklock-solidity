@@ -265,7 +265,7 @@ contract DecryptionSender is
     /// @notice Retrieves all errored request IDs.
     /// @dev Returns an array of all errored request IDs.
     /// @return An array of errored request IDs.
-    function getAllerroredRequestIds() external view returns (uint256[] memory) {
+    function getAllErroredRequestIds() external view returns (uint256[] memory) {
         return erroredRequestIds.values();
     }
 
