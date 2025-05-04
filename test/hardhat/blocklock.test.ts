@@ -223,6 +223,11 @@ describe("Blocklock integration tests", () => {
     // in receiver contract
     const callbackGasLimit = 400_000;
 
+    // used to check that the correct request estimated price based on network gas price is collected from subscription
+    const requestPrice = await blocklockSender.calculateRequestPriceNative(
+      callbackGasLimit
+    );
+
     let tx = await mockBlocklockReceiverInstance
       .connect(wallet)
       .createTimelockRequestWithSubscription(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct));
@@ -314,8 +319,13 @@ describe("Blocklock integration tests", () => {
     console.log("Native balance after tx:", ethers.formatEther(nativeBalanceAfterTx.toString()));
     console.log("Actual amount paid for tx:", ethers.formatEther(nativeBalance - nativeBalanceAfterTx));
 
+    console.log(requestPrice)
+    console.log("bal after", nativeBalance - nativeBalanceAfterTx)
+
     // amount deducted from subscription should be higher than actual gas used * gas price
+    // and higher or equal to request price estimate
     expect(nativeBalance - nativeBalanceAfterTx).to.be.gt(txReceipt!.gasUsed * effectiveGasPrice);
+    expect(requestPrice).to.be.lte(nativeBalance - nativeBalanceAfterTx);
 
     console.log("Estimated gas:", estimatedGas.toString());
     console.log("Callback gas limit:", callbackGasLimit.toString());
