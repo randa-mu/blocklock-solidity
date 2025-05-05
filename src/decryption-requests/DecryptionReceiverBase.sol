@@ -22,17 +22,14 @@ abstract contract DecryptionReceiverBase is IDecryptionReceiver {
     /// @dev Forwards a ciphertext registration request to the DecryptionSender contract
     ///      which sets up a conditional encryption request.
     /// @param schemeID Identifier of the encryption scheme used.
-    /// @param callbackGasLimit Maximum gas allowed for the decryption callback.
     /// @param ciphertext The encrypted data to be decrypted.
     /// @param condition The condition for decryption.
     /// @return requestID A unique identifier for the submitted decryption request.
-    function _registerCiphertext(
-        string memory schemeID,
-        uint32 callbackGasLimit,
-        bytes memory ciphertext,
-        bytes memory condition
-    ) internal returns (uint256 requestID) {
-        return decryptionSender.registerCiphertext(schemeID, callbackGasLimit, ciphertext, condition);
+    function _registerCiphertext(string memory schemeID, bytes memory ciphertext, bytes memory condition)
+        internal
+        returns (uint256 requestID)
+    {
+        return decryptionSender.registerCiphertext(schemeID, ciphertext, condition);
     }
 
     /// @dev Called by the DecryptionSender to deliver the decryption key and its signature

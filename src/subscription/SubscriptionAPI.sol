@@ -113,6 +113,8 @@ abstract contract SubscriptionAPI is ReentrancyGuard, ISubscription {
         // nativePremiumPercentage is the percentage of the total gas costs that is added to the final premium for native payment
         // nativePremiumPercentage = 10 means 10% of the total gas costs is added. only integral percentage is allowed
         uint8 nativePremiumPercentage;
+        // Gas required for exact EXTCODESIZE call and additional operations in CallWithExactGas library
+        uint32 gasForCallExactCheck;
     }
 
     Config public s_config;

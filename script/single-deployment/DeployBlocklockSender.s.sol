@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
+pragma solidity ^0.8;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
@@ -79,6 +79,7 @@ contract DeployBlocklockSender is JsonUtils, EnvReader {
             uint32(vm.envUint("WEI_PER_UNIT_GAS")),
             uint32(vm.envUint("BLS_PAIRING_CHECK_OVERHEAD")),
             uint8(vm.envUint("NATIVE_PREMIUM_PERCENTAGE")),
+            uint16(vm.envUint("GAS_FOR_CALL_EXACT_CHECK")),
             blocklockSenderInstance
         );
     }
@@ -100,6 +101,12 @@ contract DeployBlocklockSender is JsonUtils, EnvReader {
         console.log("BlocklockSender implementation contract deployed at: ", implementation);
     }
 
+    /**
+     * @notice Sets the billing configuration for BlocklockSender.
+     *         On Filecoin (chain IDs 314 and 314159), gas-related parameters are scaled by 500
+     *         due to the difference in gas units compared to Ethereum.
+     *         Reference: https://docs.filecoin.io/smart-contracts/filecoin-evm-runtime/difference-with-ethereum
+     */
     function setBlocklockSenderUserBillingConfiguration(
         uint32 maxGasLimit,
         uint32 gasAfterPaymentCalculation,
@@ -107,8 +114,19 @@ contract DeployBlocklockSender is JsonUtils, EnvReader {
         uint32 weiPerUnitGas,
         uint32 blsPairingCheckOverhead,
         uint8 nativePremiumPercentage,
+        uint32 gasForCallExactCheck,
         BlocklockSender blocklockSender
     ) internal {
+        uint256 chainId = getChainId();
+
+        // If on Filecoin mainnet or calibration testnet, scale gas unit parameters
+        if (chainId == 314 || chainId == 314159) {
+            maxGasLimit *= 500;
+            gasAfterPaymentCalculation *= 500;
+            blsPairingCheckOverhead *= 500;
+            gasForCallExactCheck *= 500;
+        }
+
         vm.broadcast();
         blocklockSender.setConfig(
             maxGasLimit,
@@ -116,7 +134,12 @@ contract DeployBlocklockSender is JsonUtils, EnvReader {
             fulfillmentFlatFeeNativePPM,
             weiPerUnitGas,
             blsPairingCheckOverhead,
-            nativePremiumPercentage
+            nativePremiumPercentage,
+            gasForCallExactCheck
         );
+    }
+
+    function getChainId() internal view returns (uint256) {
+        return block.chainid;
     }
 }

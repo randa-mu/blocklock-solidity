@@ -24,8 +24,6 @@ import {IDecryptionReceiver} from "../interfaces/IDecryptionReceiver.sol";
 import {ISignatureScheme} from "../interfaces/ISignatureScheme.sol";
 import {ISignatureSchemeAddressProvider} from "../interfaces/ISignatureSchemeAddressProvider.sol";
 
-import {CallWithExactGas} from "../utils/CallWithExactGas.sol";
-
 /// @title Decryption Sender contract
 /// @author Randamu
 /// @notice Contract used by offchain oracle to fulfill conditional encryption requests.
@@ -33,7 +31,6 @@ import {CallWithExactGas} from "../utils/CallWithExactGas.sol";
 /// which handles payments for requests and forwards the decryption key to the users receiver contract.
 contract DecryptionSender is
     IDecryptionSender,
-    CallWithExactGas,
     ReentrancyGuard,
     Multicall,
     Initializable,
@@ -59,7 +56,11 @@ contract DecryptionSender is
     EnumerableSet.UintSet private unfulfilledRequestIds;
 
     /// @dev Set for storing unique request Ids with failing callbacks
-    EnumerableSet.UintSet private paymentErroredRequestIds;
+    /// @dev Callbacks can fail if collection of request fee from
+    ///      subscription account fails in `_handlePaymentAndCharge` function call.
+    ///      We use `_callWithExactGasEvenIfTargetIsNoContract` function for callback so it works if
+    ///      caller does not implement the interface.
+    EnumerableSet.UintSet private erroredRequestIds;
 
     /// @dev Emitted when the signature scheme address provider is updated.
     event SignatureSchemeAddressProviderUpdated(address indexed newSignatureSchemeAddressProvider);
@@ -136,18 +137,15 @@ contract DecryptionSender is
     /// @dev The decryption request is recorded, including the encrypted data (ciphertext), conditions, and scheme ID.
     /// This function can be called by any external party wishing to request decryption.
     /// @param schemeID The signature scheme identifier.
-    /// @param callbackGasLimit The callback gas limit.
     /// @param ciphertext The encrypted data.
     /// @param condition The condition for decryption represented as bytes.
     /// The decryption key is sent to the requesting callback / contract address
     /// when the condition is met.
     /// @return The unique request ID of the decryption request.
-    function registerCiphertext(
-        string calldata schemeID,
-        uint32 callbackGasLimit,
-        bytes calldata ciphertext,
-        bytes calldata condition
-    ) external returns (uint256) {
+    function registerCiphertext(string calldata schemeID, bytes calldata ciphertext, bytes calldata condition)
+        external
+        returns (uint256)
+    {
         lastRequestID += 1;
 
         require(signatureSchemeAddressProvider.isSupportedScheme(schemeID), "Signature scheme not supported");
@@ -165,7 +163,6 @@ contract DecryptionSender is
             decryptionKey: hex"",
             signature: hex"",
             callback: msg.sender,
-            callbackGasLimit: callbackGasLimit,
             isFulfilled: false
         });
         unfulfilledRequestIds.add(lastRequestID);
@@ -183,7 +180,6 @@ contract DecryptionSender is
     function fulfillDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
         external
         nonReentrant
-        onlyAdmin
     {
         require(isInFlight(requestID), "No pending request with specified requestID");
         TypesLib.DecryptionRequest memory request = requests[requestID];
@@ -200,20 +196,20 @@ contract DecryptionSender is
             "Signature verification failed"
         );
 
-        bytes memory response = abi.encodeWithSelector(
-            IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature
+        (bool success,) = request.callback.call(
+            abi.encodeWithSelector(
+                IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature
+            )
         );
-
-        bool success = _callWithExactGas(request.callbackGasLimit, request.callback, response);
 
         requests[requestID].isFulfilled = true;
         unfulfilledRequestIds.remove(requestID);
         if (!success) {
-            paymentErroredRequestIds.add(requestID);
+            erroredRequestIds.add(requestID);
             emit DecryptionReceiverCallbackFailed(requestID);
         } else {
-            if (hasPaymentErrored(requestID)) {
-                paymentErroredRequestIds.remove(requestID);
+            if (hasErrored(requestID)) {
+                erroredRequestIds.remove(requestID);
             }
             fulfilledRequestIds.add(requestID);
             emit DecryptionReceiverCallbackSuccess(requestID, decryptionKey, signature);
@@ -233,15 +229,15 @@ contract DecryptionSender is
     /// @param requestID The unique request ID of the decryption request.
     /// @return True if the request is in flight (unfulfilled or errored), false otherwise.
     function isInFlight(uint256 requestID) public view returns (bool) {
-        return unfulfilledRequestIds.contains(requestID) || paymentErroredRequestIds.contains(requestID);
+        return unfulfilledRequestIds.contains(requestID) || erroredRequestIds.contains(requestID);
     }
 
     /// @notice Checks if a decryption request has errored out.
     /// @dev Used to check if the request has failed and is in the errored state.
     /// @param requestID The unique request ID of the decryption request.
     /// @return True if the request has errored, false otherwise.
-    function hasPaymentErrored(uint256 requestID) public view returns (bool) {
-        return paymentErroredRequestIds.contains(requestID);
+    function hasErrored(uint256 requestID) public view returns (bool) {
+        return erroredRequestIds.contains(requestID);
     }
 
     /// @notice Retrieves the details of a decryption request.
@@ -269,8 +265,8 @@ contract DecryptionSender is
     /// @notice Retrieves all errored request IDs.
     /// @dev Returns an array of all errored request IDs.
     /// @return An array of errored request IDs.
-    function getAllpaymentErroredRequestIds() external view returns (uint256[] memory) {
-        return paymentErroredRequestIds.values();
+    function getAllErroredRequestIds() external view returns (uint256[] memory) {
+        return erroredRequestIds.values();
     }
 
     /// @notice Retrieves the count of unfulfilled request IDs.

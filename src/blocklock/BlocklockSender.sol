@@ -17,6 +17,8 @@ import {IDecryptionSender} from "../interfaces/IDecryptionSender.sol";
 import {DecryptionReceiverBase} from "../decryption-requests/DecryptionReceiverBase.sol";
 import {BlocklockFeeCollector} from "./BlocklockFeeCollector.sol";
 
+import {CallWithExactGas} from "../libraries/CallWithExactGas.sol";
+
 /// @title BlocklockSender Contract
 /// @author Randamu
 /// @notice This contract is responsible for managing the blocklock sending functionality,
@@ -34,6 +36,7 @@ contract BlocklockSender is
     AccessControlEnumerableUpgradeable
 {
     using BytesLib for bytes32;
+    using CallWithExactGas for bytes;
 
     /// @notice This contract manages blocklock requests, decryption keys, and administrative roles.
     /// @dev The contract includes constants related to blocklock schemes, decryption key processing, and events for blocklock requests and callbacks.
@@ -135,15 +138,22 @@ contract BlocklockSender is
     /// @dev Overridden upgrade authorization function to ensure only an authorized caller can authorize upgrades.
     function _authorizeUpgrade(address newImplementation) internal override onlyAdmin {}
 
-    /// @notice Requests a blocklock for a specified block height with the provided ciphertext without a subscription ID.
+    /// @notice Requests a blocklock for a specified condition with the provided ciphertext without a subscription ID.
     /// Requires payment to be made for the request without a subscription.
-    /// @param callbackGasLimit The gas limit allocated for the callback execution after the blocklock request
+    /// @param callbackGasLimit How much gas you'd like to receive in your
+    /// receiveBlocklock callback. Note that gasleft() inside receiveBlocklock
+    /// may be slightly less than this amount because of gas used calling the function
+    /// (argument decoding etc.), so you may need to request slightly more than you expect
+    /// to have inside receiveBlocklock. The acceptable range is
+    /// [0, maxGasLimit]
     /// @param condition The condition for decryption represented as bytes.
     /// The decryption key is sent to the requesting callback / contract address
     /// when the condition is met.
     /// @param ciphertext The ciphertext that will be used in the blocklock request
-    /// @dev This function allows users to request a blocklock for a specific block height. The blocklock is not associated with any subscription ID
-    ///      and requires a ciphertext to be provided. The function checks that the contract is configured and not disabled before processing the request.
+    /// @dev This function allows users to request a blocklock for a specific condition.
+    ///      The blocklock is not associated with any subscription ID
+    ///      and requires a ciphertext to be provided. The function checks that the contract is
+    ///      configured and not disabled before processing the request.
     function requestBlocklock(
         uint32 callbackGasLimit,
         bytes calldata condition,
@@ -151,23 +161,30 @@ contract BlocklockSender is
     ) external payable onlyConfiguredNotDisabled returns (uint256) {
         uint256 decryptionRequestID = requestBlocklockWithSubscription(
             callbackGasLimit,
-            0, // no subId
+            0, // no subId for direct funding requests
             condition,
             ciphertext
         );
         return decryptionRequestID;
     }
 
-    /// @notice Requests a blocklock for a specified block height with the provided ciphertext and subscription ID
-    /// @param callbackGasLimit The gas limit allocated for the callback execution after the blocklock request
+    /// @notice Requests a blocklock for a specified condition with the provided ciphertext and subscription ID
+    /// @param callbackGasLimit How much gas you'd like to receive in your
+    /// receiveBlocklock callback. Note that gasleft() inside receiveBlocklock
+    /// may be slightly less than this amount because of gas used calling the function
+    /// (argument decoding etc.), so you may need to request slightly more than you expect
+    /// to have inside receiveBlocklock. The acceptable range is
+    /// [0, maxGasLimit]
     /// @param subId The subscription ID associated with the request
     /// @param condition The condition for decryption represented as bytes.
     /// The decryption key is sent to the requesting callback / contract address
     /// when the condition is met.
     /// @param ciphertext The ciphertext that will be used in the blocklock request
     /// @return requestID The unique identifier for the blocklock request
-    /// @dev This function allows users to request a blocklock for a specific block height. The blocklock is associated with a given subscription ID
-    ///      and requires a ciphertext to be provided. The function checks that the contract is configured and not disabled before processing the request.
+    /// @dev This function allows users to request a blocklock for a specific condition.
+    ///      The blocklock is associated with a given subscription ID
+    ///      and requires a ciphertext to be provided. The function checks that the contract is
+    ///      configured and not disabled before processing the request.
     function requestBlocklockWithSubscription(
         uint32 callbackGasLimit,
         uint256 subId,
@@ -177,14 +194,14 @@ contract BlocklockSender is
         require(subId != 0 || msg.value > 0, "Direct funding required for request fulfillment callback");
 
         /// @dev subId must be zero for direct funding or non zero for active subscription
-        uint32 callbackGasLimitWithOverhead = _validateAndUpdateSubscription(callbackGasLimit, subId);
+        _validateCallbackGasLimitAndUpdateSubscription(callbackGasLimit, subId);
 
-        uint64 decryptionRequestID =
-            uint64(_registerCiphertext(SCHEME_ID, callbackGasLimitWithOverhead, abi.encode(ciphertext), condition));
+        uint64 decryptionRequestID = uint64(_registerCiphertext(SCHEME_ID, abi.encode(ciphertext), condition));
 
         blocklockRequestsWithDecryptionKey[decryptionRequestID] = TypesLib.BlocklockRequest({
             subId: subId,
             directFundingFeePaid: msg.value,
+            callbackGasLimit: callbackGasLimit,
             decryptionRequestID: decryptionRequestID,
             condition: condition,
             ciphertext: ciphertext,
@@ -204,12 +221,15 @@ contract BlocklockSender is
     /// @dev If the subscription ID is zero, it processes a new subscription by calculating the necessary fees.
     /// @param _callbackGasLimit The gas limit for the callback function.
     /// @param _subId The subscription ID. If greater than zero, it indicates an existing subscription, otherwise, a new subscription is created.
-    function _validateAndUpdateSubscription(uint32 _callbackGasLimit, uint256 _subId)
-        internal
-        returns (uint32 callbackGasLimitWithOverhead)
-    {
+    function _validateCallbackGasLimitAndUpdateSubscription(uint32 _callbackGasLimit, uint256 _subId) internal {
+        // No lower bound on the requested gas limit. A user could request 0 callback gas limit
+        // but the overhead added covers bls pairing check operations and decryption as part of the callback
+        // and any other added logic in consumer contract might lead to out of gas revert.
+        require(_callbackGasLimit <= s_config.maxGasLimit, "Callback gasLimit too high");
+
         if (_subId > 0) {
-            _requireValidSubscription(s_subscriptionConfigs[_subId].owner);
+            address owner = s_subscriptionConfigs[_subId].owner;
+            _requireValidSubscription(owner);
             // Its important to ensure that the consumer is in fact who they say they
             // are, otherwise they could use someone else's subscription balance.
             mapping(uint256 => ConsumerConfig) storage consumerConfigs = s_consumers[msg.sender];
@@ -225,16 +245,6 @@ contract BlocklockSender is
 
             require(msg.value >= price, "Fee too low");
         }
-
-        // No lower bound on the requested gas limit. A user could request 0 callback gas limit
-        // but the overhead added covers bls pairing check operations and decryption as part of the callback
-        // and any other added logic in consumer contract might lead to out of gas revert.
-        require(_callbackGasLimit <= s_config.maxGasLimit, "Callback gasLimit too high");
-
-        uint32 eip150Overhead = _getEIP150Overhead(_callbackGasLimit);
-        // s_config.blsPairingCheckOverhead prevents out of gas errors when doing pairing checks
-        // for signature and decryption key during callback
-        callbackGasLimitWithOverhead = _callbackGasLimit + eip150Overhead + s_config.blsPairingCheckOverhead;
     }
 
     /// @notice Handles the reception of decryption data (decryption key and signature) for a specific decryption request
@@ -250,20 +260,25 @@ contract BlocklockSender is
     {
         uint256 startGas = gasleft();
 
-        TypesLib.BlocklockRequest memory r = blocklockRequestsWithDecryptionKey[decryptionRequestID];
-        require(r.decryptionRequestID > 0, "No request for request id");
+        TypesLib.BlocklockRequest storage request = blocklockRequestsWithDecryptionKey[decryptionRequestID];
+        require(request.decryptionRequestID != 0, "No request for request id");
 
-        (bool success,) = r.callback.call(
-            abi.encodeWithSelector(IBlocklockReceiver.receiveBlocklock.selector, decryptionRequestID, decryptionKey)
+        bytes memory callbackCallData =
+            abi.encodeWithSelector(IBlocklockReceiver.receiveBlocklock.selector, decryptionRequestID, decryptionKey);
+
+        (bool success,) = callbackCallData._callWithExactGasEvenIfTargetIsNoContract(
+            request.callback, request.callbackGasLimit, s_config.gasForCallExactCheck
         );
-
-        if (!success) {
-            emit BlocklockCallbackFailed(decryptionRequestID);
+        if (success) {
+            request.decryptionKey = decryptionKey;
+            request.signature = signature;
+            emit BlocklockCallbackSuccess(
+                decryptionRequestID, request.condition, request.ciphertext, request.decryptionKey
+            );
         } else {
-            emit BlocklockCallbackSuccess(decryptionRequestID, r.condition, r.ciphertext, decryptionKey);
-            blocklockRequestsWithDecryptionKey[decryptionRequestID].decryptionKey = decryptionKey;
-            blocklockRequestsWithDecryptionKey[decryptionRequestID].signature = signature;
+            emit BlocklockCallbackFailed(decryptionRequestID);
         }
+
         _handlePaymentAndCharge(decryptionRequestID, startGas);
     }
 
@@ -399,6 +414,7 @@ contract BlocklockSender is
     /// @param weiPerUnitGas Wei per unit of gas for callback gas measurements
     /// @param blsPairingCheckOverhead Gas overhead for bls pairing checks for signature and decryption key verification
     /// @param nativePremiumPercentage The percentage premium applied to the native token cost
+    /// @param gasForCallExactCheck Gas required for exact EXTCODESIZE call and additional operations in CallWithExactGas library
     /// @dev Only the contract admin can call this function. It validates that the `nativePremiumPercentage` is not greater than a predefined maximum value
     /// (`PREMIUM_PERCENTAGE_MAX`). After validation, it updates the contract's configuration and emits an event `ConfigSet` with the new configuration.
     /// @dev Emits a `ConfigSet` event after successfully setting the new configuration values.
@@ -408,7 +424,8 @@ contract BlocklockSender is
         uint32 fulfillmentFlatFeeNativePPM,
         uint32 weiPerUnitGas,
         uint32 blsPairingCheckOverhead,
-        uint8 nativePremiumPercentage
+        uint8 nativePremiumPercentage,
+        uint32 gasForCallExactCheck
     ) external override onlyAdmin {
         require(PREMIUM_PERCENTAGE_MAX > nativePremiumPercentage, "Invalid Premium Percentage");
 
@@ -418,7 +435,8 @@ contract BlocklockSender is
             fulfillmentFlatFeeNativePPM: fulfillmentFlatFeeNativePPM,
             weiPerUnitGas: weiPerUnitGas,
             blsPairingCheckOverhead: blsPairingCheckOverhead,
-            nativePremiumPercentage: nativePremiumPercentage
+            nativePremiumPercentage: nativePremiumPercentage,
+            gasForCallExactCheck: gasForCallExactCheck
         });
 
         s_configured = true;
@@ -429,7 +447,8 @@ contract BlocklockSender is
             fulfillmentFlatFeeNativePPM,
             weiPerUnitGas,
             blsPairingCheckOverhead,
-            nativePremiumPercentage
+            nativePremiumPercentage,
+            gasForCallExactCheck
         );
     }
 
@@ -437,7 +456,10 @@ contract BlocklockSender is
     /// @return maxGasLimit The maximum gas limit allowed for requests
     /// @return gasAfterPaymentCalculation The gas used after the payment calculation
     /// @return fulfillmentFlatFeeNativePPM The flat fee for fulfillment in native tokens, in parts per million (PPM)
+    /// @return weiPerUnitGas Wei per unit of gas for callback gas measurements
+    /// @return blsPairingCheckOverhead Gas overhead for bls pairing checks for signature and decryption key verification
     /// @return nativePremiumPercentage The percentage premium applied to the native token cost
+    /// @return gasForCallExactCheck Gas required for exact EXTCODESIZE call and additional operations in CallWithExactGas library.
     /// @dev This function returns the key configuration values from the contract's settings. These values
     /// are important for calculating request costs and applying the appropriate fees.
     function getConfig()
@@ -447,14 +469,20 @@ contract BlocklockSender is
             uint32 maxGasLimit,
             uint32 gasAfterPaymentCalculation,
             uint32 fulfillmentFlatFeeNativePPM,
-            uint8 nativePremiumPercentage
+            uint32 weiPerUnitGas,
+            uint32 blsPairingCheckOverhead,
+            uint8 nativePremiumPercentage,
+            uint32 gasForCallExactCheck
         )
     {
         return (
             s_config.maxGasLimit,
             s_config.gasAfterPaymentCalculation,
             s_config.fulfillmentFlatFeeNativePPM,
-            s_config.nativePremiumPercentage
+            s_config.weiPerUnitGas,
+            s_config.blsPairingCheckOverhead,
+            s_config.nativePremiumPercentage,
+            s_config.gasForCallExactCheck
         );
     }
 

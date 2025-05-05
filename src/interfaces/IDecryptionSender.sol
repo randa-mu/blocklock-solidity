@@ -11,15 +11,11 @@ interface IDecryptionSender {
     /// @notice creation of the `Ciphertext` and `condition` bytes will be managed by a javascript client library off-chain
     /// @dev The creation of `Ciphertext` and `condition` bytes will be managed by the JavaScript client library
     /// @param ciphertext The encrypted data to be registered
-    /// @param callbackGasLimit The gas limit for the callback.
     /// @param condition The condition that need to be met to decrypt the ciphertext
     /// @return requestID The unique ID assigned to the registered decryption request
-    function registerCiphertext(
-        string calldata schemeID,
-        uint32 callbackGasLimit,
-        bytes calldata ciphertext,
-        bytes calldata condition
-    ) external returns (uint256 requestID);
+    function registerCiphertext(string calldata schemeID, bytes calldata ciphertext, bytes calldata condition)
+        external
+        returns (uint256 requestID);
 
     /// @notice Provide the decryption key for a specific requestID alongside a signature.
     /// @dev This function is intended to be called after a decryption key has been generated off-chain.
@@ -50,7 +46,7 @@ interface IDecryptionSender {
     /// @notice returns whether a specific request errored during callback or not.
     /// @param requestID The ID of the request to check.
     /// @return boolean indicating whether the request has errored or not.
-    function hasPaymentErrored(uint256 requestID) external view returns (bool);
+    function hasErrored(uint256 requestID) external view returns (bool);
 
     /// @notice Returns all the fulfilled request ids.
     /// @return The uint array representing a set containing all fulfilled request ids.
@@ -62,7 +58,7 @@ interface IDecryptionSender {
 
     /// @notice Returns all the request ids where the callback reverted but a decryption key was provided, i.e., "fulfilled" but still in flight.
     /// @return The uint array representing a set containing all request ids with reverting callbacks.
-    function getAllpaymentErroredRequestIds() external view returns (uint256[] memory);
+    function getAllErroredRequestIds() external view returns (uint256[] memory);
 
     /// @notice Returns count of all the request ids that are yet to be fulfilled.
     /// @return A uint representing a count of all request ids that are yet to be fulfilled.
