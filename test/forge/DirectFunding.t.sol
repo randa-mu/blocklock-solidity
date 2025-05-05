@@ -138,7 +138,7 @@ contract DirectFundingTest is BlocklockTest {
         );
     }
 
-    function test_Callback_Should_NotRevert_If_InterfaceIsNotImplemented() public {
+    function test_Callback_Should_NotRevert_If_Interface_Is_Not_Implemented() public {
         assertTrue(blocklockSender.s_configured(), "BlocklockSender not configured");
         assertFalse(blocklockSender.s_disabled(), "BlocklockSender is paused");
 
