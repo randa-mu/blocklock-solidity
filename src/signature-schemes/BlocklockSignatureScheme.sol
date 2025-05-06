@@ -13,7 +13,6 @@ import {SignatureSchemeBase} from "./SignatureSchemeBase.sol";
 /// @dev The contract provides functionality to verify signatures, hash messages to points,
 /// and marshal/unmarshal points for signature verification.
 contract BlocklockSignatureScheme is SignatureSchemeBase {
-    using BLS for bytes;
     using BytesLib for bytes32;
 
     string public constant SCHEME_ID = "BN254-BLS-BLOCKLOCK";
