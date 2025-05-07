@@ -62,13 +62,13 @@ This project also includes a [coverage.sh](utils/coverage.sh) script to generate
 To make the script executable:
 
 ```sh
-chmod +x dev/coverage.sh
+chmod +x utils/coverage.sh
 ```
 
 To run the script:
 
 ```sh
-./dev/coverage.sh
+./utils/coverage.sh
 ```
 
 
