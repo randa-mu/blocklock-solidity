@@ -3,7 +3,7 @@ pragma solidity ^0.8;
 
 import {TypesLib} from "../libraries/TypesLib.sol";
 
-import {ISubscription} from "../interfaces/ISubscription.sol";
+import {ISubscription} from "./ISubscription.sol";
 
 /// @title IBlocklockSender interface
 /// @author Randamu
