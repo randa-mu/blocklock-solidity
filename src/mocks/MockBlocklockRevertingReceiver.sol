@@ -31,7 +31,7 @@ contract MockBlocklockRevertingReceiver is AbstractBlocklockReceiver {
         uint32 callbackGasLimit,
         bytes calldata condition,
         TypesLib.Ciphertext calldata encryptedData
-    ) external payable returns (uint256) {
+    ) external returns (uint256) {
         // create timelock request
         uint256 requestID = _requestBlocklockWithSubscription(callbackGasLimit, condition, encryptedData);
         // store request id
