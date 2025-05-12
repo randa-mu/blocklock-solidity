@@ -21,7 +21,7 @@ import {
 contract SubscriptionFundingTest is BlocklockTest {
     address[] public consumersToAddToSubscription;
 
-    function test_No_Charge_AtRequestTime_For_BlocklockSubscriptionRequest() public {
+    function test_NoChargeAtRequestTime_ForSubscriptionRequest() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -89,7 +89,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         assertTrue(reqCount == 0, "Incorrect request count, it should be zero");
     }
 
-    function test_FulfillBlocklock_SubscriptionRequest_Successfully() public {
+    function test_FulfillDecryptionRequest_WithSubscription_Successfully() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -211,7 +211,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
     }
 
-    function test_FulfillBlocklock_SubscriptionRequest_With_Low_CallbackGasLimit() public {
+    function test_FulfillDecryptionRequest_WithSubscription_AndLowCallbackGasLimit() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -335,7 +335,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
     /// @notice If user specifies zero callbackGasLimit, they are still charged for gas overhead which is added
     /// to cover for sending of keys and decryption
-    function test_FulfillBlocklock_SubscriptionRequest_With_Zero_CallbackGasLimit() public {
+    function test_FulfillDecryptionRequest_WithSubscription_AndZeroCallbackGasLimit() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -459,7 +459,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
     /// @dev This test case checks that we can still collect payment for reverting callback receiver and
     /// payment is not blocked for subscription funding (and direct funding in direct funding test)
-    function test_FulfillBlocklock_SubscriptionRequest_WithRevertingReceiver() public {
+    function test_FulfillDecryptionRequest_WithRevertingReceiver_ShouldNotRevert() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -566,7 +566,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
     }
 
-    function test_FulfillBlocklockRequest_For_AdditionalSubscriberAddress() public {
+    function test_FulfillDecryptionRequest_ForAdditionalSubscriberAddress() public {
         // create subscription and fund it
         vm.prank(alice);
         mockBlocklockReceiver.createSubscriptionAndFundNative{value: 5 ether}();
@@ -697,7 +697,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
     }
 
-    function test_FulfillBlocklock_SubscriptionRequest_With_OnlyRequestPriceBalance() public {
+    function test_FulfillDecryptionRequest_ForSubscription_WithOnlyRequestPriceBalance() public {
         // get request price
         uint32 callbackGasLimit = 500_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
@@ -830,7 +830,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         );
     }
 
-    function test_CancellingSubscription_WithPendingRequest_NotAllowed() public {
+    function test_CancelSubscription_WithPendingRequest_ShouldRevert() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -876,7 +876,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         assertTrue(blocklockSender.s_totalNativeBalance() == totalSubBalanceBeforeRequest, "User not charged");
     }
 
-    function test_Callback_For_SubscriptionWithZeroBalance_Reverts() public {
+    function test_FulfillDecryptionRequest_ForSubscriptionWithZeroBalance_ShouldRevert() public {
         // create subscription but don't fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -1032,7 +1032,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         );
     }
 
-    function test_Callback_For_SubscriptionWithIncorrectDecryptionKey_Reverts() public {
+    function test_FulfillDecryptionRequest_WithIncorrectDecryptionKey_ShouldRevert() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -1185,7 +1185,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         );
     }
 
-    function test_InvalidSignature_For_SubscriptionRequest_Reverts() public {
+    function test_FulfillDecryptionRequest_WithInvalidSignature_ShouldRevert() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
