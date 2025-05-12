@@ -15,7 +15,7 @@ interface IDecryptionSender {
     /// @return requestID The unique ID assigned to the registered decryption request
     function registerCiphertext(string calldata schemeID, bytes calldata ciphertext, bytes calldata condition)
         external
-        returns (uint256 requestID);
+        returns (uint64 requestID);
 
     /// @notice Provide the decryption key for a specific requestID alongside a signature.
     /// @dev This function is intended to be called after a decryption key has been generated off-chain.
@@ -24,7 +24,7 @@ interface IDecryptionSender {
     /// @param decryptionKey The decrypted content in bytes format. The data should represent the original
     ///                      message in its decrypted form.
     /// @param signature The signature associated with the request, provided as a byte array
-    function fulfillDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
+    function fulfillDecryptionRequest(uint64 requestID, bytes calldata decryptionKey, bytes calldata signature)
         external;
 
     /// @notice Updates the signature scheme address provider contract address
@@ -36,17 +36,17 @@ interface IDecryptionSender {
     /// @dev This function returns the Request struct associated with the given requestId.
     /// @param requestId The ID of the request to retrieve.
     /// @return The Request struct corresponding to the given requestId.
-    function getRequest(uint256 requestId) external view returns (TypesLib.DecryptionRequest memory);
+    function getRequest(uint64 requestId) external view returns (TypesLib.DecryptionRequest memory);
 
     /// @notice Verifies whether a specific request is in flight or not.
     /// @param requestID The ID of the request to check.
     /// @return boolean indicating whether the request is in flight or not.
-    function isInFlight(uint256 requestID) external view returns (bool);
+    function isInFlight(uint64 requestID) external view returns (bool);
 
     /// @notice returns whether a specific request errored during callback or not.
     /// @param requestID The ID of the request to check.
     /// @return boolean indicating whether the request has errored or not.
-    function hasErrored(uint256 requestID) external view returns (bool);
+    function hasErrored(uint64 requestID) external view returns (bool);
 
     /// @notice Returns all the fulfilled request ids.
     /// @return The uint array representing a set containing all fulfilled request ids.

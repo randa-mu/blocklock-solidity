@@ -13,6 +13,5 @@ interface IDecryptionReceiver {
     /// @param requestID The ID of the request for which the decryption key is provided
     /// @param decryptionKey The decryption key associated with the request, provided as a byte array
     /// @param signature The signature associated with the request, provided as a byte array
-    function receiveDecryptionData(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
-        external;
+    function receiveDecryptionData(uint64 requestID, bytes calldata decryptionKey, bytes calldata signature) external;
 }

@@ -195,7 +195,7 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
     /// @dev Intended to be overridden by derived contracts to implement custom payment handling
     /// @param requestId The unique identifier of the request being processed
     /// @param startGas The amount of gas available at the start of the function execution
-    function _handlePaymentAndCharge(uint256 requestId, uint256 startGas) internal virtual {}
+    function _handlePaymentAndCharge(uint64 requestId, uint256 startGas) internal virtual {}
 
     /// @notice Returns the L1 fee for fulfilling a request.
     /// @dev Always returns `0` on L1 chains.

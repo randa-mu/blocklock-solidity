@@ -16,9 +16,9 @@ contract MockBlocklockStringReceiver is AbstractBlocklockReceiver {
         uint32 callbackGasLimit,
         bytes calldata condition,
         TypesLib.Ciphertext calldata encryptedData
-    ) external returns (uint256, uint256) {
+    ) external returns (uint64, uint256) {
         // create timelock request
-        (uint256 requestID, uint256 requestPrice) =
+        (uint64 requestID, uint256 requestPrice) =
             _requestBlocklockPayInNative(callbackGasLimit, condition, encryptedData);
         // store request id
         requestId = requestID;
@@ -31,9 +31,9 @@ contract MockBlocklockStringReceiver is AbstractBlocklockReceiver {
         uint32 callbackGasLimit,
         bytes calldata condition,
         TypesLib.Ciphertext calldata encryptedData
-    ) external returns (uint256) {
+    ) external returns (uint64) {
         // create timelock request
-        uint256 requestID = _requestBlocklockWithSubscription(callbackGasLimit, condition, encryptedData);
+        uint64 requestID = _requestBlocklockWithSubscription(callbackGasLimit, condition, encryptedData);
         // store request id
         requestId = requestID;
         // store Ciphertext
@@ -41,7 +41,7 @@ contract MockBlocklockStringReceiver is AbstractBlocklockReceiver {
         return requestID;
     }
 
-    function _onBlocklockReceived(uint256 _requestId, bytes calldata decryptionKey) internal override {
+    function _onBlocklockReceived(uint64 _requestId, bytes calldata decryptionKey) internal override {
         require(requestId == _requestId, "Invalid request id");
         plainTextValue = abi.decode(_decrypt(encryptedValue, decryptionKey), (string));
     }

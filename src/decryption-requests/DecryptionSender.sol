@@ -41,10 +41,10 @@ contract DecryptionSender is
     using EnumerableSet for EnumerableSet.UintSet;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    uint256 public lastRequestID = 0;
+    uint64 public lastRequestID = 0;
 
     /// @dev Mapping from decryption requestID to conditional decryption request
-    mapping(uint256 => TypesLib.DecryptionRequest) public requests;
+    mapping(uint64 => TypesLib.DecryptionRequest) public requests;
 
     /// @dev Signature scheme address provider contract
     ISignatureSchemeAddressProvider public signatureSchemeAddressProvider;
@@ -89,7 +89,7 @@ contract DecryptionSender is
 
     /// @dev Emitted when a decryption receiver callback fails.
     /// @param requestID The decryption request ID that failed.
-    event DecryptionReceiverCallbackFailed(uint256 requestID);
+    event DecryptionReceiverCallbackFailed(uint64 requestID);
 
     /// @notice Ensures that only an account with the ADMIN_ROLE can execute a function.
     modifier onlyAdmin() {
@@ -144,7 +144,7 @@ contract DecryptionSender is
     /// @return The unique request ID of the decryption request.
     function registerCiphertext(string calldata schemeID, bytes calldata ciphertext, bytes calldata condition)
         external
-        returns (uint256)
+        returns (uint64)
     {
         lastRequestID += 1;
 
@@ -177,7 +177,7 @@ contract DecryptionSender is
     /// @param requestID The unique request ID of the decryption request.
     /// @param decryptionKey The decryption key to fulfill the request.
     /// @param signature The signature corresponding to the decryption.
-    function fulfillDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
+    function fulfillDecryptionRequest(uint64 requestID, bytes calldata decryptionKey, bytes calldata signature)
         external
         nonReentrant
     {
@@ -228,7 +228,7 @@ contract DecryptionSender is
     /// @dev Used to check if a request is either still awaiting decryption or has encountered an error.
     /// @param requestID The unique request ID of the decryption request.
     /// @return True if the request is in flight (unfulfilled or errored), false otherwise.
-    function isInFlight(uint256 requestID) public view returns (bool) {
+    function isInFlight(uint64 requestID) public view returns (bool) {
         return unfulfilledRequestIds.contains(requestID) || erroredRequestIds.contains(requestID);
     }
 
@@ -236,7 +236,7 @@ contract DecryptionSender is
     /// @dev Used to check if the request has failed and is in the errored state.
     /// @param requestID The unique request ID of the decryption request.
     /// @return True if the request has errored, false otherwise.
-    function hasErrored(uint256 requestID) public view returns (bool) {
+    function hasErrored(uint64 requestID) public view returns (bool) {
         return erroredRequestIds.contains(requestID);
     }
 
@@ -244,7 +244,7 @@ contract DecryptionSender is
     /// @dev Returns the full decryption request data for the given request ID.
     /// @param requestID The unique request ID.
     /// @return The decryption request object.
-    function getRequest(uint256 requestID) external view returns (TypesLib.DecryptionRequest memory) {
+    function getRequest(uint64 requestID) external view returns (TypesLib.DecryptionRequest memory) {
         return requests[requestID];
     }
 

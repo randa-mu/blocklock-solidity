@@ -130,7 +130,7 @@ function _requestBlocklockPayInNative(
     uint32 callbackGasLimit,
     bytes condition,
     TypesLib.Ciphertext calldata ciphertext
-) internal returns (uint256 requestId, uint256 requestPrice) {
+) internal returns (uint64 requestId, uint256 requestPrice) {
     requestPrice = blocklock.calculateRequestPriceNative(callbackGasLimit);
     return
         (blocklock.requestBlocklock{value: requestPrice}(callbackGasLimit, condition, ciphertext), requestPrice);
@@ -193,7 +193,7 @@ function _requestBlocklockWithSubscription(
     uint32 callbackGasLimit,
     bytes condition,
     TypesLib.Ciphertext calldata ciphertext
-) internal returns (uint256 requestId) {
+) internal returns (uint64 requestId) {
     return blocklock.requestBlocklockWithSubscription(callbackGasLimit, subscriptionId, condition, ciphertext);
 }
 ```
