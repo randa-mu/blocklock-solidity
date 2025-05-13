@@ -89,7 +89,7 @@ contract DecryptionSender is
 
     /// @dev Emitted when a decryption receiver callback fails.
     /// @param requestID The decryption request ID that failed.
-    event DecryptionReceiverCallbackFailed(uint64 requestID);
+    event DecryptionReceiverCallbackFailed(uint64 indexed requestID);
 
     /// @notice Ensures that only an account with the ADMIN_ROLE can execute a function.
     modifier onlyAdmin() {

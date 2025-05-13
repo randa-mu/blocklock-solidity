@@ -98,7 +98,7 @@ contract BlocklockSender is
     /// @notice Error thrown when a blocklock callback fails
     /// @param requestID The request ID of the failed blocklock callback
     /// @dev This error is used to indicate that the blocklock callback process has failed, providing the request ID for troubleshooting
-    event BlocklockCallbackFailed(uint64 requestID);
+    event BlocklockCallbackFailed(uint64 indexed requestID);
 
     /// @notice Event emitted when the decryption sender address is updated
     /// @param decryptionSender The new decryption sender address
