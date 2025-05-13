@@ -211,7 +211,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
     }
 
-    function test_FulfillDecryptionRequest_WithSubscription_AndLowCallbackGasLimit() public {
+    function test_FulfillDecryptionRequest_WithLowCallbackGasLimit() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
@@ -335,7 +335,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
     /// @notice If user specifies zero callbackGasLimit, they are still charged for gas overhead which is added
     /// to cover for sending of keys and decryption
-    function test_FulfillDecryptionRequest_WithSubscription_AndZeroCallbackGasLimit() public {
+    function test_FulfillDecryptionRequest_WithZeroCallbackGasLimit() public {
         // create subscription and fund it
         assert(mockBlocklockReceiver.subscriptionId() == 0);
 
