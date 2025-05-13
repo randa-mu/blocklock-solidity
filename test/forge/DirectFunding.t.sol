@@ -358,7 +358,7 @@ contract DirectFundingTest is BlocklockTest {
         );
     }
 
-    function test_FulfillDecryptionRequest_WithDirectFunding_AndZeroCallbackGasLimit() public {
+    function test_FulfillDecryptionRequest_WithZeroCallbackGasLimit() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
@@ -480,7 +480,7 @@ contract DirectFundingTest is BlocklockTest {
         );
     }
 
-    function test_FulfillDecryptionRequest_WithDirectFundingRequest_AndRevertingReceiver() public {
+    function test_FulfillDecryptionRequest_WithRevertingReceiver() public {
         vm.prank(alice);
         MockBlocklockRevertingReceiver mockBlocklockReceiver =
             new MockBlocklockRevertingReceiver(address(blocklockSender));
