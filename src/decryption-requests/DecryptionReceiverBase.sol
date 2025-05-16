@@ -27,7 +27,7 @@ abstract contract DecryptionReceiverBase is IDecryptionReceiver {
     /// @return requestID A unique identifier for the submitted decryption request.
     function _registerCiphertext(string memory schemeID, bytes memory ciphertext, bytes memory condition)
         internal
-        returns (uint256 requestID)
+        returns (uint64 requestID)
     {
         return decryptionSender.registerCiphertext(schemeID, ciphertext, condition);
     }
@@ -36,7 +36,7 @@ abstract contract DecryptionReceiverBase is IDecryptionReceiver {
     /// @param requestID The identifier of the original decryption request
     /// @param decryptionKey The derived decryption key
     /// @param signature Signature used in the key derivation process
-    function receiveDecryptionData(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
+    function receiveDecryptionData(uint64 requestID, bytes calldata decryptionKey, bytes calldata signature)
         external
         onlyDecrypter
     {
@@ -48,7 +48,7 @@ abstract contract DecryptionReceiverBase is IDecryptionReceiver {
     /// @param requestID The unique identifier of the decryption request
     /// @param decryptionKey The decryption key associated with the ciphertext
     /// @param signature The signature used to derive the decryption key
-    function onDecryptionDataReceived(uint256 requestID, bytes memory decryptionKey, bytes memory signature)
+    function onDecryptionDataReceived(uint64 requestID, bytes memory decryptionKey, bytes memory signature)
         internal
         virtual;
 }
