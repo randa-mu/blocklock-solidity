@@ -73,7 +73,7 @@ contract DecryptionSender is
     /// @param ciphertext The encrypted data that needs decryption.
     /// @param requestedAt The timestamp when the decryption request was made.
     event DecryptionRequested(
-        uint256 indexed requestID,
+        uint64 indexed requestID,
         address indexed callback,
         string schemeID,
         bytes condition,
@@ -85,7 +85,7 @@ contract DecryptionSender is
     /// @param requestID The decryption request ID that was fulfilled.
     /// @param decryptionKey The decryption key provided for the request.
     /// @param signature The signature associated with the decryption.
-    event DecryptionReceiverCallbackSuccess(uint256 indexed requestID, bytes decryptionKey, bytes signature);
+    event DecryptionReceiverCallbackSuccess(uint64 indexed requestID, bytes decryptionKey, bytes signature);
 
     /// @dev Emitted when a decryption receiver callback fails.
     /// @param requestID The decryption request ID that failed.
