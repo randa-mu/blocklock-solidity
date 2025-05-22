@@ -71,14 +71,14 @@ contract BlocklockSender is
     mapping(uint256 => TypesLib.BlocklockRequest) public blocklockRequestsWithDecryptionKey;
 
     /// @notice Event emitted when a blocklock request is made
-    /// @param requestID The unique identifier of the blocklock request
+    /// @param requestId The unique identifier of the blocklock request
     /// @param condition The condition for decryption of the ciphertext
     /// @param ciphertext The ciphertext associated with the blocklock request
     /// @param requester The address of the requester
     /// @param requestedAt The timestamp when the request was made
     /// @dev This event is emitted after a blocklock request has been successfully processed
     event BlocklockRequested(
-        uint64 indexed requestID,
+        uint256 indexed requestId,
         bytes condition,
         TypesLib.Ciphertext ciphertext,
         address indexed requester,
@@ -86,19 +86,19 @@ contract BlocklockSender is
     );
 
     /// @notice Event emitted when a blocklock callback is successful
-    /// @param requestID The unique identifier of the blocklock request
+    /// @param requestId The unique identifier of the blocklock request
     /// @param condition The condition for decryption of the ciphertext
     /// @param ciphertext The ciphertext associated with the blocklock request
     /// @param decryptionKey The decryption key used for the blocklock
     /// @dev This event is emitted when the blocklock callback is successfully processed and the decryption key is provided
     event BlocklockCallbackSuccess(
-        uint64 indexed requestID, bytes condition, TypesLib.Ciphertext ciphertext, bytes decryptionKey
+        uint256 indexed requestId, bytes condition, TypesLib.Ciphertext ciphertext, bytes decryptionKey
     );
 
     /// @notice Error thrown when a blocklock callback fails
-    /// @param requestID The request ID of the failed blocklock callback
+    /// @param requestId The request ID of the failed blocklock callback
     /// @dev This error is used to indicate that the blocklock callback process has failed, providing the request ID for troubleshooting
-    event BlocklockCallbackFailed(uint64 indexed requestID);
+    event BlocklockCallbackFailed(uint256 indexed requestId);
 
     /// @notice Event emitted when the decryption sender address is updated
     /// @param decryptionSender The new decryption sender address
@@ -158,14 +158,14 @@ contract BlocklockSender is
         uint32 callbackGasLimit,
         bytes calldata condition,
         TypesLib.Ciphertext calldata ciphertext
-    ) external payable onlyConfiguredNotDisabled returns (uint64) {
-        uint64 decryptionRequestID = requestBlocklockWithSubscription(
+    ) external payable onlyConfiguredNotDisabled returns (uint256) {
+        uint256 decryptionRequestId = requestBlocklockWithSubscription(
             callbackGasLimit,
             0, // no subId for direct funding requests
             condition,
             ciphertext
         );
-        return decryptionRequestID;
+        return decryptionRequestId;
     }
 
     /// @notice Requests a blocklock for a specified condition with the provided ciphertext and subscription ID
@@ -180,7 +180,7 @@ contract BlocklockSender is
     /// The decryption key is sent to the requesting callback / contract address
     /// when the condition is met.
     /// @param ciphertext The ciphertext that will be used in the blocklock request
-    /// @return requestID The unique identifier for the blocklock request
+    /// @return requestId The unique identifier for the blocklock request
     /// @dev This function allows users to request a blocklock for a specific condition.
     ///      The blocklock is associated with a given subscription ID
     ///      and requires a ciphertext to be provided. The function checks that the contract is
@@ -190,19 +190,19 @@ contract BlocklockSender is
         uint256 subId,
         bytes memory condition,
         TypesLib.Ciphertext calldata ciphertext
-    ) public payable onlyConfiguredNotDisabled returns (uint64) {
+    ) public payable onlyConfiguredNotDisabled returns (uint256) {
         require(subId != 0 || msg.value > 0, "Direct funding required for request fulfillment callback");
 
         /// @dev subId must be zero for direct funding or non zero for active subscription
         _validateCallbackGasLimitAndUpdateSubscription(callbackGasLimit, subId);
 
-        uint64 decryptionRequestID = uint64(_registerCiphertext(SCHEME_ID, abi.encode(ciphertext), condition));
+        uint256 decryptionRequestId = _registerCiphertext(SCHEME_ID, abi.encode(ciphertext), condition);
 
-        blocklockRequestsWithDecryptionKey[decryptionRequestID] = TypesLib.BlocklockRequest({
+        blocklockRequestsWithDecryptionKey[decryptionRequestId] = TypesLib.BlocklockRequest({
             subId: subId,
             directFundingFeePaid: msg.value,
             callbackGasLimit: callbackGasLimit,
-            decryptionRequestID: decryptionRequestID,
+            decryptionRequestId: decryptionRequestId,
             condition: condition,
             ciphertext: ciphertext,
             signature: hex"",
@@ -210,8 +210,8 @@ contract BlocklockSender is
             callback: msg.sender
         });
 
-        emit BlocklockRequested(decryptionRequestID, condition, ciphertext, msg.sender, block.timestamp);
-        return decryptionRequestID;
+        emit BlocklockRequested(decryptionRequestId, condition, ciphertext, msg.sender, block.timestamp);
+        return decryptionRequestId;
     }
 
     /// @notice Validates the subscription (if subId > 0) and the _callbackGasLimit
@@ -248,23 +248,23 @@ contract BlocklockSender is
     }
 
     /// @notice Handles the reception of decryption data (decryption key and signature) for a specific decryption request
-    /// @param decryptionRequestID The unique identifier for the decryption request, used to correlate the received data
+    /// @param decryptionRequestId The unique identifier for the decryption request, used to correlate the received data
     /// @param decryptionKey The decryption key received, used to decrypt the associated ciphertext
     /// @param signature The signature associated with the decryption key, ensuring its validity
     /// @dev This internal function is intended to be overridden in derived contracts to implement specific logic
     ///      that should be executed upon receiving the decryption data. It is called when decryption data is received
-    ///      for a decryption request identified by `decryptionRequestID`.
-    function onDecryptionDataReceived(uint64 decryptionRequestID, bytes memory decryptionKey, bytes memory signature)
+    ///      for a decryption request identified by `decryptionRequestId`.
+    function onDecryptionDataReceived(uint256 decryptionRequestId, bytes memory decryptionKey, bytes memory signature)
         internal
         override
     {
         uint256 startGas = gasleft();
 
-        TypesLib.BlocklockRequest storage request = blocklockRequestsWithDecryptionKey[decryptionRequestID];
-        require(request.decryptionRequestID != 0, "No request for request id");
+        TypesLib.BlocklockRequest storage request = blocklockRequestsWithDecryptionKey[decryptionRequestId];
+        require(request.decryptionRequestId != 0, "No request for request id");
 
         bytes memory callbackCallData =
-            abi.encodeWithSelector(IBlocklockReceiver.receiveBlocklock.selector, decryptionRequestID, decryptionKey);
+            abi.encodeWithSelector(IBlocklockReceiver.receiveBlocklock.selector, decryptionRequestId, decryptionKey);
 
         (bool success,) = callbackCallData._callWithExactGasEvenIfTargetIsNoContract(
             request.callback, request.callbackGasLimit, s_config.gasForCallExactCheck
@@ -273,13 +273,13 @@ contract BlocklockSender is
             request.decryptionKey = decryptionKey;
             request.signature = signature;
             emit BlocklockCallbackSuccess(
-                decryptionRequestID, request.condition, request.ciphertext, request.decryptionKey
+                decryptionRequestId, request.condition, request.ciphertext, request.decryptionKey
             );
         } else {
-            emit BlocklockCallbackFailed(decryptionRequestID);
+            emit BlocklockCallbackFailed(decryptionRequestId);
         }
 
-        _handlePaymentAndCharge(decryptionRequestID, startGas);
+        _handlePaymentAndCharge(decryptionRequestId, startGas);
     }
 
     /// @notice Estimates the total request price in native tokens based on the provided callback gas limit and requested gas price in wei
@@ -319,7 +319,7 @@ contract BlocklockSender is
     /// @param requestId The ID of the request to handle payment for.
     /// @param startGas The amount of gas used at the start of the transaction,
     ///     used for calculating payment based on gas consumption.
-    function _handlePaymentAndCharge(uint64 requestId, uint256 startGas) internal override {
+    function _handlePaymentAndCharge(uint256 requestId, uint256 startGas) internal override {
         TypesLib.BlocklockRequest memory request = getRequest(requestId);
 
         if (request.subId > 0) {
@@ -519,28 +519,28 @@ contract BlocklockSender is
     }
 
     /// @notice Checks whether a Blocklock request is in flight
-    /// @param requestID The unique identifier for the Blocklock request
+    /// @param requestId The unique identifier for the Blocklock request
     /// @return A boolean indicating if the request is currently in flight (true) or not (false)
     /// @dev This function retrieves the associated decryption request ID for the given request ID and checks
     /// if the decryption request is still in flight using the `decryptionSender`.
-    /// If the `decryptionRequestID` is 0, the request is not in flight.
-    function isInFlight(uint64 requestID) external view returns (bool) {
-        uint64 signatureRequestID = getRequest(requestID).decryptionRequestID;
+    /// If the `decryptionRequestId` is 0, the request is not in flight.
+    function isInFlight(uint256 requestId) external view returns (bool) {
+        uint256 signatureRequestId = getRequest(requestId).decryptionRequestId;
 
-        if (signatureRequestID == 0) {
+        if (signatureRequestId == 0) {
             return false;
         }
 
-        return decryptionSender.isInFlight(signatureRequestID);
+        return decryptionSender.isInFlight(signatureRequestId);
     }
 
     /// @notice Retrieves a Blocklock request by its unique request ID
-    /// @param requestID The unique identifier for the Blocklock request
+    /// @param requestId The unique identifier for the Blocklock request
     /// @return r The BlocklockRequest structure containing details of the request
-    /// @dev Throws an error if the provided request ID is invalid (decryptionRequestID is 0).
-    function getRequest(uint64 requestID) public view returns (TypesLib.BlocklockRequest memory) {
-        TypesLib.BlocklockRequest memory r = blocklockRequestsWithDecryptionKey[requestID];
-        require(r.decryptionRequestID > 0, "invalid requestID");
+    /// @dev Throws an error if the provided request ID is invalid (decryptionRequestId is 0).
+    function getRequest(uint256 requestId) public view returns (TypesLib.BlocklockRequest memory) {
+        TypesLib.BlocklockRequest memory r = blocklockRequestsWithDecryptionKey[requestId];
+        require(r.decryptionRequestId > 0, "invalid requestId");
 
         return r;
     }

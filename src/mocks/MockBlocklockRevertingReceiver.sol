@@ -16,32 +16,32 @@ contract MockBlocklockRevertingReceiver is AbstractBlocklockReceiver {
         uint32 callbackGasLimit,
         bytes calldata condition,
         TypesLib.Ciphertext calldata encryptedData
-    ) external returns (uint64, uint256) {
+    ) external returns (uint256, uint256) {
         // create timelock request
-        (uint64 requestID, uint256 requestPrice) =
+        (uint256 _requestId, uint256 requestPrice) =
             _requestBlocklockPayInNative(callbackGasLimit, condition, encryptedData);
         // store request id
-        requestId = requestID;
+        requestId = _requestId;
         // store Ciphertext
         encryptedValue = encryptedData;
-        return (requestID, requestPrice);
+        return (requestId, requestPrice);
     }
 
     function createTimelockRequestWithSubscription(
         uint32 callbackGasLimit,
         bytes calldata condition,
         TypesLib.Ciphertext calldata encryptedData
-    ) external returns (uint64) {
+    ) external returns (uint256) {
         // create timelock request
-        uint64 requestID = _requestBlocklockWithSubscription(callbackGasLimit, condition, encryptedData);
+        uint256 _requestId = _requestBlocklockWithSubscription(callbackGasLimit, condition, encryptedData);
         // store request id
-        requestId = requestID;
+        requestId = _requestId;
         // store Ciphertext
         encryptedValue = encryptedData;
-        return requestID;
+        return requestId;
     }
 
-    function _onBlocklockReceived(uint64, /*_requestId*/ bytes calldata /*decryptionKey*/ ) internal pure override {
+    function _onBlocklockReceived(uint256, /*_requestId*/ bytes calldata /*decryptionKey*/ ) internal pure override {
         revert();
     }
 }

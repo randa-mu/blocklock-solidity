@@ -60,7 +60,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        uint64 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -78,7 +78,7 @@ contract SubscriptionFundingTest is BlocklockTest {
             "User contract should not be charged immediately for subscription request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -115,7 +115,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        uint64 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -136,7 +136,7 @@ contract SubscriptionFundingTest is BlocklockTest {
             "User contract should not be charged immediately for subscription request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -237,7 +237,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        uint64 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -258,7 +258,7 @@ contract SubscriptionFundingTest is BlocklockTest {
             "User contract should not be charged immediately for subscription request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -361,7 +361,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        uint64 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -382,7 +382,7 @@ contract SubscriptionFundingTest is BlocklockTest {
             "User contract should not be charged immediately for subscription request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -484,7 +484,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        uint64 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -502,7 +502,7 @@ contract SubscriptionFundingTest is BlocklockTest {
             "User contract should not be charged immediately for subscription request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -582,7 +582,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        uint64 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -615,7 +615,7 @@ contract SubscriptionFundingTest is BlocklockTest {
 
         // make second blocklock request from newly added consumer contract
         vm.prank(bob);
-        uint64 second_requestId = secondBlocklockReceiver.createTimelockRequestWithSubscription(
+        uint256 second_requestId = secondBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -626,7 +626,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         // we don't use user payment as the gas price for callback from oracle.
         vm.txGasPrice(100_000);
         vm.prank(admin);
-        vm.expectRevert("No pending request with specified requestID");
+        vm.expectRevert("No pending request with specified requestId");
         decryptionSender.fulfillDecryptionRequest(
             requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
         );
@@ -718,7 +718,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        uint64 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -738,7 +738,7 @@ contract SubscriptionFundingTest is BlocklockTest {
             "User contract should not be charged immediately for subscription request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -847,7 +847,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        uint64 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -865,7 +865,7 @@ contract SubscriptionFundingTest is BlocklockTest {
             "User contract should not be charged immediately for subscription request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -897,7 +897,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        uint64 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -918,7 +918,7 @@ contract SubscriptionFundingTest is BlocklockTest {
             "User contract should not be charged immediately for subscription request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -1058,7 +1058,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        uint64 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -1079,7 +1079,7 @@ contract SubscriptionFundingTest is BlocklockTest {
             "User contract should not be charged immediately for subscription request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -1162,13 +1162,13 @@ contract SubscriptionFundingTest is BlocklockTest {
         assert(blocklockSender.s_totalNativeBalance() == nativeBalance);
 
         /// @notice we cannot retry fulfilling the request with the correct decryption key
-        /// if we call fulfillDecryptionRequest, we get an error with no pending request with specified requestID
+        /// if we call fulfillDecryptionRequest, we get an error with No pending request with specified requestId
         /// In some cases user might register incorrect ciphertext leading to this scenario.
         vm.txGasPrice(100_000);
         gasBefore = gasleft();
 
         vm.prank(admin);
-        vm.expectRevert("No pending request with specified requestID");
+        vm.expectRevert("No pending request with specified requestId");
         decryptionSender.fulfillDecryptionRequest(
             requestId, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
         );
@@ -1206,7 +1206,7 @@ contract SubscriptionFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = 100_000;
-        uint64 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
+        uint256 requestId = mockBlocklockReceiver.createTimelockRequestWithSubscription(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 

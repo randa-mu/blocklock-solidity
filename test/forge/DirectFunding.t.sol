@@ -48,7 +48,7 @@ contract DirectFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        (uint64 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -69,7 +69,7 @@ contract DirectFundingTest is BlocklockTest {
             "Invalid price paid by user contract for request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -149,7 +149,7 @@ contract DirectFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        uint64 requestId = blocklockSender.requestBlocklock{value: requestPrice}(
+        uint256 requestId = blocklockSender.requestBlocklock{value: requestPrice}(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -170,7 +170,7 @@ contract DirectFundingTest is BlocklockTest {
             "Invalid price paid by user contract for request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -268,7 +268,7 @@ contract DirectFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        (uint64 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -289,7 +289,7 @@ contract DirectFundingTest is BlocklockTest {
             "Invalid price paid by user contract for request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -390,7 +390,7 @@ contract DirectFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        (uint64 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -411,7 +411,7 @@ contract DirectFundingTest is BlocklockTest {
             "Invalid price paid by user contract for request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -513,7 +513,7 @@ contract DirectFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        (uint64 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -534,7 +534,7 @@ contract DirectFundingTest is BlocklockTest {
             "Invalid price paid by user contract for request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -628,11 +628,11 @@ contract DirectFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        (uint64 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
-        vm.expectRevert("No pending request with specified requestID");
+        vm.expectRevert("No pending request with specified requestId");
         vm.prank(admin);
         decryptionSender.fulfillDecryptionRequest(
             requestId + 1, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
@@ -667,7 +667,7 @@ contract DirectFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        (uint64 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
@@ -760,7 +760,7 @@ contract DirectFundingTest is BlocklockTest {
         // make blocklock request
         vm.prank(alice);
         uint32 requestCallbackGasLimit = callbackGasLimit;
-        (uint64 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
+        (uint256 requestId,) = mockBlocklockReceiver.createTimelockRequestWithDirectFunding(
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 

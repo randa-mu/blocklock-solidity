@@ -29,7 +29,7 @@ interface IBlocklockSender is ISubscription {
         uint32 callbackGasLimit,
         bytes calldata condition,
         TypesLib.Ciphertext calldata ciphertext
-    ) external payable returns (uint64 requestID);
+    ) external payable returns (uint256 requestId);
 
     /// @notice Requests a blocklock for a specified condition with the provided ciphertext and subscription ID
     /// @param callbackGasLimit How much gas you'd like to receive in your
@@ -43,7 +43,7 @@ interface IBlocklockSender is ISubscription {
     /// The decryption key is sent to the requesting callback / contract address
     /// when the condition is met.
     /// @param ciphertext The ciphertext that will be used in the blocklock request
-    /// @return requestID The unique identifier for the blocklock request
+    /// @return requestId The unique identifier for the blocklock request
     /// @dev This function allows users to request a blocklock for a specific condition.
     ///      The blocklock is associated with a given subscription ID
     ///      and requires a ciphertext to be provided. The function checks that the contract is
@@ -53,7 +53,7 @@ interface IBlocklockSender is ISubscription {
         uint256 subId,
         bytes calldata condition,
         TypesLib.Ciphertext calldata ciphertext
-    ) external payable returns (uint64 requestID);
+    ) external payable returns (uint256 requestId);
 
     /// @notice Calculates the estimated price in native tokens for a request based on the provided gas limit
     /// @param _callbackGasLimit The gas limit for the callback execution
@@ -77,7 +77,7 @@ interface IBlocklockSender is ISubscription {
     /// @dev This function returns the Request struct associated with the given requestId.
     /// @param requestId The ID of the request to retrieve.
     /// @return The Request struct corresponding to the given requestId.
-    function getRequest(uint64 requestId) external view returns (TypesLib.BlocklockRequest memory);
+    function getRequest(uint256 requestId) external view returns (TypesLib.BlocklockRequest memory);
 
     /// Decrypt a ciphertext into a plaintext using a decryption key.
     /// @param ciphertext The ciphertext to decrypt.

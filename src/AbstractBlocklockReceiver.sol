@@ -47,11 +47,11 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice Receives a blocklock request and the associated decryption key.
     /// @dev This function is only callable by a contract that is recognized as a valid "BlocklockContract".
     ///      Once the decryption key is received, it triggers the internal function `_onBlocklockReceived` to handle the processing.
-    /// @param requestID The unique identifier of the blocklock request.
+    /// @param requestId The unique identifier of the blocklock request.
     /// @param decryptionKey The decryption key that will be used to decrypt the associated ciphertext.
     /// @notice Emits an event or performs additional logic in `_onBlocklockReceived`.
-    function receiveBlocklock(uint64 requestID, bytes calldata decryptionKey) external virtual onlyBlocklockContract {
-        _onBlocklockReceived(requestID, decryptionKey);
+    function receiveBlocklock(uint256 requestId, bytes calldata decryptionKey) external virtual onlyBlocklockContract {
+        _onBlocklockReceived(requestId, decryptionKey);
     }
 
     /// @notice Sets the Randamu subscription ID used for conditional encryption oracle services.
@@ -131,7 +131,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         uint32 callbackGasLimit,
         bytes memory condition,
         TypesLib.Ciphertext calldata ciphertext
-    ) internal returns (uint64 requestId, uint256 requestPrice) {
+    ) internal returns (uint256 requestId, uint256 requestPrice) {
         requestPrice = blocklock.calculateRequestPriceNative(callbackGasLimit);
         return (blocklock.requestBlocklock{value: requestPrice}(callbackGasLimit, condition, ciphertext), requestPrice);
     }
@@ -149,7 +149,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         uint32 callbackGasLimit,
         bytes memory condition,
         TypesLib.Ciphertext calldata ciphertext
-    ) internal returns (uint64 requestId) {
+    ) internal returns (uint256 requestId) {
         return blocklock.requestBlocklockWithSubscription(callbackGasLimit, subscriptionId, condition, ciphertext);
     }
 
@@ -176,7 +176,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice This function does not implement any functionality itself but serves as a placeholder for derived contracts
     ///         to implement their specific logic when a blocklock is received.
     /// @dev This function is marked as `internal` and `virtual`, meaning it can be overridden in a derived contract.
-    function _onBlocklockReceived(uint64 _requestId, bytes calldata decryptionKey) internal virtual;
+    function _onBlocklockReceived(uint256 _requestId, bytes calldata decryptionKey) internal virtual;
 
     /// @notice Creates a new Randamu subscription if none exists and registers this contract as a consumer.
     /// @dev Internal helper that initializes the subscription only once.
