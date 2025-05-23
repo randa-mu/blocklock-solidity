@@ -66,7 +66,7 @@ To resolve dependencies between the contract deployments, a `.json` file named [
 * DecryptionSender (proxy address)
 * SignatureSchemeAddressProvider
 
-The addresses from this input file are read in by scripts using them. To overwrite the addresses in this file, replace them with the relevant address for each contract.
+The addresses from this input file are read in by scripts using them. To overwrite the addresses in this file when doing a single deployment, replace them with the relevant address for each contract.
 
 For example, running the following command writes a JSON property `{"signatureSchemeAddressProviderAddress": "0x7D020A4E3D8795581Ec06E0e57701dDCf7B19EDF"}` to the Deployment_input.json file:
 
