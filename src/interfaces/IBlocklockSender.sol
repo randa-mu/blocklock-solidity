@@ -87,6 +87,8 @@ interface IBlocklockSender is ISubscription {
         view
         returns (bytes memory);
 
+    function isInFlight(uint256 requestId) external view returns (bool);
+
     /// @dev Returns the version number of the upgradeable contract.
     function version() external pure returns (string memory);
 

@@ -195,6 +195,14 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         blocklock.cancelSubscription(subscriptionId, to);
     }
 
+    function isInFlight(uint256 requestId) public view returns (bool) {
+        return blocklock.isInFlight(requestId);
+    }
+
+    function pendingRequestExists(uint256 subId) public view returns (bool) {
+        return blocklock.pendingRequestExists(subId);
+    }
+
     /// @notice The receive function is executed on a call to the contract with empty calldata.
     /// This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()).
     receive() external payable {
