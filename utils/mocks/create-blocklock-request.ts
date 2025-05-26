@@ -12,6 +12,9 @@ import {
     Ciphertext,
 } from "../../utils/crypto/ibe-bn254";
 import { keccak_256 } from "@noble/hashes/sha3";
+import {
+    encodeCondition
+} from "blocklock-js"
 
 // Usage:
 // yarn ts-node utils/mocks/create-blocklock-request.ts 
@@ -83,10 +86,8 @@ async function createBlocklockRequest() {
     console.log("block height", blockHeight);
 
     // condition bytes
-    const types = ["string", "uint256"]; // "B" is a string, and blockHeight is a uint256
-    const values = ["B", blockHeight];
-    const encodedCondition = ethers.AbiCoder.defaultAbiCoder().encode(types, values);
-    console.log(values, encodedCondition);
+    const encodedCondition = encodeCondition(blockHeight);
+    console.log("encoded condition", encodedCondition.toString());
 
     // identity for IBE
     // encrypt_towards_identity_g1 expects a uint8Array as input for the identity
@@ -148,6 +149,8 @@ async function createBlocklockRequest() {
     let tx = await mockBlocklockReceiverInstance.connect(signer).fundContractNative({ value: requestPrice + ethers.parseEther("0.1")});
     await tx.wait(1); // Wait for the transaction to be mined
 
+    console.log("Tequest price", requestPrice, ethers.parseEther("0.1"));
+
     tx = await mockBlocklockReceiverInstance
         .connect(signer)
         .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct));
@@ -156,7 +159,7 @@ async function createBlocklockRequest() {
     if (!receipt) {
         throw new Error("transaction has not been mined");
     }
-    console.log(receipt);
+    // console.log(receipt);
 
     const reqId = await mockBlocklockReceiverInstance.requestId();
     console.log("Created request id on filecoin testnet:", reqId);
