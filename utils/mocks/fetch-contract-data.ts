@@ -14,7 +14,7 @@ const RPC_URL = process.env.RPC_URL;
 // polygon mainnet addresses
 const blocklockSenderAddr = "0x82Fed730CbdeC5A2D8724F2e3b316a70A565e27e"
 const decryptionSenderAddr = "0x41cF74811B6B326bAe4AC4Df5b829035CB8a05DA";
-const mockBlocklockReceiverAddr = "0x1B7f32A7C3Ce1e0f732a2b016a4034528939e9Df";
+const mockBlocklockReceiverAddr = "0x5F8C824A150170B325ec804d8163364926B9FF76";
 
 // // filecoin calibration testnet addresses
 // const blocklockSenderAddr = "0xF00aB3B64c81b6Ce51f8220EB2bFaa2D469cf702"

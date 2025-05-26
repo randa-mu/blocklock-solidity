@@ -24,7 +24,7 @@ const RPC_URL = process.env.RPC_URL;
 // polygon mainnet addresses
 const blocklockSenderAddr = "0x82Fed730CbdeC5A2D8724F2e3b316a70A565e27e"
 const decryptionSenderAddr = "0x41cF74811B6B326bAe4AC4Df5b829035CB8a05DA";
-const mockBlocklockReceiverAddr = "0x1B7f32A7C3Ce1e0f732a2b016a4034528939e9Df";
+const mockBlocklockReceiverAddr = "0x5F8C824A150170B325ec804d8163364926B9FF76";
 
 // // Filecoin calibration testnet addresses
 // const blocklockSenderAddr = "0xF00aB3B64c81b6Ce51f8220EB2bFaa2D469cf702"
@@ -133,40 +133,88 @@ async function createBlocklockRequest() {
 
     const ct = encrypt_towards_identity_g1(encodedMessage, identity, blocklock_default_pk, BLOCKLOCK_IBE_OPTS);
 
+    // compute gas price
+    const network = await provider!.getNetwork();
+    const chainId = network.chainId;
+
+    const feeData = await provider!.getFeeData();
+
+    // feeData.gasPrice: Legacy flat gas price (used on non-EIP-1559 chains like Filecoin or older EVMs)
+    const gasPrice = feeData.gasPrice!;
+
+    // feeData.maxFeePerGas: Max total gas price we're willing to pay (base + priority), used in EIP-1559
+    const maxFeePerGas = feeData.maxFeePerGas!;
+
+    // feeData.maxPriorityFeePerGas: Tip to incentivize validators (goes directly to them)
+    const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas!;
+
+    const isFilecoin = Number(chainId) === 314 || Number(chainId) === 314159;
+
+    let txGasPrice: bigint;
+    if (isFilecoin) {
+        // Use legacy gasPrice directly
+        txGasPrice = gasPrice > 0 ? gasPrice * 10n : (maxFeePerGas + maxPriorityFeePerGas) * 10n;
+    } else {
+        // Use effective gas price based on EIP-1559
+        txGasPrice = maxFeePerGas + maxPriorityFeePerGas;
+    }
+    
     // make direct funding request with enough callbackGasLimit to cover BLS operations in call to decrypt() function
     // in receiver contract
     // for filecoin simulation test, the tx goes through if we also increase callback gas limit by buffer or not
     // const filecoinGasBuffer = 444;
     // filecoin calibration testnet
-    // const callbackGasLimit = 500_000 * filecoinGasBuffer;
+    // const callbackGasLimit = 400_000 * filecoinGasBuffer;
 
-    // polygon mainnet
-    const callbackGasLimit = 300_000;
+    const callbackGasLimit = 400_000;
 
-    const requestPrice = await blocklockSenderInstance.calculateRequestPriceNative(callbackGasLimit);
+    const requestPrice = await blocklockSenderInstance.estimateRequestPriceNative(
+        callbackGasLimit,
+        txGasPrice 
+    );
 
-    // fund contract
-    let tx = await mockBlocklockReceiverInstance.connect(signer).fundContractNative({ value: requestPrice + ethers.parseEther("0.1")});
-    await tx.wait(1); // Wait for the transaction to be mined
+    // // fund contract
+    // let tx = await mockBlocklockReceiverInstance.connect(signer).fundContractNative({ value: requestPrice});
+    // await tx.wait(1); // Wait for the transaction to be mined
 
-    console.log("Request price", requestPrice, ethers.parseEther("0.4"));
+    const bufferPercent = isFilecoin? 300n: 10n;
+    const valueToSend = requestPrice + (requestPrice * bufferPercent) / 100n;
 
-    tx = await mockBlocklockReceiverInstance
-        .connect(signer)
-        .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct));
+    console.log("Native / ETH to pay for request", ethers.formatEther(valueToSend));
 
-    let receipt = await tx.wait(1);
-    if (!receipt) {
-        throw new Error("transaction has not been mined");
-    }
-    // console.log(receipt);
+    // const estimatedGas = await mockBlocklockReceiverInstance.createTimelockRequestWithDirectFunding.estimateGas(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct),
+    //     isFilecoin
+    //         ? { value: valueToSend, gasPrice: txGasPrice }
+    //         : {
+    //             value: valueToSend, maxFeePerGas,
+    //             maxPriorityFeePerGas,
+    //         });
+    // console.log("estimated gas", estimatedGas);
+    
+    // const tx = await mockBlocklockReceiverInstance
+    //     .connect(signer)
+    //     .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct),
+    //         isFilecoin
+    //             ? { value: valueToSend, gasLimit: estimatedGas, gasPrice: txGasPrice }
+    //             : {
+    //                 value: valueToSend, gasLimit: estimatedGas,
+    //                 maxFeePerGas,
+    //                 maxPriorityFeePerGas,
+    //             });
+    
 
-    const reqId = await mockBlocklockReceiverInstance.requestId();
-    console.log("Created request id on filecoin testnet:", reqId);
+    // let receipt = await tx.wait(1);
+    // if (!receipt) {
+    //     throw new Error("transaction has not been mined");
+    // }
+    // // console.log(receipt);
 
-    console.log("Request tx created at block height:", await provider.getBlockNumber())
-    console.log("is created blocklock request id inFlight in decryptionSender?:", await decryptionSenderInstance.isInFlight(reqId));
-    console.log("is created blocklock request id inFlight in blocklockSender?:", await blocklockSenderInstance.isInFlight(reqId));
+    // const reqId = await mockBlocklockReceiverInstance.requestId();
+    // console.log("Created request id on filecoin testnet:", reqId);
+
+    // console.log("Request tx created at block height:", await provider.getBlockNumber())
+    // console.log("is created blocklock request id inFlight in decryptionSender?:", await decryptionSenderInstance.isInFlight(reqId));
+    // console.log("is created blocklock request id inFlight in blocklockSender?:", await blocklockSenderInstance.isInFlight(reqId));
 }
 
 function encodeCiphertextToSolidity(ciphertext: Ciphertext): BlocklockTypes.CiphertextStruct {
