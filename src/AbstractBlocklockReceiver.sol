@@ -132,9 +132,6 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         bytes memory condition,
         TypesLib.Ciphertext calldata ciphertext
     ) internal returns (uint256 requestId, uint256 requestPrice) {
-        // requestPrice = blocklock.calculateRequestPriceNative(callbackGasLimit);
-        // return (blocklock.requestBlocklock{value: requestPrice}(callbackGasLimit, condition, ciphertext), requestPrice);
-
         requestPrice = blocklock.calculateRequestPriceNative(callbackGasLimit);
 
         require(msg.value >= requestPrice, "Insufficient ETH");
