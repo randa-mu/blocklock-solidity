@@ -83,11 +83,11 @@ async function main() {
         const erroredRequestIds = await decryptionSender.getAllErroredRequestIds()
         console.log(`Errored request ids ${erroredRequestIds}`)
 
-        // const unfilfilledRequestIds = await decryptionSender.getAllUnfulfilledRequestIds()
-        // console.log(`Unfulfilled request ids ${unfilfilledRequestIds}`)
+        const unfilfilledRequestIds = await decryptionSender.getAllUnfulfilledRequestIds()
+        console.log(`Unfulfilled request ids ${unfilfilledRequestIds}`)
 
-        // const fulfilledRequestIds = await decryptionSender.getAllFulfilledRequestIds()
-        // console.log(`Unfulfilled request ids ${fulfilledRequestIds}`)
+        const fulfilledRequestIds = await decryptionSender.getAllFulfilledRequestIds()
+        console.log(`Fulfilled request ids ${fulfilledRequestIds}`)
     } catch (error) {
         console.error("Error fetching latest block number:", error);
     }
