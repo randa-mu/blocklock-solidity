@@ -141,7 +141,7 @@ async function createBlocklockRequest() {
     // const callbackGasLimit = 500_000 * filecoinGasBuffer;
 
     // polygon mainnet
-    const callbackGasLimit = 500_000;
+    const callbackGasLimit = 300_000;
 
     const requestPrice = await blocklockSenderInstance.calculateRequestPriceNative(callbackGasLimit);
 
@@ -149,7 +149,7 @@ async function createBlocklockRequest() {
     let tx = await mockBlocklockReceiverInstance.connect(signer).fundContractNative({ value: requestPrice + ethers.parseEther("0.1")});
     await tx.wait(1); // Wait for the transaction to be mined
 
-    console.log("Tequest price", requestPrice, ethers.parseEther("0.1"));
+    console.log("Request price", requestPrice, ethers.parseEther("0.4"));
 
     tx = await mockBlocklockReceiverInstance
         .connect(signer)
