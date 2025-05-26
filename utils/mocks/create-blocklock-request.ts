@@ -73,7 +73,7 @@ async function createBlocklockRequest() {
         signer,
     );
 
-    const blockHeight = BigInt((await provider.getBlockNumber()) + 5);
+    const blockHeight = BigInt((await provider.getBlockNumber()) + 10);
     console.log("block height", blockHeight);
 
     // condition bytes
