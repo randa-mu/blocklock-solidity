@@ -1,4 +1,4 @@
-import { JsonRpcProvider, ethers, AbiCoder, getBytes, AddressLike } from "ethers";
+import { JsonRpcProvider, ethers, getBytes, AddressLike } from "ethers";
 import 'dotenv/config'
 import {
     DecryptionSender__factory,
@@ -8,7 +8,6 @@ import {
 import { TypesLib as BlocklockTypes } from "../../typechain-types/src/blocklock/BlocklockSender";
 import {
     IbeOpts,
-    preprocess_decryption_key_g1,
     encrypt_towards_identity_g1,
     Ciphertext,
 } from "../../utils/crypto/ibe-bn254";
@@ -61,6 +60,11 @@ async function latestBlockNumber(provider: JsonRpcProvider) {
 async function createBlocklockRequest() {
     const decryptionSenderInstance = DecryptionSender__factory.connect(
         decryptionSenderAddr,
+        signer,
+    );
+
+    const blocklockSenderInstance = BlocklockSender__factory.connect(
+        blocklockSenderAddr,
         signer,
     );
 
@@ -146,8 +150,8 @@ async function createBlocklockRequest() {
     console.log("Created request id on filecoin testnet:", reqId);
 
     console.log("Request tx created at block height:", await provider.getBlockNumber())
-    console.log("is created blocklock request id inFlight?:", await decryptionSenderInstance.isInFlight(reqId));
-
+    console.log("is created blocklock request id inFlight in decryptionSender?:", await decryptionSenderInstance.isInFlight(reqId));
+    console.log("is created blocklock request id inFlight in blocklockSender?:", await blocklockSenderInstance.isInFlight(reqId));
 }
 
 function encodeCiphertextToSolidity(ciphertext: Ciphertext): BlocklockTypes.CiphertextStruct {

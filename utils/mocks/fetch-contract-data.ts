@@ -1,4 +1,4 @@
-import { JsonRpcProvider, ethers, AbiCoder, getBytes } from "ethers";
+import { JsonRpcProvider, ethers } from "ethers";
 import 'dotenv/config'
 import {
     DecryptionSender__factory,
@@ -16,9 +16,6 @@ const decryptionSenderAddr = "0x2474d71AB97F1189D0E0cc1b6EbF8118DCa83000";
 // mockBlocklockReceiverAddr deployment:
 // forge script script/single-deployment/DeployBlocklockReceiver.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast -g 100000
 const mockBlocklockReceiverAddr = "0x228Be38159Fc2A30A98acfD2Eddc46E1afa67fdc";
-
-// Create a provider using the RPC URL
-const provider = new ethers.JsonRpcProvider(RPC_URL);
 
 async function getWalletBalance(rpcUrl: string, walletAddress: string): Promise<void> {
     try {
