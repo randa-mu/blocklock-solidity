@@ -39,7 +39,6 @@
         "@types/node": "^22.5.1",
         "asn1js": "^3.0.5",
         "axios": "^1.7.7",
-        "blocklock-js": "^0.0.8-rc3",
         "chai": "4",
         "commander": "^12.1.0",
         "dotenv": "^16.4.5",

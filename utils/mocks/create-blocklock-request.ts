@@ -12,9 +12,6 @@ import {
     Ciphertext,
 } from "../../utils/crypto/ibe-bn254";
 import { keccak_256 } from "@noble/hashes/sha3";
-import {
-    encodeCondition
-} from "blocklock-js"
 
 // Usage:
 // yarn ts-node utils/mocks/create-blocklock-request.ts 
@@ -25,10 +22,6 @@ const RPC_URL = process.env.RPC_URL;
 const blocklockSenderAddr = "0x82Fed730CbdeC5A2D8724F2e3b316a70A565e27e"
 const decryptionSenderAddr = "0x41cF74811B6B326bAe4AC4Df5b829035CB8a05DA";
 const mockBlocklockReceiverAddr = "0x5F8C824A150170B325ec804d8163364926B9FF76";
-
-// // Filecoin calibration testnet addresses
-// const blocklockSenderAddr = "0xF00aB3B64c81b6Ce51f8220EB2bFaa2D469cf702"
-// const decryptionSenderAddr = "0x2474d71AB97F1189D0E0cc1b6EbF8118DCa83000";
 
 // mockBlocklockReceiverAddr can be deployed with the following command:
 // forge script script/single-deployment/DeployBlocklockReceiver.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast -g 100000
@@ -101,41 +94,23 @@ async function createBlocklockRequest() {
     // generate Ciphertext
     const blocklock_default_pk = {
         x: {
-            c0: 19466273993852079063924474392378816199685375459664529508122564849204533666468n,
-            c1: 21131687462638968537850845255670528066014536613738342153553860006061609469324n,
+            c0: BigInt("0x2691d39ecc380bfa873911a0b848c77556ee948fb8ab649137d3d3e78153f6ca"),
+            c1: BigInt("0x2863e20a5125b098108a5061b31f405e16a069e9ebff60022f57f4c4fd0237bf"),
         },
         y: {
-            c0: 7578617840607454142936008614752231508238355116367494353476740252708767858492n,
-            c1: 5343514427465363660208643216752839104127697387077797304816316938005257664244n,
+            c0: BigInt("0x193513dbe180d700b189c529754f650b7b7882122c8a1e242a938d23ea9f765c"),
+            c1: BigInt("0x11c939ea560caf31f552c9c4879b15865d38ba1dfb0f7a7d2ac46a4f0cae25ba"),
         },
     };
 
-    // chain id for filecoin calibration testnet is 314_159
-    const BLOCKLOCK_IBE_OPTS: IbeOpts = {
-        hash: keccak_256,
-        k: 128,
-        expand_fn: "xmd",
-        dsts: {
-            H1_G1: Buffer.from(
-                "BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_0x0000000000000000000000000000000000000000000000000000000000004c8f_",
-            ),
-            H2: Buffer.from(
-                "BLOCKLOCK_BN254_XMD:KECCAK-256_H2_0x0000000000000000000000000000000000000000000000000000000000004c8f_",
-            ),
-            H3: Buffer.from(
-                "BLOCKLOCK_BN254_XMD:KECCAK-256_H3_0x0000000000000000000000000000000000000000000000000000000000004c8f_",
-            ),
-            H4: Buffer.from(
-                "BLOCKLOCK_BN254_XMD:KECCAK-256_H4_0x0000000000000000000000000000000000000000000000000000000000004c8f_",
-            ),
-        },
-    };
+    const network = await provider!.getNetwork();
+    const chainId = network.chainId;
+
+    const BLOCKLOCK_IBE_OPTS: IbeOpts = createBlocklockIbeOpts(chainId);
 
     const ct = encrypt_towards_identity_g1(encodedMessage, identity, blocklock_default_pk, BLOCKLOCK_IBE_OPTS);
 
     // compute gas price
-    const network = await provider!.getNetwork();
-    const chainId = network.chainId;
 
     const feeData = await provider!.getFeeData();
 
@@ -150,7 +125,7 @@ async function createBlocklockRequest() {
 
     const isFilecoin = Number(chainId) === 314 || Number(chainId) === 314159;
 
-    let callbackGasLimit = 400000n;
+    let callbackGasLimit = 500000n;
 
     let txGasPrice: bigint;
     let filecoinllbackGasLimitBuffer = 444n;
@@ -163,16 +138,16 @@ async function createBlocklockRequest() {
         txGasPrice = maxFeePerGas + maxPriorityFeePerGas;
         callbackGasLimit = callbackGasLimit;
     }
-    
+
     // make direct funding request with enough callbackGasLimit to cover BLS operations in call to decrypt() function
     // in receiver contract and msg.value to cover the request price + a buffer
 
     const requestPrice = await blocklockSenderInstance.estimateRequestPriceNative(
         callbackGasLimit,
-        txGasPrice 
+        txGasPrice
     );
 
-    const bufferPercent = isFilecoin? 300n: 10n;
+    const bufferPercent = isFilecoin ? 300n : 10n;
     const valueToSend = requestPrice + (requestPrice * bufferPercent) / 100n;
 
     console.log("Native / ETH to pay for request", ethers.formatEther(valueToSend));
@@ -185,7 +160,7 @@ async function createBlocklockRequest() {
                 maxPriorityFeePerGas,
             });
     console.log("estimated gas", estimatedGas);
-    
+
     const tx = await mockBlocklockReceiverInstance
         .connect(signer)
         .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct),
@@ -196,7 +171,7 @@ async function createBlocklockRequest() {
                     maxFeePerGas,
                     maxPriorityFeePerGas,
                 });
-    
+
     let receipt = await tx.wait(1);
     if (!receipt) {
         throw new Error("transaction has not been mined");
@@ -246,6 +221,24 @@ async function getTransactionCount(walletAddr: AddressLike) {
     return txCount;
 }
 
+function encodeCondition(blockHeight: bigint): Uint8Array {
+    const blockHeightBytes = getBytes(ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [blockHeight]))
+    // 0x42 is the magic 'B' tag for the `blockHeight` condition
+    return new Uint8Array([0x42, ...blockHeightBytes])
+}
+
+const createBlocklockIbeOpts = (chainId: bigint): IbeOpts => ({
+    hash: keccak_256,
+    k: 128,
+    expand_fn: "xmd",
+    dsts: {
+        H1_G1: Buffer.from(`BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_${ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [chainId])}_`),
+        H2: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H2_${ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [chainId])}_`),
+        H3: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H3_${ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [chainId])}_`),
+        H4: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H4_${ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [chainId])}_`),
+    },
+})
+
 async function main() {
     const walletAddr = await signer.getAddress()
 
@@ -265,6 +258,7 @@ async function main() {
         console.error("Error fetching latest block number:", error);
     }
 }
+
 
 main()
     .then(() => process.exit(0))
