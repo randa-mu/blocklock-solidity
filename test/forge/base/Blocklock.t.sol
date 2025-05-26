@@ -124,7 +124,10 @@ contract BlocklockTest is Deployment {
         // request price should increase if callbackGasLimit increases
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
         callbackGasLimit = 200_000;
-        assertTrue(requestPrice < blocklockSender.calculateRequestPriceNative(callbackGasLimit), "Estimated request price should increase if callback gas limit increases");
+        assertTrue(
+            requestPrice < blocklockSender.calculateRequestPriceNative(callbackGasLimit),
+            "Estimated request price should increase if callback gas limit increases"
+        );
     }
 
     function test_EstimatedRequestPrice_Increases_WithGasPrice() public {
@@ -133,7 +136,10 @@ contract BlocklockTest is Deployment {
         // request price should increase if gas price increases
         uint256 requestPrice = blocklockSender.estimateRequestPriceNative(callbackGasLimit, gasPrice);
         gasPrice = 200 wei;
-        assertTrue(requestPrice < blocklockSender.estimateRequestPriceNative(callbackGasLimit, gasPrice), "Estimated request price should increase if callback gas price increases");
+        assertTrue(
+            requestPrice < blocklockSender.estimateRequestPriceNative(callbackGasLimit, gasPrice),
+            "Estimated request price should increase if callback gas price increases"
+        );
     }
 
     // helper functions
