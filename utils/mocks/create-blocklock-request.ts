@@ -18,9 +18,14 @@ import { keccak_256 } from "@noble/hashes/sha3";
 
 const RPC_URL = process.env.RPC_URL;
 
-// Filecoin calibration testnet addresses for blocklock
-const blocklockSenderAddr = "0xF00aB3B64c81b6Ce51f8220EB2bFaa2D469cf702"
-const decryptionSenderAddr = "0x2474d71AB97F1189D0E0cc1b6EbF8118DCa83000";
+// polygon mainnet addresses
+const blocklockSenderAddr = "0x82Fed730CbdeC5A2D8724F2e3b316a70A565e27e"
+const decryptionSenderAddr = "0x41cF74811B6B326bAe4AC4Df5b829035CB8a05DA";
+const mockBlocklockReceiverAddr = "0x1B7f32A7C3Ce1e0f732a2b016a4034528939e9Df";
+
+// // Filecoin calibration testnet addresses
+// const blocklockSenderAddr = "0xF00aB3B64c81b6Ce51f8220EB2bFaa2D469cf702"
+// const decryptionSenderAddr = "0x2474d71AB97F1189D0E0cc1b6EbF8118DCa83000";
 
 // mockBlocklockReceiverAddr can be deployed with the following command:
 // forge script script/single-deployment/DeployBlocklockReceiver.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast -g 100000
@@ -29,8 +34,9 @@ const decryptionSenderAddr = "0x2474d71AB97F1189D0E0cc1b6EbF8118DCa83000";
 //     "blocklockSenderProxyAddress": "0xF00aB3B64c81b6Ce51f8220EB2bFaa2D469cf702"
 //   }
 // and RANDAMU_CREATE2_FACTORY_CONTRACT_ADDRESS is set to filecoin calibration 
-// testnet factory 0x93B465392F8B4993Db724690A3b527Ec035d3a9F in .env file alongside RPC_URL and PRIVATE_KEY
-const mockBlocklockReceiverAddr = "0x228Be38159Fc2A30A98acfD2Eddc46E1afa67fdc";
+// testnet factory 0x93B465392F8B4993Db724690A3b527Ec035d3a9F in .env file alongside RPC_URL and PRIVATE_KEY and
+// USE_RANDAMU_FACTORY set to true in .env file
+// const mockBlocklockReceiverAddr = "0x228Be38159Fc2A30A98acfD2Eddc46E1afa67fdc";
 
 // Create a provider using the RPC URL
 const provider = new ethers.JsonRpcProvider(RPC_URL);
@@ -73,7 +79,7 @@ async function createBlocklockRequest() {
         signer,
     );
 
-    const blockHeight = BigInt((await provider.getBlockNumber()) + 10);
+    const blockHeight = BigInt((await provider.getBlockNumber()) + 5);
     console.log("block height", blockHeight);
 
     // condition bytes
@@ -126,15 +132,21 @@ async function createBlocklockRequest() {
 
     const ct = encrypt_towards_identity_g1(encodedMessage, identity, blocklock_default_pk, BLOCKLOCK_IBE_OPTS);
 
-    // fund contract
-    let tx = await mockBlocklockReceiverInstance.connect(signer).fundContractNative({ value: ethers.parseEther("2") });
-    await tx.wait(1); // Waits for the transaction to be mined
-
     // make direct funding request with enough callbackGasLimit to cover BLS operations in call to decrypt() function
     // in receiver contract
     // for filecoin simulation test, the tx goes through if we also increase callback gas limit by buffer or not
-    const filecoinGasBuffer = 444;
-    const callbackGasLimit = 500_000 * filecoinGasBuffer;
+    // const filecoinGasBuffer = 444;
+    // filecoin calibration testnet
+    // const callbackGasLimit = 500_000 * filecoinGasBuffer;
+
+    // polygon mainnet
+    const callbackGasLimit = 500_000;
+
+    const requestPrice = await blocklockSenderInstance.calculateRequestPriceNative(callbackGasLimit);
+
+    // fund contract
+    let tx = await mockBlocklockReceiverInstance.connect(signer).fundContractNative({ value: requestPrice + ethers.parseEther("0.1")});
+    await tx.wait(1); // Wait for the transaction to be mined
 
     tx = await mockBlocklockReceiverInstance
         .connect(signer)
