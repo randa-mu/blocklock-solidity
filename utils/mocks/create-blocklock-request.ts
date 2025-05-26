@@ -201,7 +201,6 @@ async function createBlocklockRequest() {
     if (!receipt) {
         throw new Error("transaction has not been mined");
     }
-    // console.log(receipt);
 
     const reqId = await mockBlocklockReceiverInstance.requestId();
     console.log("Created request id on filecoin testnet:", reqId);
