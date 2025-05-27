@@ -1,4 +1,4 @@
-import { JsonRpcProvider, ethers, getBytes, AddressLike } from "ethers";
+import { JsonRpcProvider, ethers, getBytes, AddressLike, AbiCoder, ParamType } from "ethers";
 import 'dotenv/config'
 import {
     DecryptionSender__factory,
@@ -18,10 +18,15 @@ import { keccak_256 } from "@noble/hashes/sha3";
 
 const RPC_URL = process.env.RPC_URL;
 
-// polygon mainnet addresses
-const blocklockSenderAddr = "0x82Fed730CbdeC5A2D8724F2e3b316a70A565e27e"
-const decryptionSenderAddr = "0x41cF74811B6B326bAe4AC4Df5b829035CB8a05DA";
-const mockBlocklockReceiverAddr = "0x5F8C824A150170B325ec804d8163364926B9FF76";
+// // polygon mainnet addresses
+// const blocklockSenderAddr = "0x82Fed730CbdeC5A2D8724F2e3b316a70A565e27e"
+// const decryptionSenderAddr = "0x41cF74811B6B326bAe4AC4Df5b829035CB8a05DA";
+// const mockBlocklockReceiverAddr = "0x5F8C824A150170B325ec804d8163364926B9FF76";
+
+// filecoin testnet addresses
+const blocklockSenderAddr = "0xF00aB3B64c81b6Ce51f8220EB2bFaa2D469cf702"
+const decryptionSenderAddr = "0x2474d71AB97F1189D0E0cc1b6EbF8118DCa83000";
+const mockBlocklockReceiverAddr = "0xC23BDcc5b79718B9C2e48A37D3b30a96D3231D52";
 
 // mockBlocklockReceiverAddr can be deployed with the following command:
 // forge script script/single-deployment/DeployBlocklockReceiver.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast -g 100000
@@ -125,10 +130,10 @@ async function createBlocklockRequest() {
 
     const isFilecoin = Number(chainId) === 314 || Number(chainId) === 314159;
 
-    let callbackGasLimit = 500000n;
+    let callbackGasLimit = 5000000n;
 
     let txGasPrice: bigint;
-    let filecoinllbackGasLimitBuffer = 444n;
+    let filecoinllbackGasLimitBuffer = 400n;
     if (isFilecoin) {
         // Use legacy gasPrice directly
         txGasPrice = gasPrice > 0 ? gasPrice * 10n : (maxFeePerGas + maxPriorityFeePerGas) * 10n;
@@ -178,7 +183,7 @@ async function createBlocklockRequest() {
     }
 
     const reqId = await mockBlocklockReceiverInstance.requestId();
-    console.log("Created request id on filecoin testnet:", reqId);
+    console.log("Created request id:", reqId);
 
     console.log("Request tx created at block height:", await provider.getBlockNumber())
     console.log("is created blocklock request id inFlight in decryptionSender?:", await decryptionSenderInstance.isInFlight(reqId));
@@ -222,22 +227,43 @@ async function getTransactionCount(walletAddr: AddressLike) {
 }
 
 function encodeCondition(blockHeight: bigint): Uint8Array {
-    const blockHeightBytes = getBytes(ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [blockHeight]))
+    const blockHeightBytes = getBytes(encodeParams(["uint256"], [blockHeight]))
     // 0x42 is the magic 'B' tag for the `blockHeight` condition
     return new Uint8Array([0x42, ...blockHeightBytes])
 }
 
-const createBlocklockIbeOpts = (chainId: bigint): IbeOpts => ({
-    hash: keccak_256,
-    k: 128,
-    expand_fn: "xmd",
-    dsts: {
-        H1_G1: Buffer.from(`BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_${ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [chainId])}_`),
-        H2: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H2_${ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [chainId])}_`),
-        H3: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H3_${ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [chainId])}_`),
-        H4: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H4_${ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [chainId])}_`),
-    },
-})
+// const createBlocklockIbeOpts = (chainId: bigint): IbeOpts => ({
+//     hash: keccak_256,
+//     k: 128,
+//     expand_fn: "xmd",
+//     dsts: {
+//         H1_G1: Buffer.from(`BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_${encodeParams(["uint256"], [chainId])}_`),
+//         H2: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H2_${encodeParams(["uint256"], [chainId])}_`),
+//         H3: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H3_${encodeParams(["uint256"], [chainId])}_`),
+//         H4: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H4_${encodeParams(["uint256"], [chainId])}_`),
+//     },
+// })
+
+const createBlocklockIbeOpts = (chainId: bigint): IbeOpts => {
+    const hex = chainId.toString(16).padStart(64, '0'); // 32 bytes
+    return {
+        hash: keccak_256,
+        k: 128,
+        expand_fn: "xmd",
+        dsts: {
+            H1_G1: Buffer.from(`BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_0x${hex}_`),
+            H2: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H2_0x${hex}_`),
+            H3: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H3_0x${hex}_`),
+            H4: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H4_0x${hex}_`),
+        },
+    };
+};
+
+
+const encodeParams = (dataTypes: readonly ParamType[] | readonly string[], data: readonly any[]): string => {
+    const abiCoder = AbiCoder.defaultAbiCoder()
+    return abiCoder.encode(dataTypes, data)
+}
 
 async function main() {
     const walletAddr = await signer.getAddress()
