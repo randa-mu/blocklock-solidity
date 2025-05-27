@@ -232,33 +232,17 @@ function encodeCondition(blockHeight: bigint): Uint8Array {
     return new Uint8Array([0x42, ...blockHeightBytes])
 }
 
-// const createBlocklockIbeOpts = (chainId: bigint): IbeOpts => ({
-//     hash: keccak_256,
-//     k: 128,
-//     expand_fn: "xmd",
-//     dsts: {
-//         H1_G1: Buffer.from(`BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_${encodeParams(["uint256"], [chainId])}_`),
-//         H2: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H2_${encodeParams(["uint256"], [chainId])}_`),
-//         H3: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H3_${encodeParams(["uint256"], [chainId])}_`),
-//         H4: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H4_${encodeParams(["uint256"], [chainId])}_`),
-//     },
-// })
-
-const createBlocklockIbeOpts = (chainId: bigint): IbeOpts => {
-    const hex = chainId.toString(16).padStart(64, '0'); // 32 bytes
-    return {
-        hash: keccak_256,
-        k: 128,
-        expand_fn: "xmd",
-        dsts: {
-            H1_G1: Buffer.from(`BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_0x${hex}_`),
-            H2: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H2_0x${hex}_`),
-            H3: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H3_0x${hex}_`),
-            H4: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H4_0x${hex}_`),
-        },
-    };
-};
-
+const createBlocklockIbeOpts = (chainId: bigint): IbeOpts => ({
+    hash: keccak_256,
+    k: 128,
+    expand_fn: "xmd",
+    dsts: {
+        H1_G1: Buffer.from(`BLOCKLOCK_BN254G1_XMD:KECCAK-256_SVDW_RO_H1_${encodeParams(["uint256"], [chainId])}_`),
+        H2: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H2_${encodeParams(["uint256"], [chainId])}_`),
+        H3: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H3_${encodeParams(["uint256"], [chainId])}_`),
+        H4: Buffer.from(`BLOCKLOCK_BN254_XMD:KECCAK-256_H4_${encodeParams(["uint256"], [chainId])}_`),
+    },
+})
 
 const encodeParams = (dataTypes: readonly ParamType[] | readonly string[], data: readonly any[]): string => {
     const abiCoder = AbiCoder.defaultAbiCoder()
