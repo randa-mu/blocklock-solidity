@@ -158,24 +158,20 @@ async function createBlocklockRequest() {
     console.log("Native / ETH to pay for request", ethers.formatEther(valueToSend));
 
     const estimatedGas = await mockBlocklockReceiverInstance.createTimelockRequestWithDirectFunding.estimateGas(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct),
-        isFilecoin
-            ? { value: valueToSend, gasPrice: txGasPrice }
-            : {
-                value: valueToSend, maxFeePerGas,
-                maxPriorityFeePerGas,
-            });
+        {
+            value: valueToSend, maxFeePerGas,
+            maxPriorityFeePerGas,
+        });
     console.log("estimated gas", estimatedGas);
 
     const tx = await mockBlocklockReceiverInstance
         .connect(signer)
         .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct),
-            isFilecoin
-                ? { value: valueToSend, gasLimit: estimatedGas, gasPrice: txGasPrice }
-                : {
-                    value: valueToSend, gasLimit: estimatedGas,
-                    maxFeePerGas,
-                    maxPriorityFeePerGas,
-                });
+            {
+                value: valueToSend, gasLimit: estimatedGas,
+                maxFeePerGas,
+                maxPriorityFeePerGas,
+            });
 
     let receipt = await tx.wait(1);
     if (!receipt) {
