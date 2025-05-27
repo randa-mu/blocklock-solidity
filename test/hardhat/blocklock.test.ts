@@ -224,9 +224,7 @@ describe("Blocklock integration tests", () => {
     const callbackGasLimit = 400_000;
 
     // used to check that the correct request estimated price based on network gas price is collected from subscription
-    const requestPrice = await blocklockSender.calculateRequestPriceNative(
-      callbackGasLimit
-    );
+    const requestPrice = await blocklockSender.calculateRequestPriceNative(callbackGasLimit);
 
     let tx = await mockBlocklockReceiverInstance
       .connect(wallet)
@@ -319,8 +317,8 @@ describe("Blocklock integration tests", () => {
     console.log("Native balance after tx:", ethers.formatEther(nativeBalanceAfterTx.toString()));
     console.log("Actual amount paid for tx:", ethers.formatEther(nativeBalance - nativeBalanceAfterTx));
 
-    console.log(requestPrice)
-    console.log("bal after", nativeBalance - nativeBalanceAfterTx)
+    console.log(requestPrice);
+    console.log("bal after", nativeBalance - nativeBalanceAfterTx);
 
     // amount deducted from subscription should be higher than actual gas used * gas price
     // and higher or equal to request price estimate
@@ -477,15 +475,15 @@ describe("Blocklock integration tests", () => {
     // generate Ciphertext
     const ct = encrypt_towards_identity_g1(encodedMessage, identity, blocklock_default_pk, BLOCKLOCK_IBE_OPTS);
 
-    // fund contract
-    await mockBlocklockReceiverInstance.connect(wallet).fundContractNative({ value: ethers.parseEther("2") });
     // make direct funding request with enough callbackGasLimit to cover BLS operations in call to decrypt() function
     // in receiver contract
     const callbackGasLimit = 500_000;
 
     let tx = await mockBlocklockReceiverInstance
       .connect(wallet)
-      .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct));
+      .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct), {
+        value: ethers.parseEther("2")
+      });
 
     let receipt = await tx.wait(1);
     if (!receipt) {
@@ -733,8 +731,6 @@ describe("Blocklock integration tests", () => {
     // generate Ciphertext
     const ct = encrypt_towards_identity_g1(encodedMessage, identity, blocklock_default_pk, BLOCKLOCK_IBE_OPTS);
 
-    // fund contract
-    await mockBlocklockReceiverInstance.connect(wallet).fundContractNative({ value: ethers.parseEther("2") });
     // make direct funding request with enough callbackGasLimit to cover BLS operations in call to decrypt() function
     // in receiver contract
     // for filecoin simulation test, the tx goes through if we also increase callback gas limit by buffer or not
@@ -742,7 +738,9 @@ describe("Blocklock integration tests", () => {
 
     let tx = await mockBlocklockReceiverInstance
       .connect(wallet)
-      .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct));
+      .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct), {
+        value: ethers.parseEther("2")
+      });
 
     let receipt = await tx.wait(1);
     if (!receipt) {
