@@ -47,11 +47,11 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice Receives a blocklock request and the associated decryption key.
     /// @dev This function is only callable by a contract that is recognized as a valid "BlocklockContract".
     ///      Once the decryption key is received, it triggers the internal function `_onBlocklockReceived` to handle the processing.
-    /// @param requestID The unique identifier of the blocklock request.
+    /// @param requestId The unique identifier of the blocklock request.
     /// @param decryptionKey The decryption key that will be used to decrypt the associated ciphertext.
     /// @notice Emits an event or performs additional logic in `_onBlocklockReceived`.
-    function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey) external virtual onlyBlocklockContract {
-        _onBlocklockReceived(requestID, decryptionKey);
+    function receiveBlocklock(uint256 requestId, bytes calldata decryptionKey) external virtual onlyBlocklockContract {
+        _onBlocklockReceived(requestId, decryptionKey);
     }
 
     /// @notice Sets the Randamu subscription ID used for conditional encryption oracle services.
@@ -196,6 +196,14 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     function _cancelSubscription(address to) internal {
         require(subscriptionId != 0, "SubscriptionId is zero");
         blocklock.cancelSubscription(subscriptionId, to);
+    }
+
+    function isInFlight(uint256 requestId) public view returns (bool) {
+        return blocklock.isInFlight(requestId);
+    }
+
+    function pendingRequestExists(uint256 subId) public view returns (bool) {
+        return blocklock.pendingRequestExists(subId);
     }
 
     /// @notice The receive function is executed on a call to the contract with empty calldata.

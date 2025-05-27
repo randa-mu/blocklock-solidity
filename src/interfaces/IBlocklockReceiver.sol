@@ -9,7 +9,7 @@ interface IBlocklockReceiver {
     /// @dev This function is called to provide the blocklock decryption generated for a
     /// given request ID.
     /// It is intended to be called by a trusted source that provides the decryption key.
-    /// @param requestID The unique identifier of the blocklock request.
+    /// @param requestId The unique identifier of the blocklock request.
     /// @param decryptionKey The generated random value, provided as a `bytes` type.
-    function receiveBlocklock(uint256 requestID, bytes calldata decryptionKey) external;
+    function receiveBlocklock(uint256 requestId, bytes calldata decryptionKey) external;
 }

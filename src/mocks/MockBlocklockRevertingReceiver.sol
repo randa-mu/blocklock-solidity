@@ -18,13 +18,13 @@ contract MockBlocklockRevertingReceiver is AbstractBlocklockReceiver {
         TypesLib.Ciphertext calldata encryptedData
     ) external payable returns (uint256, uint256) {
         // create timelock request
-        (uint256 requestID, uint256 requestPrice) =
+        (uint256 _requestId, uint256 requestPrice) =
             _requestBlocklockPayInNative(callbackGasLimit, condition, encryptedData);
         // store request id
-        requestId = requestID;
+        requestId = _requestId;
         // store Ciphertext
         encryptedValue = encryptedData;
-        return (requestID, requestPrice);
+        return (requestId, requestPrice);
     }
 
     function createTimelockRequestWithSubscription(
@@ -33,12 +33,12 @@ contract MockBlocklockRevertingReceiver is AbstractBlocklockReceiver {
         TypesLib.Ciphertext calldata encryptedData
     ) external returns (uint256) {
         // create timelock request
-        uint256 requestID = _requestBlocklockWithSubscription(callbackGasLimit, condition, encryptedData);
+        uint256 _requestId = _requestBlocklockWithSubscription(callbackGasLimit, condition, encryptedData);
         // store request id
-        requestId = requestID;
+        requestId = _requestId;
         // store Ciphertext
         encryptedValue = encryptedData;
-        return requestID;
+        return requestId;
     }
 
     function _onBlocklockReceived(uint256, /*_requestId*/ bytes calldata /*decryptionKey*/ ) internal pure override {

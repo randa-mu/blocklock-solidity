@@ -249,7 +249,7 @@ describe("Blocklock integration tests", () => {
       decryptionSenderIface.getEvent("DecryptionRequested"),
     );
     console.log(`received decryption request id ${requestID}`);
-    console.log(`blocklock request id ${blocklockRequestStatus?.decryptionRequestID}`);
+    console.log(`blocklock request id ${blocklockRequestStatus?.decryptionRequestId}`);
     console.log(`callback address ${callback}, scheme id ${schemeID}`);
 
     const bls = await BlsBn254.create();
@@ -506,7 +506,7 @@ describe("Blocklock integration tests", () => {
       decryptionSenderIface.getEvent("DecryptionRequested"),
     );
     console.log(`received decryption request id ${requestID}`);
-    console.log(`blocklock request id ${blockRequest?.decryptionRequestID}`);
+    console.log(`blocklock request id ${blockRequest?.decryptionRequestId}`);
     console.log(`callback address ${callback}, scheme id ${schemeID}`);
     const bls = await BlsBn254.create();
     const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);
@@ -763,7 +763,7 @@ describe("Blocklock integration tests", () => {
       decryptionSenderIface.getEvent("DecryptionRequested"),
     );
     console.log(`received decryption request id ${requestID}`);
-    console.log(`blocklock request id ${blockRequest?.decryptionRequestID}`);
+    console.log(`blocklock request id ${blockRequest?.decryptionRequestId}`);
     console.log(`callback address ${callback}, scheme id ${schemeID}`);
     const bls = await BlsBn254.create();
     const { pubKey, secretKey } = bls.createKeyPair(blsKey as `0x${string}`);

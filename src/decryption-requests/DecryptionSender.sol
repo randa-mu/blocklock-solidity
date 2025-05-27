@@ -41,39 +41,39 @@ contract DecryptionSender is
     using EnumerableSet for EnumerableSet.UintSet;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    uint256 public lastRequestID = 0;
+    uint256 public lastRequestId = 0;
 
-    /// @dev Mapping from decryption requestID to conditional decryption request
+    /// @dev Mapping from decryption requestId to conditional decryption request
     mapping(uint256 => TypesLib.DecryptionRequest) public requests;
 
     /// @dev Signature scheme address provider contract
     ISignatureSchemeAddressProvider public signatureSchemeAddressProvider;
 
     /// @dev Set for storing unique fulfilled request Ids
-    EnumerableSet.UintSet private fulfilledRequestIds;
+    EnumerableSet.UintSet private fulfilledrequestIds;
 
     /// @dev Set for storing unique unfulfilled request Ids
-    EnumerableSet.UintSet private unfulfilledRequestIds;
+    EnumerableSet.UintSet private unfulfilledrequestIds;
 
     /// @dev Set for storing unique request Ids with failing callbacks
     /// @dev Callbacks can fail if collection of request fee from
     ///      subscription account fails in `_handlePaymentAndCharge` function call.
     ///      We use `_callWithExactGasEvenIfTargetIsNoContract` function for callback so it works if
     ///      caller does not implement the interface.
-    EnumerableSet.UintSet private erroredRequestIds;
+    EnumerableSet.UintSet private erroredrequestIds;
 
     /// @dev Emitted when the signature scheme address provider is updated.
     event SignatureSchemeAddressProviderUpdated(address indexed newSignatureSchemeAddressProvider);
 
     /// @dev Emitted when a decryption request is made.
-    /// @param requestID The unique identifier for the decryption request.
+    /// @param requestId The unique identifier for the decryption request.
     /// @param callback The address that will receive the decryption callback.
     /// @param schemeID The identifier for the signature scheme used.
     /// @param condition The condition to be met for the decryption.
     /// @param ciphertext The encrypted data that needs decryption.
     /// @param requestedAt The timestamp when the decryption request was made.
     event DecryptionRequested(
-        uint256 indexed requestID,
+        uint256 indexed requestId,
         address indexed callback,
         string schemeID,
         bytes condition,
@@ -82,14 +82,14 @@ contract DecryptionSender is
     );
 
     /// @dev Emitted when a decryption receiver callback succeeds.
-    /// @param requestID The decryption request ID that was fulfilled.
+    /// @param requestId The decryption request ID that was fulfilled.
     /// @param decryptionKey The decryption key provided for the request.
     /// @param signature The signature associated with the decryption.
-    event DecryptionReceiverCallbackSuccess(uint256 indexed requestID, bytes decryptionKey, bytes signature);
+    event DecryptionReceiverCallbackSuccess(uint256 indexed requestId, bytes decryptionKey, bytes signature);
 
     /// @dev Emitted when a decryption receiver callback fails.
-    /// @param requestID The decryption request ID that failed.
-    event DecryptionReceiverCallbackFailed(uint256 requestID);
+    /// @param requestId The decryption request ID that failed.
+    event DecryptionReceiverCallbackFailed(uint256 indexed requestId);
 
     /// @notice Ensures that only an account with the ADMIN_ROLE can execute a function.
     modifier onlyAdmin() {
@@ -146,7 +146,7 @@ contract DecryptionSender is
         external
         returns (uint256)
     {
-        lastRequestID += 1;
+        lastRequestId += 1;
 
         require(signatureSchemeAddressProvider.isSupportedScheme(schemeID), "Signature scheme not supported");
         require(ciphertext.isLengthWithinBounds(1, 4096), "Ciphertext failed length bounds check");
@@ -156,7 +156,7 @@ contract DecryptionSender is
         address schemeContractAddress = signatureSchemeAddressProvider.getSignatureSchemeAddress(schemeID);
         require(schemeContractAddress > address(0), "invalid signature scheme");
 
-        requests[lastRequestID] = TypesLib.DecryptionRequest({
+        requests[lastRequestId] = TypesLib.DecryptionRequest({
             schemeID: schemeID,
             ciphertext: ciphertext,
             condition: condition,
@@ -165,24 +165,24 @@ contract DecryptionSender is
             callback: msg.sender,
             isFulfilled: false
         });
-        unfulfilledRequestIds.add(lastRequestID);
+        unfulfilledrequestIds.add(lastRequestId);
 
-        emit DecryptionRequested(lastRequestID, msg.sender, schemeID, condition, ciphertext, block.timestamp);
+        emit DecryptionRequested(lastRequestId, msg.sender, schemeID, condition, ciphertext, block.timestamp);
 
-        return lastRequestID;
+        return lastRequestId;
     }
 
     /// @notice Fulfills a decryption request by providing the decryption key and signature.
     /// @dev This function validates the provided signature, then sends the decryption key and signature back to the callback address.
-    /// @param requestID The unique request ID of the decryption request.
+    /// @param requestId The unique request ID of the decryption request.
     /// @param decryptionKey The decryption key to fulfill the request.
     /// @param signature The signature corresponding to the decryption.
-    function fulfillDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
+    function fulfillDecryptionRequest(uint256 requestId, bytes calldata decryptionKey, bytes calldata signature)
         external
         nonReentrant
     {
-        require(isInFlight(requestID), "No pending request with specified requestID");
-        TypesLib.DecryptionRequest memory request = requests[requestID];
+        require(isInFlight(requestId), "No pending request with specified requestId");
+        TypesLib.DecryptionRequest memory request = requests[requestId];
 
         string memory schemeID = request.schemeID;
         address schemeContractAddress = signatureSchemeAddressProvider.getSignatureSchemeAddress(schemeID);
@@ -198,21 +198,21 @@ contract DecryptionSender is
 
         (bool success,) = request.callback.call(
             abi.encodeWithSelector(
-                IDecryptionReceiver.receiveDecryptionData.selector, requestID, decryptionKey, signature
+                IDecryptionReceiver.receiveDecryptionData.selector, requestId, decryptionKey, signature
             )
         );
 
-        requests[requestID].isFulfilled = true;
-        unfulfilledRequestIds.remove(requestID);
+        requests[requestId].isFulfilled = true;
+        unfulfilledrequestIds.remove(requestId);
         if (!success) {
-            erroredRequestIds.add(requestID);
-            emit DecryptionReceiverCallbackFailed(requestID);
+            erroredrequestIds.add(requestId);
+            emit DecryptionReceiverCallbackFailed(requestId);
         } else {
-            if (hasErrored(requestID)) {
-                erroredRequestIds.remove(requestID);
+            if (hasErrored(requestId)) {
+                erroredrequestIds.remove(requestId);
             }
-            fulfilledRequestIds.add(requestID);
-            emit DecryptionReceiverCallbackSuccess(requestID, decryptionKey, signature);
+            fulfilledrequestIds.add(requestId);
+            emit DecryptionReceiverCallbackSuccess(requestId, decryptionKey, signature);
         }
     }
 
@@ -226,54 +226,54 @@ contract DecryptionSender is
 
     /// @notice Checks if a decryption request is still in progress (unfulfilled or errored).
     /// @dev Used to check if a request is either still awaiting decryption or has encountered an error.
-    /// @param requestID The unique request ID of the decryption request.
+    /// @param requestId The unique request ID of the decryption request.
     /// @return True if the request is in flight (unfulfilled or errored), false otherwise.
-    function isInFlight(uint256 requestID) public view returns (bool) {
-        return unfulfilledRequestIds.contains(requestID) || erroredRequestIds.contains(requestID);
+    function isInFlight(uint256 requestId) public view returns (bool) {
+        return unfulfilledrequestIds.contains(requestId) || erroredrequestIds.contains(requestId);
     }
 
     /// @notice Checks if a decryption request has errored out.
     /// @dev Used to check if the request has failed and is in the errored state.
-    /// @param requestID The unique request ID of the decryption request.
+    /// @param requestId The unique request ID of the decryption request.
     /// @return True if the request has errored, false otherwise.
-    function hasErrored(uint256 requestID) public view returns (bool) {
-        return erroredRequestIds.contains(requestID);
+    function hasErrored(uint256 requestId) public view returns (bool) {
+        return erroredrequestIds.contains(requestId);
     }
 
     /// @notice Retrieves the details of a decryption request.
     /// @dev Returns the full decryption request data for the given request ID.
-    /// @param requestID The unique request ID.
+    /// @param requestId The unique request ID.
     /// @return The decryption request object.
-    function getRequest(uint256 requestID) external view returns (TypesLib.DecryptionRequest memory) {
-        return requests[requestID];
+    function getRequest(uint256 requestId) external view returns (TypesLib.DecryptionRequest memory) {
+        return requests[requestId];
     }
 
     /// @notice Retrieves all fulfilled request IDs.
     /// @dev Returns an array of all fulfilled request IDs.
     /// @return An array of fulfilled request IDs.
     function getAllFulfilledRequestIds() external view returns (uint256[] memory) {
-        return fulfilledRequestIds.values();
+        return fulfilledrequestIds.values();
     }
 
     /// @notice Retrieves all unfulfilled request IDs.
     /// @dev Returns an array of all unfulfilled request IDs.
     /// @return An array of unfulfilled request IDs.
     function getAllUnfulfilledRequestIds() external view returns (uint256[] memory) {
-        return unfulfilledRequestIds.values();
+        return unfulfilledrequestIds.values();
     }
 
     /// @notice Retrieves all errored request IDs.
     /// @dev Returns an array of all errored request IDs.
     /// @return An array of errored request IDs.
     function getAllErroredRequestIds() external view returns (uint256[] memory) {
-        return erroredRequestIds.values();
+        return erroredrequestIds.values();
     }
 
     /// @notice Retrieves the count of unfulfilled request IDs.
     /// @dev Returns the number of unfulfilled decryption requests.
     /// @return The number of unfulfilled request IDs.
     function getCountOfUnfulfilledRequestIds() external view returns (uint256) {
-        return unfulfilledRequestIds.length();
+        return unfulfilledrequestIds.length();
     }
 
     /// @notice Returns the version number of the upgradeable contract.

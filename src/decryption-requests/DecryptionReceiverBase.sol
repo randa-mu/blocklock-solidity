@@ -24,31 +24,31 @@ abstract contract DecryptionReceiverBase is IDecryptionReceiver {
     /// @param schemeID Identifier of the encryption scheme used.
     /// @param ciphertext The encrypted data to be decrypted.
     /// @param condition The condition for decryption.
-    /// @return requestID A unique identifier for the submitted decryption request.
+    /// @return requestId A unique identifier for the submitted decryption request.
     function _registerCiphertext(string memory schemeID, bytes memory ciphertext, bytes memory condition)
         internal
-        returns (uint256 requestID)
+        returns (uint256 requestId)
     {
         return decryptionSender.registerCiphertext(schemeID, ciphertext, condition);
     }
 
     /// @dev Called by the DecryptionSender to deliver the decryption key and its signature
-    /// @param requestID The identifier of the original decryption request
+    /// @param requestId The identifier of the original decryption request
     /// @param decryptionKey The derived decryption key
     /// @param signature Signature used in the key derivation process
-    function receiveDecryptionData(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
+    function receiveDecryptionData(uint256 requestId, bytes calldata decryptionKey, bytes calldata signature)
         external
         onlyDecrypter
     {
-        onDecryptionDataReceived(requestID, decryptionKey, signature);
+        onDecryptionDataReceived(requestId, decryptionKey, signature);
     }
 
     /// @notice Callback function triggered when a decryption key is received
     /// @dev Must be implemented in derived contracts to define how to handle the received decryption data
-    /// @param requestID The unique identifier of the decryption request
+    /// @param requestId The unique identifier of the decryption request
     /// @param decryptionKey The decryption key associated with the ciphertext
     /// @param signature The signature used to derive the decryption key
-    function onDecryptionDataReceived(uint256 requestID, bytes memory decryptionKey, bytes memory signature)
+    function onDecryptionDataReceived(uint256 requestId, bytes memory decryptionKey, bytes memory signature)
         internal
         virtual;
 }

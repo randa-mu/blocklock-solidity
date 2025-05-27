@@ -19,7 +19,7 @@ import {
 /// @title DirectFunding test contract
 /// @notice Tests for requests paid for via the direct funding route
 contract DirectFundingTest is BlocklockTest {
-    function test_FulfillBlocklock_DirectFunding_Request_Successfully() public {
+    function test_FulfillDecryptionRequest_WithDirectFunding_Successfully() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
@@ -69,7 +69,7 @@ contract DirectFundingTest is BlocklockTest {
             "Invalid price paid by user contract for request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -138,7 +138,7 @@ contract DirectFundingTest is BlocklockTest {
         );
     }
 
-    function test_Callback_Should_NotRevert_If_Interface_Is_Not_Implemented() public {
+    function test_CallbackShouldNotRevert_IfInterfaceIsNotImplemented() public {
         assertTrue(blocklockSender.s_configured(), "BlocklockSender not configured");
         assertFalse(blocklockSender.s_disabled(), "BlocklockSender is paused");
 
@@ -170,7 +170,7 @@ contract DirectFundingTest is BlocklockTest {
             "Invalid price paid by user contract for request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -236,7 +236,7 @@ contract DirectFundingTest is BlocklockTest {
         );
     }
 
-    function test_FulfillBlocklock_DirectFunding_Request_With_Low_CallbackGasLimit() public {
+    function test_FulfillDecryptionRequest_WithLowCallbackGasLimit() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
@@ -277,7 +277,7 @@ contract DirectFundingTest is BlocklockTest {
             "Invalid price paid by user contract for request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -346,7 +346,7 @@ contract DirectFundingTest is BlocklockTest {
         );
     }
 
-    function test_FulfillBlocklock_DirectFunding_Request_With_Zero_CallbackGasLimit() public {
+    function test_FulfillDecryptionRequest_WithZeroCallbackGasLimit() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
@@ -387,7 +387,7 @@ contract DirectFundingTest is BlocklockTest {
             "Invalid price paid by user contract for request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -456,7 +456,7 @@ contract DirectFundingTest is BlocklockTest {
         );
     }
 
-    function test_FulfillBlocklock_DirectFundingRequest_With_RevertingReceiver() public {
+    function test_FulfillDecryptionRequest_WithRevertingReceiver() public {
         vm.prank(alice);
         MockBlocklockRevertingReceiver mockBlocklockReceiver =
             new MockBlocklockRevertingReceiver(address(blocklockSender));
@@ -498,7 +498,7 @@ contract DirectFundingTest is BlocklockTest {
             "Invalid price paid by user contract for request"
         );
         assertTrue(
-            blocklockRequest.decryptionRequestID == requestId,
+            blocklockRequest.decryptionRequestId == requestId,
             "Request id mismatch between blocklockSender and decryptionSender"
         );
 
@@ -567,7 +567,7 @@ contract DirectFundingTest is BlocklockTest {
         );
     }
 
-    function test_InvalidRequestId_For_DirectFundingRequest_Reverts() public {
+    function test_FulfillDecryptionRequest_WithInvalidRequestId_ShouldRevert() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
@@ -596,7 +596,7 @@ contract DirectFundingTest is BlocklockTest {
             requestCallbackGasLimit, ciphertextDataUint[3 ether].condition, ciphertextDataUint[3 ether].ciphertext
         );
 
-        vm.expectRevert("No pending request with specified requestID");
+        vm.expectRevert("No pending request with specified requestId");
         vm.prank(admin);
         decryptionSender.fulfillDecryptionRequest(
             requestId + 1, ciphertextDataUint[3 ether].decryptionKey, ciphertextDataUint[3 ether].signature
@@ -606,7 +606,7 @@ contract DirectFundingTest is BlocklockTest {
         assert(mockBlocklockReceiver.requestId() == 1);
     }
 
-    function test_InvalidSignature_For_DirectFundingRequest_Reverts() public {
+    function test_FulfillDecryptionRequest_WithInvalidSignature_ShouldRevert() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 
@@ -699,7 +699,7 @@ contract DirectFundingTest is BlocklockTest {
         assertTrue(admin.balance == adminBalance, "Admin balance should not change without withdrawing fees");
     }
 
-    function test_Fulfill_WithUnauthorisedCaller_Reverts() public {
+    function test_FulfillDecryptionRequest_WithUnauthorisedCaller_ShouldRevert() public {
         assert(mockBlocklockReceiver.plainTextValue() == 0);
         assert(mockBlocklockReceiver.requestId() == 0);
 

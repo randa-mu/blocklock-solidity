@@ -12,19 +12,19 @@ interface IDecryptionSender {
     /// @dev The creation of `Ciphertext` and `condition` bytes will be managed by the JavaScript client library
     /// @param ciphertext The encrypted data to be registered
     /// @param condition The condition that need to be met to decrypt the ciphertext
-    /// @return requestID The unique ID assigned to the registered decryption request
+    /// @return requestId The unique ID assigned to the registered decryption request
     function registerCiphertext(string calldata schemeID, bytes calldata ciphertext, bytes calldata condition)
         external
-        returns (uint256 requestID);
+        returns (uint256 requestId);
 
     /// @notice Provide the decryption key for a specific requestID alongside a signature.
     /// @dev This function is intended to be called after a decryption key has been generated off-chain.
-    /// @param requestID The unique identifier for the encryption request. This should match the ID used
+    /// @param requestId The unique identifier for the encryption request. This should match the ID used
     ///                  when the encryption was initially requested.
     /// @param decryptionKey The decrypted content in bytes format. The data should represent the original
     ///                      message in its decrypted form.
     /// @param signature The signature associated with the request, provided as a byte array
-    function fulfillDecryptionRequest(uint256 requestID, bytes calldata decryptionKey, bytes calldata signature)
+    function fulfillDecryptionRequest(uint256 requestId, bytes calldata decryptionKey, bytes calldata signature)
         external;
 
     /// @notice Updates the signature scheme address provider contract address
@@ -39,14 +39,14 @@ interface IDecryptionSender {
     function getRequest(uint256 requestId) external view returns (TypesLib.DecryptionRequest memory);
 
     /// @notice Verifies whether a specific request is in flight or not.
-    /// @param requestID The ID of the request to check.
+    /// @param requestId The ID of the request to check.
     /// @return boolean indicating whether the request is in flight or not.
-    function isInFlight(uint256 requestID) external view returns (bool);
+    function isInFlight(uint256 requestId) external view returns (bool);
 
     /// @notice returns whether a specific request errored during callback or not.
-    /// @param requestID The ID of the request to check.
+    /// @param requestId The ID of the request to check.
     /// @return boolean indicating whether the request has errored or not.
-    function hasErrored(uint256 requestID) external view returns (bool);
+    function hasErrored(uint256 requestId) external view returns (bool);
 
     /// @notice Returns all the fulfilled request ids.
     /// @return The uint array representing a set containing all fulfilled request ids.
