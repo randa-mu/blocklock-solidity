@@ -119,7 +119,7 @@ contract BlocklockTest is Deployment {
         signatureSchemeAddressProvider.updateSignatureScheme(bn254_schemeID, address(0));
     }
 
-    function test_EstimatedRequestPrice_Increases_WithCallbackGasLimit() public {
+    function test_EstimatedRequestPrice_Increases_WithCallbackGasLimit() public view {
         uint32 callbackGasLimit = 100_000;
         // request price should increase if callbackGasLimit increases
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
@@ -130,7 +130,7 @@ contract BlocklockTest is Deployment {
         );
     }
 
-    function test_EstimatedRequestPrice_Increases_WithGasPrice() public {
+    function test_EstimatedRequestPrice_Increases_WithGasPrice() public view {
         uint32 callbackGasLimit = 100_000;
         uint32 gasPrice = 100 wei;
         // request price should increase if gas price increases
