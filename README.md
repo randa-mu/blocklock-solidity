@@ -103,7 +103,7 @@ import {AbstractBlocklockReceiver} from "blocklock-solidity/src/AbstractBlockloc
 ```
 
 #### 2. Extend the AbstractBlocklockReceiver contract
-Your contract must inherit from `AbstractBlocklockReceiver` and initialize with the deployed `BlocklockSender (Proxy)` contract from your desired network in the constructor.
+Your contract must inherit from `AbstractBlocklockReceiver` and initialize with the deployed `BlocklockSender (Proxy)` contract from your desired network in the constructor. `AbstractBlocklockReceiver` can also be customised.
 
 For a full example contract, please see [MockBlocklockReceiver.sol](src/mocks/MockBlocklockReceiver.sol) in the `src/mocks` folder. It inherits from the [AbstractBlocklockReceiver](src/AbstractBlocklockReceiver.sol) base contract.
 
@@ -128,12 +128,14 @@ The following internal function allows the smart contract to make requests witho
 /// @notice This function internally calls the `blocklock.requestBlocklock` function.
 function _requestBlocklockPayInNative(
     uint32 callbackGasLimit,
-    bytes condition,
+    bytes memory condition,
     TypesLib.Ciphertext calldata ciphertext
 ) internal returns (uint256 requestId, uint256 requestPrice) {
     requestPrice = blocklock.calculateRequestPriceNative(callbackGasLimit);
-    return
-        (blocklock.requestBlocklock{value: requestPrice}(callbackGasLimit, condition, ciphertext), requestPrice);
+
+    require(msg.value >= requestPrice, "Insufficient ETH");
+
+    requestId = blocklock.requestBlocklock{value: msg.value}(callbackGasLimit, condition, ciphertext);
 }
 ```
 The function returns the request id and request price in wei.
@@ -251,14 +253,14 @@ To view a full example, please check the following links:
 * Decryption: After the specified condition has been met, a callback to your `receiveBlocklock` logic is triggered with the decryption key which can be used unlock the data in your smart contract.
 
 
-## 📜 Licensing
+## Licensing
 
 This library is licensed under the MIT License which can be accessed [here](LICENSE).
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! If you find a bug, have a feature request, or want to improve the code, feel free to open an issue or submit a pull request.
 
-## 🎉 Acknowledgments
+## Acknowledgments
 
 Special thanks to the Filecoin Foundation for supporting the development of this library.
