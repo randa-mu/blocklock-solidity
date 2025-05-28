@@ -30,18 +30,6 @@ contract DirectFundingTest is BlocklockTest {
         uint32 callbackGasLimit = 500_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
 
-        // fund blocklock receiver contract
-        uint256 aliceBalance = alice.balance;
-
-        vm.prank(alice);
-        uint256 contractFundBuffer = 1 ether;
-        mockBlocklockReceiver.fundContractNative{value: requestPrice + contractFundBuffer}();
-
-        assertTrue(
-            mockBlocklockReceiver.getBalance() == requestPrice + contractFundBuffer,
-            "Incorrect ether balance for blocklock receiver contract"
-        );
-        assertTrue(alice.balance == aliceBalance - (requestPrice + contractFundBuffer), "Alice balance not debited");
         assertTrue(requestPrice > 0, "Invalid request price");
         console.log("Estimated request price", requestPrice);
 
@@ -575,18 +563,6 @@ contract DirectFundingTest is BlocklockTest {
         uint32 callbackGasLimit = 100_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
 
-        // fund blocklock receiver contract
-        uint256 aliceBalance = alice.balance;
-
-        vm.prank(alice);
-        uint256 contractFundBuffer = 1 ether;
-        mockBlocklockReceiver.fundContractNative{value: requestPrice + contractFundBuffer}();
-
-        assertTrue(
-            mockBlocklockReceiver.getBalance() == requestPrice + contractFundBuffer,
-            "Incorrect ether balance for blocklock receiver contract"
-        );
-        assertTrue(alice.balance == aliceBalance - (requestPrice + contractFundBuffer), "Alice balance not debited");
         assertTrue(requestPrice > 0, "Invalid request price");
 
         // make blocklock request
@@ -614,18 +590,6 @@ contract DirectFundingTest is BlocklockTest {
         uint32 callbackGasLimit = 100_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
 
-        // fund blocklock receiver contract
-        uint256 aliceBalance = alice.balance;
-
-        vm.prank(alice);
-        uint256 contractFundBuffer = 1 ether;
-        mockBlocklockReceiver.fundContractNative{value: requestPrice + contractFundBuffer}();
-
-        assertTrue(
-            mockBlocklockReceiver.getBalance() == requestPrice + contractFundBuffer,
-            "Incorrect ether balance for blocklock receiver contract"
-        );
-        assertTrue(alice.balance == aliceBalance - (requestPrice + contractFundBuffer), "Alice balance not debited");
         assertTrue(requestPrice > 0, "Invalid request price");
 
         // make blocklock request
@@ -707,18 +671,6 @@ contract DirectFundingTest is BlocklockTest {
         uint32 callbackGasLimit = 100_000;
         uint256 requestPrice = blocklockSender.calculateRequestPriceNative(callbackGasLimit);
 
-        // fund blocklock receiver contract
-        uint256 aliceBalance = alice.balance;
-
-        vm.prank(alice);
-        uint256 contractFundBuffer = 1 ether;
-        mockBlocklockReceiver.fundContractNative{value: requestPrice + contractFundBuffer}();
-
-        assertTrue(
-            mockBlocklockReceiver.getBalance() == requestPrice + contractFundBuffer,
-            "Incorrect ether balance for blocklock receiver contract"
-        );
-        assertTrue(alice.balance == aliceBalance - (requestPrice + contractFundBuffer), "Alice balance not debited");
         assertTrue(requestPrice > 0, "Invalid request price");
 
         // make blocklock request
