@@ -57,7 +57,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice Sets the Randamu subscription ID used for conditional encryption oracle services.
     /// @dev Only callable by the contract owner.
     /// @param subId The new subscription ID to be set.
-    function setSubId(uint256 subId) external onlyOwner {
+    function setSubId(uint256 subId) external virtual onlyOwner {
         subscriptionId = subId;
         emit NewSubscriptionId(subId);
     }
@@ -65,7 +65,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice Sets the address of the IBlocklockSender contract.
     /// @dev Only the contract owner can call this function.
     /// @param _blocklock The address of the deployed IBlocklockSender contract.
-    function setBlocklock(address _blocklock) external onlyOwner {
+    function setBlocklock(address _blocklock) external virtual onlyOwner {
         require(_blocklock != address(0), "Cannot set zero address as sender");
         blocklock = IBlocklockSender(_blocklock);
     }
@@ -73,7 +73,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice Adds a list of consumer addresses to the Randamu subscription.
     /// @dev Requires the subscription ID to be set before calling.
     /// @param consumers An array of addresses to be added as authorized consumers.
-    function updateSubscription(address[] calldata consumers) external onlyOwner {
+    function updateSubscription(address[] calldata consumers) external virtual onlyOwner {
         require(subscriptionId != 0, "subID not set");
         for (uint256 i = 0; i < consumers.length; i++) {
             blocklock.addConsumer(subscriptionId, consumers[i]);
@@ -83,7 +83,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice Creates and funds a new Randamu subscription using native currency.
     /// @dev Only callable by the contract owner. If a subscription already exists, it will not be recreated.
     /// @dev The ETH value sent in the transaction (`msg.value`) will be used to fund the subscription.
-    function createSubscriptionAndFundNative() external payable onlyOwner {
+    function createSubscriptionAndFundNative() external payable virtual onlyOwner {
         subscriptionId = _subscribe();
         blocklock.fundSubscriptionWithNative{value: msg.value}(subscriptionId);
     }
@@ -91,7 +91,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice Tops up the Randamu subscription using native currency (e.g., ETH).
     /// @dev Requires a valid subscription ID to be set before calling.
     /// @dev The amount to top up should be sent along with the transaction as `msg.value`.
-    function topUpSubscriptionNative() external payable {
+    function topUpSubscriptionNative() external payable virtual {
         require(subscriptionId != 0, "sub not set");
         blocklock.fundSubscriptionWithNative{value: msg.value}(subscriptionId);
     }
@@ -101,6 +101,36 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// sufficient enough to cover the cost of the request.
     function getBalance() public view returns (uint256) {
         return address(this).balance;
+    }
+
+    function isInFlight(uint256 requestId) public view returns (bool) {
+        return blocklock.isInFlight(requestId);
+    }
+
+    function pendingRequestExists(uint256 subId) public view returns (bool) {
+        return blocklock.pendingRequestExists(subId);
+    }
+
+    /// @notice Function to fund the contract with native tokens for direct funding requests.
+    function fundContractNative() external payable virtual {
+        require(msg.value > 0, "You must send some ETH");
+        emit Funded(msg.sender, msg.value);
+    }
+
+    /// @notice Function to withdraw native tokens from the contract.
+    /// @dev Only callable by contract owner.
+    /// @param amount The amount to withdraw.
+    /// @param recipient The address to send the tokens to.
+    function withdrawNative(uint256 amount, address recipient) external virtual onlyOwner {
+        require(getBalance() >= amount, "Insufficient funds in contract");
+        payable(recipient).transfer(amount);
+        emit Withdrawn(recipient, amount);
+    }
+
+    /// @notice The receive function is executed on a call to the contract with empty calldata.
+    /// This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()).
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
     }
 
     /// @notice Requests a blocklock without a subscription and returns the request ID and request price.
@@ -115,7 +145,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         uint32 callbackGasLimit,
         bytes memory condition,
         TypesLib.Ciphertext calldata ciphertext
-    ) internal returns (uint256 requestId, uint256 requestPrice) {
+    ) internal virtual returns (uint256 requestId, uint256 requestPrice) {
         requestPrice = blocklock.calculateRequestPriceNative(callbackGasLimit);
 
         require(msg.value >= requestPrice, "Insufficient ETH");
@@ -136,7 +166,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         uint32 callbackGasLimit,
         bytes memory condition,
         TypesLib.Ciphertext calldata ciphertext
-    ) internal returns (uint256 requestId) {
+    ) internal virtual returns (uint256 requestId) {
         return blocklock.requestBlocklockWithSubscription(callbackGasLimit, subscriptionId, condition, ciphertext);
     }
 
@@ -168,7 +198,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice Creates a new Randamu subscription if none exists and registers this contract as a consumer.
     /// @dev Internal helper that initializes the subscription only once.
     /// @return subId The subscription ID that was created or already exists.
-    function _subscribe() internal returns (uint256 subId) {
+    function _subscribe() internal virtual returns (uint256 subId) {
         require(subscriptionId == 0, "SubscriptionId is not zero");
         subId = blocklock.createSubscription();
         blocklock.addConsumer(subId, address(this));
@@ -177,16 +207,8 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice Cancels an existing Randamu subscription if one exists.
     /// @dev Internal helper that cancels the subscription.
     /// @param to The recipient addresss that will receive the subscription balance.
-    function _cancelSubscription(address to) internal {
+    function _cancelSubscription(address to) internal virtual {
         require(subscriptionId != 0, "SubscriptionId is zero");
         blocklock.cancelSubscription(subscriptionId, to);
-    }
-
-    function isInFlight(uint256 requestId) public view returns (bool) {
-        return blocklock.isInFlight(requestId);
-    }
-
-    function pendingRequestExists(uint256 subId) public view returns (bool) {
-        return blocklock.pendingRequestExists(subId);
     }
 }
