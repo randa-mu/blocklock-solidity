@@ -83,7 +83,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice Creates and funds a new Randamu subscription using native currency.
     /// @dev Only callable by the contract owner. If a subscription already exists, it will not be recreated.
     /// @dev The ETH value sent in the transaction (`msg.value`) will be used to fund the subscription.
-    function createSubscriptionAndFundNative() external virtual payable onlyOwner {
+    function createSubscriptionAndFundNative() external payable virtual onlyOwner {
         subscriptionId = _subscribe();
         blocklock.fundSubscriptionWithNative{value: msg.value}(subscriptionId);
     }
@@ -91,7 +91,7 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice Tops up the Randamu subscription using native currency (e.g., ETH).
     /// @dev Requires a valid subscription ID to be set before calling.
     /// @dev The amount to top up should be sent along with the transaction as `msg.value`.
-    function topUpSubscriptionNative() external virtual payable {
+    function topUpSubscriptionNative() external payable virtual {
         require(subscriptionId != 0, "sub not set");
         blocklock.fundSubscriptionWithNative{value: msg.value}(subscriptionId);
     }
@@ -101,6 +101,36 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// sufficient enough to cover the cost of the request.
     function getBalance() public view returns (uint256) {
         return address(this).balance;
+    }
+
+    function isInFlight(uint256 requestId) public view returns (bool) {
+        return blocklock.isInFlight(requestId);
+    }
+
+    function pendingRequestExists(uint256 subId) public view returns (bool) {
+        return blocklock.pendingRequestExists(subId);
+    }
+
+    /// @notice Function to fund the contract with native tokens for direct funding requests.
+    function fundContractNative() external payable virtual {
+        require(msg.value > 0, "You must send some ETH");
+        emit Funded(msg.sender, msg.value);
+    }
+
+    /// @notice Function to withdraw native tokens from the contract.
+    /// @dev Only callable by contract owner.
+    /// @param amount The amount to withdraw.
+    /// @param recipient The address to send the tokens to.
+    function withdrawNative(uint256 amount, address recipient) external virtual onlyOwner {
+        require(getBalance() >= amount, "Insufficient funds in contract");
+        payable(recipient).transfer(amount);
+        emit Withdrawn(recipient, amount);
+    }
+
+    /// @notice The receive function is executed on a call to the contract with empty calldata.
+    /// This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()).
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
     }
 
     /// @notice Requests a blocklock without a subscription and returns the request ID and request price.
@@ -177,38 +207,8 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
     /// @notice Cancels an existing Randamu subscription if one exists.
     /// @dev Internal helper that cancels the subscription.
     /// @param to The recipient addresss that will receive the subscription balance.
-    function _cancelSubscription(address to) internal virtual virtual {
+    function _cancelSubscription(address to) internal virtual {
         require(subscriptionId != 0, "SubscriptionId is zero");
         blocklock.cancelSubscription(subscriptionId, to);
-    }
-
-    function isInFlight(uint256 requestId) public view returns (bool) {
-        return blocklock.isInFlight(requestId);
-    }
-
-    function pendingRequestExists(uint256 subId) public view returns (bool) {
-        return blocklock.pendingRequestExists(subId);
-    }
-
-    /// @notice Function to fund the contract with native tokens for direct funding requests.
-    function fundContractNative() external virtual payable {
-        require(msg.value > 0, "You must send some ETH");
-        emit Funded(msg.sender, msg.value);
-    }
-
-    /// @notice Function to withdraw native tokens from the contract.
-    /// @dev Only callable by contract owner.
-    /// @param amount The amount to withdraw.
-    /// @param recipient The address to send the tokens to.
-    function withdrawNative(uint256 amount, address recipient) external virtual onlyOwner {
-        require(getBalance() >= amount, "Insufficient funds in contract");
-        payable(recipient).transfer(amount);
-        emit Withdrawn(recipient, amount);
-    }
-
-    /// @notice The receive function is executed on a call to the contract with empty calldata.
-    /// This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()).
-    receive() external payable {
-        emit Received(msg.sender, msg.value);
     }
 }
