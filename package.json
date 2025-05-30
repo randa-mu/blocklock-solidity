@@ -5,7 +5,7 @@
     "publishConfig": {
         "access": "public"
     },
-    "version": "0.0.12",
+    "version": "0.0.13",
     "directories": {
         "lib": "lib",
         "test": "test"
