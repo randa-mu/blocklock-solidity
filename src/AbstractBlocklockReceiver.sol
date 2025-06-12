@@ -111,28 +111,6 @@ abstract contract AbstractBlocklockReceiver is IBlocklockReceiver, ConfirmedOwne
         return blocklock.pendingRequestExists(subId);
     }
 
-    /// @notice Function to fund the contract with native tokens for direct funding requests.
-    function fundContractNative() external payable virtual {
-        require(msg.value > 0, "You must send some ETH");
-        emit Funded(msg.sender, msg.value);
-    }
-
-    /// @notice Function to withdraw native tokens from the contract.
-    /// @dev Only callable by contract owner.
-    /// @param amount The amount to withdraw.
-    /// @param recipient The address to send the tokens to.
-    function withdrawNative(uint256 amount, address recipient) external virtual onlyOwner {
-        require(getBalance() >= amount, "Insufficient funds in contract");
-        payable(recipient).transfer(amount);
-        emit Withdrawn(recipient, amount);
-    }
-
-    /// @notice The receive function is executed on a call to the contract with empty calldata.
-    /// This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()).
-    receive() external payable {
-        emit Received(msg.sender, msg.value);
-    }
-
     /// @notice Requests a blocklock without a subscription and returns the request ID and request price.
     /// @dev This function calls the `requestBlocklock` function from the `blocklock` contract, passing the required parameters such as
     ///      `callbackGasLimit`, `blockHeight`, and `ciphertext`.
