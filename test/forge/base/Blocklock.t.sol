@@ -103,14 +103,13 @@ contract BlocklockTest is Deployment {
         signatureSchemeAddressProvider.updateSignatureScheme(bn254_schemeID, schemeAddr);
         assertTrue(signatureSchemeAddressProvider.getSignatureSchemeAddress(bn254_schemeID) == schemeAddr);
 
-        // replacing existing scheme contract reverts
+        // replacing existing scheme contract does not revert
         schemeAddr = address(blocklockSender);
         vm.prank(admin);
-        vm.expectRevert("Scheme already added for schemeID");
         signatureSchemeAddressProvider.updateSignatureScheme(bn254_schemeID, schemeAddr);
         assertTrue(
-            signatureSchemeAddressProvider.getSignatureSchemeAddress(bn254_schemeID) != schemeAddr,
-            "Scheme contract address should not have been replaced"
+            signatureSchemeAddressProvider.getSignatureSchemeAddress(bn254_schemeID) == schemeAddr,
+            "Scheme contract address should have been replaced"
         );
 
         // zero address with zero code
