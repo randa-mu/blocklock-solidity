@@ -3,6 +3,7 @@ pragma solidity ^0.8;
 
 import {SubscriptionAPI} from "../subscription/SubscriptionAPI.sol";
 import {TypesLib} from "../libraries/TypesLib.sol";
+import {BlocklockErrors} from "../libraries/BlocklockErrors.sol";
 
 /// @title BlocklockSubscriptionLib library
 /// @notice Library for handling subscription validation and payment logic
@@ -89,12 +90,3 @@ library BlocklockSubscriptionLib {
     }
 }
 
-/// @title BlocklockErrors library
-/// @notice Centralized custom errors for BlocklockSender contract
-library BlocklockErrors {
-    error GrantRoleFailed();
-    error DirectFundingRequired();
-    error NoRequestFound();
-    error InvalidPremiumPercentage();
-    error InvalidRequestId();
-}
