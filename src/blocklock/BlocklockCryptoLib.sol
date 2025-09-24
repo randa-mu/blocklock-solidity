@@ -3,6 +3,7 @@ pragma solidity ^0.8;
 
 import {TypesLib} from "../libraries/TypesLib.sol";
 import {BLS} from "../libraries/BLS.sol";
+import {BlocklockErrors} from "../libraries/BlocklockErrors.sol";
 
 library BlocklockCryptoLib {
     /// @notice Decrypts a ciphertext into plaintext using a decryption key
@@ -23,8 +24,8 @@ library BlocklockCryptoLib {
         bytes memory DST_H3,
         bytes memory DST_H4
     ) public view returns (bytes memory) {
-        require(ciphertext.v.length != 256, "invalid decryption key length");
-        require(ciphertext.w.length < 256, "message of unsupported length");
+        if (ciphertext.v.length == 256) revert BlocklockErrors.InvalidDecryptionKeyLength();
+        if (ciphertext.w.length >= 256) revert BlocklockErrors.UnsupportedMessageLength();
 
         // \sigma' \gets V \xor decryptionKey
         bytes memory sigma2 = ciphertext.v;
@@ -49,7 +50,7 @@ library BlocklockCryptoLib {
         BLS.PointG1 memory rG1 = BLS.scalarMulG1Base(r);
         (bool equal, bool success) = BLS.verifyEqualityG1G2(rG1, ciphertext.u);
         // Decryption fails if a bad decryption key / ciphertext was provided
-        require(equal == success == true, "invalid decryption key / ciphertext registered");
+        if (!(equal && success)) revert BlocklockErrors.InvalidDecryptionKeyOrCiphertext();
 
         return m2;
     }

@@ -4,6 +4,7 @@ pragma solidity ^0.8;
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {SubscriptionAPI} from "../subscription/SubscriptionAPI.sol";
+import {BlocklockErrors} from "../libraries/BlocklockErrors.sol";
 
 /// @title BlocklockFeeCollector contract
 /// @notice An abstract contract for collecting fees related to blocklock functionality
@@ -44,8 +45,8 @@ abstract contract BlocklockFeeCollector is ReentrancyGuard, SubscriptionAPI {
     /// @dev Ensures function is only called when the contract configuration parameters are set and
     /// the contract is not disabled.
     modifier onlyConfiguredNotDisabled() {
-        require(s_configured, "Contract is not configured");
-        require(!s_disabled, "Contract is disabled");
+        if (!s_configured) revert BlocklockErrors.ContractNotConfigured();
+        if (s_disabled) revert BlocklockErrors.ContractDisabled();
         _;
     }
 
