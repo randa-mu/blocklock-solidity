@@ -9,6 +9,7 @@ import {ScheduledUpgradeable} from "../scheduled-contract-upgrades/ScheduledUpgr
 import {TypesLib} from "../libraries/TypesLib.sol";
 import {BLS} from "../libraries/BLS.sol";
 import {BytesLib} from "../libraries/BytesLib.sol";
+import {BlocklockCryptoLib} from "./BlocklockCryptoLib.sol";
 
 import {IBlocklockSender} from "../interfaces/IBlocklockSender.sol";
 import {IBlocklockReceiver} from "../interfaces/IBlocklockReceiver.sol";
@@ -350,35 +351,7 @@ contract BlocklockSender is
         view
         returns (bytes memory)
     {
-        require(ciphertext.v.length != 256, "invalid decryption key length");
-        require(ciphertext.w.length < 256, "message of unsupported length");
-
-        // \sigma' \gets V \xor decryptionKey
-        bytes memory sigma2 = ciphertext.v;
-        for (uint256 i = 0; i < decryptionKey.length; i++) {
-            sigma2[i] ^= decryptionKey[i];
-        }
-
-        // Decrypt the message
-        // 4: M' \gets W \xor H_4(\sigma')
-        bytes memory m2 = ciphertext.w;
-        bytes memory mask = BLS.expandMsg(DST_H4, sigma2, uint8(ciphertext.w.length));
-        for (uint256 i = 0; i < ciphertext.w.length; i++) {
-            m2[i] ^= mask[i];
-        }
-
-        // Derive the ephemeral keypair with the candidate \sigma'
-        // 5: r \gets H_3(\sigma, M)
-        uint256 r = BLS.hashToFieldSingle(DST_H3, bytes.concat(sigma2, m2));
-
-        // Verify that \sigma' is consistent with the message and ephemeral public key
-        // 6: if U = [r]G_2 then return M' else return \bot
-        BLS.PointG1 memory rG1 = BLS.scalarMulG1Base(r);
-        (bool equal, bool success) = BLS.verifyEqualityG1G2(rG1, ciphertext.u);
-        // Decryption fails if a bad decryption key / ciphertext was provided
-        require(equal == success == true, "invalid decryption key / ciphertext registered");
-
-        return m2;
+        return BlocklockCryptoLib.decrypt(ciphertext, decryptionKey, DST_H3, DST_H4);
     }
 
     /// @notice Sets a new decryption sender address
