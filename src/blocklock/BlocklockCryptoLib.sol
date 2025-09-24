@@ -17,11 +17,12 @@ library BlocklockCryptoLib {
     ///     - The decryption key length is incorrect.
     ///     - The message length is unsupported.
     ///     - The decryption key and ciphertext do not match (validation failure).
-    function decrypt(TypesLib.Ciphertext calldata ciphertext, bytes calldata decryptionKey, bytes memory DST_H3, bytes memory DST_H4)
-        public
-        view
-        returns (bytes memory)
-    {
+    function decrypt(
+        TypesLib.Ciphertext calldata ciphertext,
+        bytes calldata decryptionKey,
+        bytes memory DST_H3,
+        bytes memory DST_H4
+    ) public view returns (bytes memory) {
         require(ciphertext.v.length != 256, "invalid decryption key length");
         require(ciphertext.w.length < 256, "message of unsupported length");
 

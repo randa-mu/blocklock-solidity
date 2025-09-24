@@ -26,10 +26,10 @@ library BlocklockSubscriptionLib {
         mapping(address => mapping(uint256 => SubscriptionAPI.ConsumerConfig)) storage consumers
     ) external {
         require(_callbackGasLimit <= maxGasLimit, "Callback gasLimit too high");
-        
+
         address owner = subscriptionConfigs[_subId].owner;
         requireValidSubscription(owner);
-        
+
         // Its important to ensure that the consumer is in fact who they say they
         // are, otherwise they could use someone else's subscription balance.
         mapping(uint256 => SubscriptionAPI.ConsumerConfig) storage consumerConfigs = consumers[msg.sender];
@@ -42,16 +42,15 @@ library BlocklockSubscriptionLib {
         consumerConfigs[_subId] = consumerConfig;
     }
 
-    /// @notice Validates callback gas limit for direct funding requests  
+    /// @notice Validates callback gas limit for direct funding requests
     /// @param _callbackGasLimit The gas limit for the callback function
     /// @param maxGasLimit The maximum allowed gas limit
     /// @param requestPrice The calculated price for this request
     /// @dev Validates payment amount for direct funding
-    function validateDirectFundingRequest(
-        uint32 _callbackGasLimit,
-        uint32 maxGasLimit,
-        uint256 requestPrice
-    ) external view {
+    function validateDirectFundingRequest(uint32 _callbackGasLimit, uint32 maxGasLimit, uint256 requestPrice)
+        external
+        view
+    {
         require(_callbackGasLimit <= maxGasLimit, "Callback gasLimit too high");
         require(msg.value >= requestPrice, "Fee too low");
     }
@@ -60,7 +59,7 @@ library BlocklockSubscriptionLib {
     /// @param request The blocklock request containing payment details
     /// @param payment The payment amount to charge
     /// @param subscriptions Mapping of subscription data
-    /// @param consumers Mapping of consumer configurations  
+    /// @param consumers Mapping of consumer configurations
     /// @dev Updates request counts for subscription-based payments
     function handleSubscriptionPayment(
         TypesLib.BlocklockRequest memory request,
@@ -76,9 +75,7 @@ library BlocklockSubscriptionLib {
     /// @notice Returns the payment amount for direct funding requests
     /// @param request The blocklock request containing payment details
     /// @dev For direct funding, returns the amount already paid by the user
-    function handleDirectFundingPayment(
-        TypesLib.BlocklockRequest memory request
-    ) external pure returns (uint96) {
+    function handleDirectFundingPayment(TypesLib.BlocklockRequest memory request) external pure returns (uint96) {
         return uint96(request.directFundingFeePaid);
     }
 

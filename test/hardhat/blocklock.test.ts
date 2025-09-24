@@ -482,7 +482,7 @@ describe("Blocklock integration tests", () => {
     let tx = await mockBlocklockReceiverInstance
       .connect(wallet)
       .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct), {
-        value: ethers.parseEther("2")
+        value: ethers.parseEther("2"),
       });
 
     let receipt = await tx.wait(1);
@@ -739,7 +739,7 @@ describe("Blocklock integration tests", () => {
     let tx = await mockBlocklockReceiverInstance
       .connect(wallet)
       .createTimelockRequestWithDirectFunding(callbackGasLimit, encodedCondition, encodeCiphertextToSolidity(ct), {
-        value: ethers.parseEther("2")
+        value: ethers.parseEther("2"),
       });
 
     let receipt = await tx.wait(1);

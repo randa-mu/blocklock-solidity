@@ -53,7 +53,7 @@ contract BlocklockSender is
     /// @notice Domain separation tags for cryptographic operations
     bytes public DST_H1_G1;
     bytes public DST_H2;
-    bytes public DST_H3;  
+    bytes public DST_H3;
     bytes public DST_H4;
 
     /// @notice Mapping of request ID to blocklock request data
@@ -180,19 +180,11 @@ contract BlocklockSender is
     function _validateCallbackGasLimitAndUpdateSubscription(uint32 _callbackGasLimit, uint256 _subId) internal {
         if (_subId > 0) {
             BlocklockSubscriptionLib.validateSubscriptionAndUpdateConsumer(
-                _callbackGasLimit, 
-                _subId, 
-                s_config.maxGasLimit,
-                s_subscriptionConfigs,
-                s_consumers
+                _callbackGasLimit, _subId, s_config.maxGasLimit, s_subscriptionConfigs, s_consumers
             );
         } else {
             uint256 price = _calculateRequestPriceNative(_callbackGasLimit, tx.gasprice);
-            BlocklockSubscriptionLib.validateDirectFundingRequest(
-                _callbackGasLimit,
-                s_config.maxGasLimit,
-                price
-            );
+            BlocklockSubscriptionLib.validateDirectFundingRequest(_callbackGasLimit, s_config.maxGasLimit, price);
         }
     }
 
@@ -242,7 +234,7 @@ contract BlocklockSender is
     }
 
     /// @notice Calculates request price in native tokens
-    /// @param _gasLimit Callback gas limit  
+    /// @param _gasLimit Callback gas limit
     /// @return Total price in wei
     function calculateRequestPriceNative(uint32 _gasLimit)
         public
@@ -267,15 +259,12 @@ contract BlocklockSender is
         if (request.subId > 0) {
             uint96 calculatedPayment = _calculatePaymentAmountNative(startGas, tx.gasprice);
             payment = BlocklockSubscriptionLib.handleSubscriptionPayment(
-                request,
-                calculatedPayment,
-                s_subscriptions,
-                s_consumers
+                request, calculatedPayment, s_subscriptions, s_consumers
             );
         } else {
             payment = BlocklockSubscriptionLib.handleDirectFundingPayment(request);
         }
-        
+
         _chargePayment(payment, request.subId);
     }
 
@@ -370,7 +359,7 @@ contract BlocklockSender is
     /// @return maxGasLimit Max gas limit
     /// @return gasAfterPaymentCalculation Post-payment gas
     /// @return fulfillmentFlatFeeNativePPM Flat fee in PPM
-    /// @return weiPerUnitGas Wei per gas unit  
+    /// @return weiPerUnitGas Wei per gas unit
     /// @return blsPairingCheckOverhead BLS operation overhead
     /// @return nativePremiumPercentage Native payment premium
     /// @return gasForCallExactCheck Exact call gas
