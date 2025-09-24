@@ -7,8 +7,6 @@ import {AccessControlEnumerableUpgradeable} from
 import {ScheduledUpgradeable} from "../scheduled-contract-upgrades/ScheduledUpgradeable.sol";
 
 import {TypesLib} from "../libraries/TypesLib.sol";
-import {BLS} from "../libraries/BLS.sol";
-import {BytesLib} from "../libraries/BytesLib.sol";
 import {BlocklockCryptoLib} from "./BlocklockCryptoLib.sol";
 import {BlocklockSubscriptionLib, BlocklockErrors} from "./BlocklockSubscriptionLib.sol";
 import {BlocklockDSTLib} from "./BlocklockDSTLib.sol";
@@ -37,22 +35,17 @@ contract BlocklockSender is
     ScheduledUpgradeable,
     AccessControlEnumerableUpgradeable
 {
-    using BytesLib for bytes32;
     using CallWithExactGas for bytes;
 
     /// @notice This contract manages blocklock requests, decryption keys, and administrative roles.
     /// @dev The contract includes constants related to blocklock schemes, decryption key processing, and events for blocklock requests and callbacks.
     ///      It also defines an `ADMIN_ROLE` for managing access control and updates to decryption sender.
 
-    /// @notice Admin role identifier
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
-    /// @notice BLS blocklock scheme identifier
-    string public constant SCHEME_ID = "BN254-BLS-BLOCKLOCK";
+
+
 
     /// @notice Domain separation tags for cryptographic operations
-    bytes public DST_H1_G1;
-    bytes public DST_H2;
     bytes public DST_H3;
     bytes public DST_H4;
 
@@ -97,7 +90,7 @@ contract BlocklockSender is
     /// @notice Modifier that restricts access to only accounts with the admin role
     /// @dev This modifier checks that the caller has the `ADMIN_ROLE` before allowing the function to be executed.
     modifier onlyAdmin() {
-        _checkRole(ADMIN_ROLE);
+        _checkRole(keccak256("ADMIN_ROLE"));
         _;
     }
 
@@ -114,11 +107,11 @@ contract BlocklockSender is
         __AccessControlEnumerable_init();
         __ScheduledUpgradeable_init(_contractUpgradeBlsValidator, 2 days);
 
-        if (!_grantRole(ADMIN_ROLE, owner)) revert BlocklockErrors.GrantRoleFailed();
+        if (!_grantRole(keccak256("ADMIN_ROLE"), owner)) revert BlocklockErrors.GrantRoleFailed();
         if (!_grantRole(DEFAULT_ADMIN_ROLE, owner)) revert BlocklockErrors.GrantRoleFailed();
         decryptionSender = IDecryptionSender(_decryptionSender);
 
-        (DST_H1_G1, DST_H2, DST_H3, DST_H4) = BlocklockDSTLib.initializeDSTs(getChainId());
+        (, , DST_H3, DST_H4) = BlocklockDSTLib.initializeDSTs(getChainId());
     }
 
     /// @notice Requests blocklock with direct payment
@@ -156,7 +149,7 @@ contract BlocklockSender is
         /// @dev subId must be zero for direct funding or non zero for active subscription
         _validateCallbackGasLimitAndUpdateSubscription(callbackGasLimit, subId);
 
-        uint256 decryptionRequestId = _registerCiphertext(SCHEME_ID, abi.encode(ciphertext), condition);
+        uint256 decryptionRequestId = _registerCiphertext("BN254-BLS-BLOCKLOCK", abi.encode(ciphertext), condition);
 
         blocklockRequestsWithDecryptionKey[decryptionRequestId] = TypesLib.BlocklockRequest({
             subId: subId,
@@ -367,13 +360,13 @@ contract BlocklockSender is
         external
         view
         returns (
-            uint32 maxGasLimit,
-            uint32 gasAfterPaymentCalculation,
-            uint32 fulfillmentFlatFeeNativePPM,
-            uint32 weiPerUnitGas,
-            uint32 blsPairingCheckOverhead,
-            uint8 nativePremiumPercentage,
-            uint32 gasForCallExactCheck
+            uint32,
+            uint32,
+            uint32,
+            uint32,
+            uint32,
+            uint8,
+            uint32
         )
     {
         return (
