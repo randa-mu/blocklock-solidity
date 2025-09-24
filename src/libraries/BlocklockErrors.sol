@@ -9,12 +9,4 @@ library BlocklockErrors {
     error NoRequestFound();
     error InvalidPremiumPercentage();
     error InvalidRequestId();
-    error CallbackGasLimitTooHigh();
-    error NoActiveSubscription();
-    error FeeTooLow();
-    error InvalidDecryptionKeyLength();
-    error UnsupportedMessageLength();
-    error InvalidDecryptionKeyOrCiphertext();
-    error ContractNotConfigured();
-    error ContractDisabled();
 }

@@ -70,6 +70,8 @@ contract BlocklockTest is Deployment {
 
         console.logBytes(blocklockSignatureScheme.DST());
         console.logString(string(blocklockSignatureScheme.DST()));
+        console.logString(string(blocklockSender.DST_H1_G1()));
+        console.logString(string(blocklockSender.DST_H2()));
         console.logString(string(blocklockSender.DST_H3()));
         console.logString(string(blocklockSender.DST_H4()));
     }

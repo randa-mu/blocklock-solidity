@@ -7,10 +7,10 @@ import {AccessControlEnumerableUpgradeable} from
 import {ScheduledUpgradeable} from "../scheduled-contract-upgrades/ScheduledUpgradeable.sol";
 
 import {TypesLib} from "../libraries/TypesLib.sol";
-import {BlocklockDecryptLib} from "../libraries/BlocklockDecryptLib.sol";
-import {BlocklockCallbackLib} from "../libraries/BlocklockCallbackLib.sol";
-import {BlocklockSubscriptionLib} from "./BlocklockSubscriptionLib.sol";
-import {BlocklockErrors} from "../libraries/BlocklockErrors.sol";
+import {BLS} from "../libraries/BLS.sol";
+import {BytesLib} from "../libraries/BytesLib.sol";
+import {BlocklockCryptoLib} from "./BlocklockCryptoLib.sol";
+import {BlocklockSubscriptionLib, BlocklockErrors} from "./BlocklockSubscriptionLib.sol";
 import {BlocklockDSTLib} from "./BlocklockDSTLib.sol";
 
 import {IBlocklockSender} from "../interfaces/IBlocklockSender.sol";
@@ -37,6 +37,7 @@ contract BlocklockSender is
     ScheduledUpgradeable,
     AccessControlEnumerableUpgradeable
 {
+    using BytesLib for bytes32;
     using CallWithExactGas for bytes;
 
     /// @notice This contract manages blocklock requests, decryption keys, and administrative roles.
@@ -46,9 +47,12 @@ contract BlocklockSender is
     /// @notice Admin role identifier
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
-
+    /// @notice BLS blocklock scheme identifier
+    string public constant SCHEME_ID = "BN254-BLS-BLOCKLOCK";
 
     /// @notice Domain separation tags for cryptographic operations
+    bytes public DST_H1_G1;
+    bytes public DST_H2;
     bytes public DST_H3;
     bytes public DST_H4;
 
@@ -114,7 +118,7 @@ contract BlocklockSender is
         if (!_grantRole(DEFAULT_ADMIN_ROLE, owner)) revert BlocklockErrors.GrantRoleFailed();
         decryptionSender = IDecryptionSender(_decryptionSender);
 
-        (, , DST_H3, DST_H4) = BlocklockDSTLib.initializeDSTs(getChainId());
+        (DST_H1_G1, DST_H2, DST_H3, DST_H4) = BlocklockDSTLib.initializeDSTs(getChainId());
     }
 
     /// @notice Requests blocklock with direct payment
@@ -152,7 +156,7 @@ contract BlocklockSender is
         /// @dev subId must be zero for direct funding or non zero for active subscription
         _validateCallbackGasLimitAndUpdateSubscription(callbackGasLimit, subId);
 
-        uint256 decryptionRequestId = _registerCiphertext("BN254-BLS-BLOCKLOCK", abi.encode(ciphertext), condition);
+        uint256 decryptionRequestId = _registerCiphertext(SCHEME_ID, abi.encode(ciphertext), condition);
 
         blocklockRequestsWithDecryptionKey[decryptionRequestId] = TypesLib.BlocklockRequest({
             subId: subId,
@@ -197,11 +201,15 @@ contract BlocklockSender is
         TypesLib.BlocklockRequest storage request = blocklockRequestsWithDecryptionKey[decryptionRequestId];
         if (request.decryptionRequestId == 0) revert BlocklockErrors.NoRequestFound();
 
-        bool success = BlocklockCallbackLib.executeCallback(
-            request, decryptionRequestId, decryptionKey, signature, s_config.gasForCallExactCheck
+        bytes memory callbackCallData =
+            abi.encodeWithSelector(IBlocklockReceiver.receiveBlocklock.selector, decryptionRequestId, decryptionKey);
+
+        (bool success,) = callbackCallData._callWithExactGasEvenIfTargetIsNoContract(
+            request.callback, request.callbackGasLimit, s_config.gasForCallExactCheck
         );
-        
         if (success) {
+            request.decryptionKey = decryptionKey;
+            request.signature = signature;
             emit BlocklockCallbackSuccess(
                 decryptionRequestId, request.condition, request.ciphertext, request.decryptionKey
             );
@@ -277,7 +285,7 @@ contract BlocklockSender is
         view
         returns (bytes memory)
     {
-        return BlocklockDecryptLib.decrypt(ciphertext, decryptionKey, DST_H3, DST_H4);
+        return BlocklockCryptoLib.decrypt(ciphertext, decryptionKey, DST_H3, DST_H4);
     }
 
     /// @notice Sets a new decryption sender address
@@ -359,13 +367,13 @@ contract BlocklockSender is
         external
         view
         returns (
-            uint32,
-            uint32,
-            uint32,
-            uint32,
-            uint32,
-            uint8,
-            uint32
+            uint32 maxGasLimit,
+            uint32 gasAfterPaymentCalculation,
+            uint32 fulfillmentFlatFeeNativePPM,
+            uint32 weiPerUnitGas,
+            uint32 blsPairingCheckOverhead,
+            uint8 nativePremiumPercentage,
+            uint32 gasForCallExactCheck
         )
     {
         return (
@@ -438,7 +446,16 @@ contract BlocklockSender is
         return r;
     }
 
+    /// @notice Returns the version number of the upgradeable contract
+    /// @return The version number of the contract as a string
+    /// @dev This function is used to identify the current version of the contract for upgrade management and version tracking.
+    function version() external pure returns (string memory) {
+        return "0.0.1";
+    }
+
     /// @notice Returns the current blockchain chain ID.
+    /// @dev Uses inline assembly to retrieve the `chainid` opcode.
+    /// @return chainId The current chain ID of the network.
     function getChainId() public view override (IBlocklockSender, ScheduledUpgradeable) returns (uint256 chainId) {
         chainId = super.getChainId();
     }

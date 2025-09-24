@@ -26,7 +26,7 @@ library BlocklockSubscriptionLib {
         mapping(uint256 => SubscriptionAPI.SubscriptionConfig) storage subscriptionConfigs,
         mapping(address => mapping(uint256 => SubscriptionAPI.ConsumerConfig)) storage consumers
     ) external {
-        if (_callbackGasLimit > maxGasLimit) revert BlocklockErrors.CallbackGasLimitTooHigh();
+        require(_callbackGasLimit <= maxGasLimit, "Callback gasLimit too high");
 
         address owner = subscriptionConfigs[_subId].owner;
         requireValidSubscription(owner);
@@ -36,7 +36,7 @@ library BlocklockSubscriptionLib {
         mapping(uint256 => SubscriptionAPI.ConsumerConfig) storage consumerConfigs = consumers[msg.sender];
 
         SubscriptionAPI.ConsumerConfig memory consumerConfig = consumerConfigs[_subId];
-        if (!consumerConfig.active) revert BlocklockErrors.NoActiveSubscription();
+        require(consumerConfig.active, "No active subscription for caller");
 
         ++consumerConfig.nonce;
         ++consumerConfig.pendingReqCount;
@@ -52,8 +52,8 @@ library BlocklockSubscriptionLib {
         external
         view
     {
-        if (_callbackGasLimit > maxGasLimit) revert BlocklockErrors.CallbackGasLimitTooHigh();
-        if (msg.value < requestPrice) revert BlocklockErrors.FeeTooLow();
+        require(_callbackGasLimit <= maxGasLimit, "Callback gasLimit too high");
+        require(msg.value >= requestPrice, "Fee too low");
     }
 
     /// @notice Updates subscription counters and charges payment for subscription requests
@@ -89,3 +89,4 @@ library BlocklockSubscriptionLib {
         }
     }
 }
+
