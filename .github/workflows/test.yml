@@ -38,6 +38,9 @@ jobs:
         run: |
           forge fmt --check
         id: fmt
+      
+      - name: Install soldeer dependencies
+        run: forge soldeer install
 
       - name: Run Forge build
         run: |
