@@ -105,7 +105,10 @@ contract DecryptionSender is
     /// @param owner The address of the owner to be granted roles.
     /// @param _signatureSchemeAddressProvider The address of the signature scheme provider contract.
     /// @dev This function also sets the owner and signature scheme address provider.
-    function initialize(address owner, address _signatureSchemeAddressProvider, address _contractUpgradeBlsValidator) public initializer {
+    function initialize(address owner, address _signatureSchemeAddressProvider, address _contractUpgradeBlsValidator)
+        public
+        initializer
+    {
         __UUPSUpgradeable_init();
         __AccessControlEnumerable_init();
         __ScheduledUpgradeable_init(_contractUpgradeBlsValidator, 2 days);

@@ -28,7 +28,6 @@ abstract contract ScheduledUpgradeable is IScheduledUpgradeable, Initializable, 
     /// @notice BLS validator used for validating admin threshold signatures for stopping timed upgrades
     ISignatureScheme public contractUpgradeBlsValidator;
 
-
     /// @notice Custom errors for the contract
     error ZeroAddress();
     error UpgradeDelayTooShort();
@@ -84,8 +83,7 @@ abstract contract ScheduledUpgradeable is IScheduledUpgradeable, Initializable, 
         );
 
         require(
-            contractUpgradeBlsValidator.verifySignature(messageAsG1Bytes, signature),
-            BLSSignatureVerificationFailed()
+            contractUpgradeBlsValidator.verifySignature(messageAsG1Bytes, signature), BLSSignatureVerificationFailed()
         );
 
         scheduledImplementation = newImplementation;
@@ -98,10 +96,7 @@ abstract contract ScheduledUpgradeable is IScheduledUpgradeable, Initializable, 
     /// @notice Cancels a previously scheduled contract upgrade.
     /// @param signature BLS signature from the admin threshold validating the upgrade cancellation
     function cancelUpgrade(bytes calldata signature) public virtual {
-        require(
-            block.timestamp < scheduledTimestampForUpgrade,
-            TooLateToCancelUpgrade(scheduledTimestampForUpgrade)
-        );
+        require(block.timestamp < scheduledTimestampForUpgrade, TooLateToCancelUpgrade(scheduledTimestampForUpgrade));
 
         string memory action = "cancel";
         uint256 nonce = ++currentNonce;
@@ -115,8 +110,7 @@ abstract contract ScheduledUpgradeable is IScheduledUpgradeable, Initializable, 
         );
 
         require(
-            contractUpgradeBlsValidator.verifySignature(messageAsG1Bytes, signature),
-            BLSSignatureVerificationFailed()
+            contractUpgradeBlsValidator.verifySignature(messageAsG1Bytes, signature), BLSSignatureVerificationFailed()
         );
 
         address cancelledImplementation = scheduledImplementation;
@@ -132,9 +126,7 @@ abstract contract ScheduledUpgradeable is IScheduledUpgradeable, Initializable, 
     /// @dev Can only be called after the scheduled upgrade time has passed
     function executeUpgrade() public virtual {
         require(scheduledImplementation != address(0), NoUpgradePending());
-        require(
-            block.timestamp >= scheduledTimestampForUpgrade, UpgradeTooEarly(scheduledTimestampForUpgrade)
-        );
+        require(block.timestamp >= scheduledTimestampForUpgrade, UpgradeTooEarly(scheduledTimestampForUpgrade));
 
         address impl = scheduledImplementation;
         bytes memory callData = scheduledImplementationCalldata;
@@ -253,8 +245,7 @@ abstract contract ScheduledUpgradeable is IScheduledUpgradeable, Initializable, 
         (, bytes memory messageAsG1Bytes) = blsValidatorUpdateParamsToBytes(action, _contractUpgradeBlsValidator, nonce);
 
         require(
-            contractUpgradeBlsValidator.verifySignature(messageAsG1Bytes, signature),
-            BLSSignatureVerificationFailed()
+            contractUpgradeBlsValidator.verifySignature(messageAsG1Bytes, signature), BLSSignatureVerificationFailed()
         );
         contractUpgradeBlsValidator = ISignatureScheme(_contractUpgradeBlsValidator);
         emit ContractUpgradeBLSValidatorUpdated(address(contractUpgradeBlsValidator));
@@ -274,8 +265,7 @@ abstract contract ScheduledUpgradeable is IScheduledUpgradeable, Initializable, 
             minimumContractUpgradeDelayParamsToBytes(action, _minimumContractUpgradeDelay, nonce);
 
         require(
-            contractUpgradeBlsValidator.verifySignature(messageAsG1Bytes, signature),
-            BLSSignatureVerificationFailed()
+            contractUpgradeBlsValidator.verifySignature(messageAsG1Bytes, signature), BLSSignatureVerificationFailed()
         );
         minimumContractUpgradeDelay = _minimumContractUpgradeDelay;
         emit MinimumContractUpgradeDelayUpdated(minimumContractUpgradeDelay);

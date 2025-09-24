@@ -116,7 +116,10 @@ contract BlocklockSender is
         _disableInitializers();
     }
 
-    function initialize(address owner, address _decryptionSender, address _contractUpgradeBlsValidator) public initializer {
+    function initialize(address owner, address _decryptionSender, address _contractUpgradeBlsValidator)
+        public
+        initializer
+    {
         __UUPSUpgradeable_init();
         __AccessControlEnumerable_init();
         __ScheduledUpgradeable_init(_contractUpgradeBlsValidator, 2 days);
@@ -552,7 +555,7 @@ contract BlocklockSender is
     /// @notice Returns the current blockchain chain ID.
     /// @dev Uses inline assembly to retrieve the `chainid` opcode.
     /// @return chainId The current chain ID of the network.
-    function getChainId() public view override(IBlocklockSender, ScheduledUpgradeable) returns (uint256 chainId) {
+    function getChainId() public view override (IBlocklockSender, ScheduledUpgradeable) returns (uint256 chainId) {
         chainId = super.getChainId();
     }
 }
