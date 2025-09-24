@@ -3,8 +3,8 @@ pragma solidity ^0.8;
 
 import {AccessControlEnumerableUpgradeable} from
     "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
+import {ScheduledUpgradeable} from "../scheduled-contract-upgrades/ScheduledUpgradeable.sol";
 
 import {TypesLib} from "../libraries/TypesLib.sol";
 import {BLS} from "../libraries/BLS.sol";
@@ -31,8 +31,7 @@ contract BlocklockSender is
     IBlocklockSender,
     DecryptionReceiverBase,
     BlocklockFeeCollector,
-    Initializable,
-    UUPSUpgradeable,
+    ScheduledUpgradeable,
     AccessControlEnumerableUpgradeable
 {
     using BytesLib for bytes32;
@@ -117,9 +116,10 @@ contract BlocklockSender is
         _disableInitializers();
     }
 
-    function initialize(address owner, address _decryptionSender) public initializer {
+    function initialize(address owner, address _decryptionSender, address _contractUpgradeBlsValidator) public initializer {
         __UUPSUpgradeable_init();
         __AccessControlEnumerable_init();
+        __ScheduledUpgradeable_init(_contractUpgradeBlsValidator, 2 days);
 
         require(_grantRole(ADMIN_ROLE, owner), "Grant role failed");
         require(_grantRole(DEFAULT_ADMIN_ROLE, owner), "Grant role failed");
@@ -134,9 +134,6 @@ contract BlocklockSender is
 
         DST_H4 = abi.encodePacked("BLOCKLOCK_BN254_XMD:KECCAK-256_H4_", bytes32(getChainId()).toHexString(), "_");
     }
-
-    /// @dev Overridden upgrade authorization function to ensure only an authorized caller can authorize upgrades.
-    function _authorizeUpgrade(address newImplementation) internal override onlyAdmin {}
 
     /// @notice Requests a blocklock for a specified condition with the provided ciphertext without a subscription ID.
     /// Requires payment to be made for the request without a subscription.
@@ -555,9 +552,7 @@ contract BlocklockSender is
     /// @notice Returns the current blockchain chain ID.
     /// @dev Uses inline assembly to retrieve the `chainid` opcode.
     /// @return chainId The current chain ID of the network.
-    function getChainId() public view returns (uint256 chainId) {
-        assembly {
-            chainId := chainid()
-        }
+    function getChainId() public view override(IBlocklockSender, ScheduledUpgradeable) returns (uint256 chainId) {
+        chainId = super.getChainId();
     }
 }
