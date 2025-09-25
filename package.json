@@ -2,7 +2,6 @@
     "name": "blocklock-solidity",
     "description": "Core solidity smart contracts for Randamu's on-chain timelock encryption",
     "license": "MIT",
-    "type": "module",
     "publishConfig": {
         "access": "public"
     },
