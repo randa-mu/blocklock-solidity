@@ -12,7 +12,7 @@
     },
     "scripts": {
         "build": "npm run build:forge && npm run build:hardhat",
-        "build:forge": "FOUNDRY_PROFILE=build forge install && FOUNDRY_PROFILE=build forge build",
+        "build:forge": "FOUNDRY_PROFILE=build forge soldeer install && FOUNDRY_PROFILE=build forge build",
         "build:hardhat": "npx hardhat compile",
         "test": "npm run test:forge && npm run test:hardhat",
         "test:forge": "FOUNDRY_PROFILE=test forge test --gas-report",
@@ -96,5 +96,6 @@
         "@typechain/hardhat": "^9.0.0",
         "ethers": "^6.13.3",
         "prettier-plugin-solidity": "^1.3.1"
-    }
+    },
+    "type": "commonjs"
 }
