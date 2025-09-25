@@ -1,4 +1,4 @@
-@forge-std/=lib/forge-std/src/
-@ds-test/=lib/forge-std/lib/ds-test/src/
-
-@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+@openzeppelin/contracts-upgradeable/=dependencies/@openzeppelin-contracts-upgradeable-5.4.0/
+@openzeppelin/contracts/=dependencies/@openzeppelin-contracts-5.4.0/
+bls-solidity-0.3.0/=dependencies/bls-solidity-0.3.0/
+forge-std/=dependencies/forge-std-1.10.0/src/

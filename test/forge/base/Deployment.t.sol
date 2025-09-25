@@ -81,10 +81,10 @@ abstract contract Deployment is Base {
         signatureSchemeAddressProvider.updateSignatureScheme(SCHEME_ID, address(blocklockSignatureScheme));
 
         vm.prank(admin);
-        decryptionSender.initialize(admin, address(signatureSchemeAddressProvider));
+        decryptionSender.initialize(admin, address(signatureSchemeAddressProvider), address(blocklockSignatureScheme));
 
         vm.prank(admin);
-        blocklockSender.initialize(admin, address(decryptionSender));
+        blocklockSender.initialize(admin, address(decryptionSender), address(blocklockSignatureScheme));
     }
 
     function deployAndFundReceiverWithSubscription(address owner, address blocklockSenderProxy, uint256 subBalance)

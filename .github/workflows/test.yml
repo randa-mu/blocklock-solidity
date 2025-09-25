@@ -22,13 +22,19 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
       
-      - name: Install hardhat
+      - name: Install dependencies
         run: |
-          yarn add --dev hardhat
-        id: hardhat-install
+          npm install
+        id: install-deps
 
       - name: Show Forge version
         run: |
@@ -38,6 +44,9 @@ jobs:
         run: |
           forge fmt --check
         id: fmt
+      
+      - name: Install soldeer dependencies
+        run: forge soldeer install
 
       - name: Run Forge build
         run: |

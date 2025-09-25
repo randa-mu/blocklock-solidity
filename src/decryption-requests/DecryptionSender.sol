@@ -3,10 +3,10 @@ pragma solidity ^0.8;
 
 import {AccessControlEnumerableUpgradeable} from
     "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
+import {ScheduledUpgradeable} from "../scheduled-contract-upgrades/ScheduledUpgradeable.sol";
 
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
@@ -33,8 +33,7 @@ contract DecryptionSender is
     IDecryptionSender,
     ReentrancyGuard,
     Multicall,
-    Initializable,
-    UUPSUpgradeable,
+    ScheduledUpgradeable,
     AccessControlEnumerableUpgradeable
 {
     using BytesLib for bytes;
@@ -106,17 +105,20 @@ contract DecryptionSender is
     /// @param owner The address of the owner to be granted roles.
     /// @param _signatureSchemeAddressProvider The address of the signature scheme provider contract.
     /// @dev This function also sets the owner and signature scheme address provider.
-    function initialize(address owner, address _signatureSchemeAddressProvider) public initializer {
+    function initialize(address owner, address _signatureSchemeAddressProvider, address _contractUpgradeBlsValidator)
+        public
+        initializer
+    {
         __UUPSUpgradeable_init();
         __AccessControlEnumerable_init();
+        __ScheduledUpgradeable_init(_contractUpgradeBlsValidator, 2 days);
 
         require(_grantRole(ADMIN_ROLE, owner), "Grant role failed");
         require(_grantRole(DEFAULT_ADMIN_ROLE, owner), "Grant role failed");
         signatureSchemeAddressProvider = ISignatureSchemeAddressProvider(_signatureSchemeAddressProvider);
     }
 
-    /// @dev Overridden upgrade authorization function to ensure only an authorized caller can authorize upgrades.
-    function _authorizeUpgrade(address newImplementation) internal override onlyAdmin {}
+    /// @dev Overridden upgrade functions
 
     /// @dev Overridden msg.sender function to return the correct sender address.
     function _msgSender() internal view override (Context, ContextUpgradeable) returns (address) {
