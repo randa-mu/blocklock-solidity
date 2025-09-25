@@ -1,22 +1,20 @@
-name: Foundry
+name: CI
 
 on:
   push:
   pull_request:
   workflow_dispatch:
-  pull_request_target:
 
 env:
   BLS_PRIVATE_KEY: ${{ secrets.BLS_KEY }}
-    
+  FOUNDRY_PROFILE: ci
+
 jobs:
-  check:
+  foundry:
     strategy:
       fail-fast: true
-
     name: Foundry project
     runs-on: ubuntu-latest
-      
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,35 +22,51 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
-      
-      - name: Install hardhat
-        run: |
-          yarn add --dev hardhat
-        id: hardhat-install
 
       - name: Show Forge version
-        run: |
-          forge --version
+        run: forge --version
+
+      - name: Install soldeer dependencies
+        run: forge soldeer install
 
       - name: Run Forge fmt
-        run: |
-          forge fmt --check
+        run: forge fmt --check
         id: fmt
 
       - name: Run Forge build
-        run: |
-          forge build --force --skip test --sizes
+        run: forge build --sizes
         id: build
 
       - name: Run Forge tests
-        run: |
-          FOUNDRY_PROFILE=test forge test --gas-report
-        id: forge-test
-      
-      - name: Run foundry coverage
-        run: FOUNDRY_PROFILE=coverage forge coverage --report summary
+        run: forge test -vvv
+        id: test
+
+  hardhat:
+    needs: foundry
+    runs-on: ubuntu-latest
+    name: Hardhat tests
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install soldeer dependencies
+        run: forge soldeer install 
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
 
       - name: Run Hardhat tests
-        run: |
-          npx hardhat test
-        id: hardhat-test
+        run: npx hardhat test
