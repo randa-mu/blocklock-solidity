@@ -4,7 +4,6 @@ on:
   push:
   pull_request:
   workflow_dispatch:
-  pull_request_target:
 
 env:
   BLS_PRIVATE_KEY: ${{ secrets.BLS_KEY }}
