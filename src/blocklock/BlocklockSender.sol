@@ -41,10 +41,6 @@ contract BlocklockSender is
     /// @dev The contract includes constants related to blocklock schemes, decryption key processing, and events for blocklock requests and callbacks.
     ///      It also defines an `ADMIN_ROLE` for managing access control and updates to decryption sender.
 
-
-
-
-
     /// @notice Domain separation tags for cryptographic operations
     bytes public DST_H3;
     bytes public DST_H4;
@@ -111,7 +107,7 @@ contract BlocklockSender is
         if (!_grantRole(DEFAULT_ADMIN_ROLE, owner)) revert BlocklockErrors.GrantRoleFailed();
         decryptionSender = IDecryptionSender(_decryptionSender);
 
-        (, , DST_H3, DST_H4) = BlocklockDSTLib.initializeDSTs(getChainId());
+        (,, DST_H3, DST_H4) = BlocklockDSTLib.initializeDSTs(getChainId());
     }
 
     /// @notice Requests blocklock with direct payment
@@ -356,19 +352,7 @@ contract BlocklockSender is
     /// @return blsPairingCheckOverhead BLS operation overhead
     /// @return nativePremiumPercentage Native payment premium
     /// @return gasForCallExactCheck Exact call gas
-    function getConfig()
-        external
-        view
-        returns (
-            uint32,
-            uint32,
-            uint32,
-            uint32,
-            uint32,
-            uint8,
-            uint32
-        )
-    {
+    function getConfig() external view returns (uint32, uint32, uint32, uint32, uint32, uint8, uint32) {
         return (
             s_config.maxGasLimit,
             s_config.gasAfterPaymentCalculation,
